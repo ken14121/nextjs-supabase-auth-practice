@@ -116,7 +116,7 @@ Google マップのタイムライン（スマホから書き出した `Timeline
 
 ### Step 3: Supabase と Google ログイン（今回のメイン）
 
-- [ ] Supabase でプロジェクトを作成
+- [x] Supabase でプロジェクトを作成（Data API: ON / 新しいテーブルの自動公開: OFF / 自動 RLS: ON）
 - [ ] Google Cloud Console で OAuth クライアント ID を作る
 - [ ] Supabase の Auth 設定で Google プロバイダを有効にする
 - [ ] `@supabase/supabase-js` と `@supabase/ssr` を入れる
@@ -137,6 +137,7 @@ Google マップのタイムライン（スマホから書き出した `Timeline
   - `visited_regions`（行った県・国）: `user_id`, `region_code`, `outing_id`, `first_visited_at`
   - `friendships`（友人関係）: `user_id`, `friend_id`, `status`
 - [ ] RLS（行レベルセキュリティ）を有効にし、「自分の行だけ読める・書ける」ポリシーを書く（**テーブルを作ったらすぐ書く。後回しにしない**）
+- [ ] 新しいテーブルは自動では API に公開されない設定なので、使うテーブルごとに `authenticated` ロールへ権限を付ける（例: `grant select, insert, update, delete on table outings to authenticated;`）。付け忘れると `permission denied` になる
 - [ ] Supabase CLI で型を生成し（`supabase gen types typescript`）、コードで使う
 - [ ] 手で 1 件入れて、画面に表示する
 
