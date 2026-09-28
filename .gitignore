@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 位置情報の実データ（Timeline.json など）はコミットしない
+Timeline*.json
+/data/private/

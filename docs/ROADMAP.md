@@ -86,10 +86,10 @@ Google マップのタイムライン（スマホから書き出した `Timeline
 
 ### Step 0: 環境の準備
 
-- [ ] Node.js 24 を入れる（`nvm` や `fnm` などのバージョン管理ツール推奨）
-- [ ] `corepack enable` で Yarn を有効化し、`yarn set version 4.5.3`
-- [ ] `.yarnrc.yml` に `nodeLinker: node-modules` を書く
-
+- [x] Node.js 24 を入れる（`nvm` や `fnm` などのバージョン管理ツール推奨）
+- [x] `corepack enable` で Yarn を有効化し、`corepack use yarn@4.5.3`
+- [x] `.yarnrc.yml` に `nodeLinker: node-modules` を書く
+- [x] Jev のアカウントを作成（新規登録の一時停止でクレジットが付かず、Zendash 側で対応してもらうことに）
 - [ ] **Jev のアカウントを作り、公式のサンプルで API が 1 回呼べるか確認する**（前任者は外部 API の登録待ちで 2 週間以上止まったため、待ちが出るものは初日に始める）
 
 **調べるキーワード:** corepack, Yarn Berry, nodeLinker, Plug'n'Play と node_modules の違い
@@ -97,9 +97,10 @@ Google マップのタイムライン（スマホから書き出した `Timeline
 
 ### Step 1: Next.js を動かす
 
-- [ ] Next.js 16 のプロジェクトを作成（App Router / TypeScript）
-- [ ] `tsconfig.json` の `strict: true` を確認
-- [ ] ESLint の代わりに Biome 2.4 を入れて `yarn lint` / `yarn format` を使えるようにする
+- [x] Next.js 16 のプロジェクトを作成（App Router / TypeScript）
+- [x] `tsconfig.json` の `strict: true` を確認
+- [x] ESLint の代わりに Biome 2.4 を入れて `yarn lint` / `yarn format` を使えるようにする（`biome.json` で `css.parser.tailwindDirectives` を有効化）
+- [ ] React を指定バージョン 19.2.5 にそろえる（作成時は 19.2.4 が入る）
 - [ ] トップページの文字を自分で書き換えてみる
 
 **調べるキーワード:** App Router, `layout.tsx` と `page.tsx`, Server Components と Client Components の違い
