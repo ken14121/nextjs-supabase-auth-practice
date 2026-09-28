@@ -1,0 +1,549 @@
+<title>旅アプリ開発 1日目ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --surface-2: #e9eff3;
+    --ink: #15212c;
+    --muted: #566676;
+    --line: #d4dde5;
+    --accent: #1a6a9c;
+    --accent-soft: #dcebf5;
+    --pending: #a36b00;
+    --pending-soft: #fbefd4;
+    --ok: #2d7a4c;
+    --ok-soft: #dcefe3;
+    --ng: #b03a2e;
+    --ng-soft: #f6dedb;
+    --code-bg: #edf2f6;
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e151c;
+      --surface: #15202a;
+      --surface-2: #1b2934;
+      --ink: #e4ecf2;
+      --muted: #9aabba;
+      --line: #2a3a47;
+      --accent: #62b0e3;
+      --accent-soft: #173247;
+      --pending: #e3b453;
+      --pending-soft: #3a2e14;
+      --ok: #6cc48f;
+      --ok-soft: #173325;
+      --ng: #ee8a7e;
+      --ng-soft: #3d1e1a;
+      --code-bg: #1c2833;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e151c;
+    --surface: #15202a;
+    --surface-2: #1b2934;
+    --ink: #e4ecf2;
+    --muted: #9aabba;
+    --line: #2a3a47;
+    --accent: #62b0e3;
+    --accent-soft: #173247;
+    --pending: #e3b453;
+    --pending-soft: #3a2e14;
+    --ok: #6cc48f;
+    --ok-soft: #173325;
+    --ng: #ee8a7e;
+    --ng-soft: #3d1e1a;
+    --code-bg: #1c2833;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.35; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 900; }
+  h2 { font-size: 1.45rem; font-weight: 900; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ヘッダー：きっぷ風 */
+  header.ticket {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+  }
+  .ticket-main { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .ticket-main .lead { color: var(--muted); max-width: 60ch; }
+  .ticket-stub {
+    border-left: 2px dashed var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: var(--surface-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 140px;
+  }
+  .stub-label { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+  .stub-value { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  @media (max-width: 560px) {
+    header.ticket { grid-template-columns: 1fr; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; flex-wrap: wrap; gap: 4px 20px; }
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -32px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.88rem;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .sec-no { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+  .note { color: var(--muted); font-size: 0.95rem; }
+
+  /* 全体像 */
+  .map { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .map-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+  @media (max-width: 640px) { .map-row { grid-template-columns: 1fr; } .map-arrow { transform: rotate(90deg); justify-self: center; } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .box-title { font-family: var(--font-display); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.93rem; }
+  .tool-list li { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px; }
+  .tool-list b { font-weight: 700; }
+  .map-arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .map-arrow span { font-size: 1.6rem; line-height: 1; color: var(--accent); }
+  .localhost { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+  .pending-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .pending-row { grid-template-columns: 1fr; } }
+  .pending-row .box { border-style: dashed; }
+  .chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip.pending { color: var(--pending); background: var(--pending-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.ng { color: var(--ng); background: var(--ng-soft); }
+  .chip.step { color: var(--accent); background: var(--accent-soft); }
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  /* リスト */
+  dl.facts { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 16px; }
+  dl.facts dt { font-weight: 700; color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 10px; } }
+
+  /* 表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 路線図（ログインの流れ） */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.route li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  ol.route li:last-child { padding-bottom: 0; }
+  ol.route li::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent);
+  }
+  ol.route li:last-child::before { display: none; }
+  .station {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--accent);
+    position: relative; z-index: 1;
+  }
+  .stop { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .who { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+  /* Git の流れ */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.93rem; }
+  .flow .stepbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; }
+  .flow .stepbox small { color: var(--muted); font-size: 0.78rem; }
+  .flow .arr { color: var(--accent); font-weight: 700; }
+
+  /* クイズ */
+  ol.quiz { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: q; }
+  ol.quiz li { counter-increment: q; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  ol.quiz li > p::before { content: "Q" counter(q) "　"; font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; font-weight: 700; width: fit-content; }
+  details[open] summary { margin-bottom: 6px; }
+  details p { color: var(--ink); font-size: 0.95rem; }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+
+<div class="wrap">
+
+  <header class="ticket">
+    <div class="ticket-main">
+      <span class="eyebrow">ZENDASH 臨地実習 ／ 学習ノート</span>
+      <h1>旅アプリ開発 1日目ノート</h1>
+      <p class="lead">道具をそろえて、空のアプリを動かすところまで進んだ日。サービス同士の連携はまだで、明日以降の Step 3 から始まる。</p>
+    </div>
+    <div class="ticket-stub">
+      <span class="stub-label">日付</span>
+      <span class="stub-value">2026.09.28 月</span>
+      <span class="stub-label">進んだところ</span>
+      <span class="stub-value">Step 0 → 1</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#overview">全体像</a>
+    <a href="#decided">決めたこと</a>
+    <a href="#services">登録したサービス</a>
+    <a href="#tools">入れたツール</a>
+    <a href="#files">プロジェクトの中身</a>
+    <a href="#mechanics">触ったしくみ</a>
+    <a href="#troubles">つまずき</a>
+    <a href="#quiz">理解度チェック</a>
+    <a href="#next">次回</a>
+  </nav>
+
+  <section id="overview">
+    <div class="sec-head"><span class="sec-no">00</span><h2>今日の全体像</h2></div>
+
+    <div class="map">
+      <div class="map-row">
+        <div class="box">
+          <div class="box-title">あなたの PC（Windows）<span class="chip ok">動いている</span></div>
+          <ul class="tool-list">
+            <li><b>VS Code</b><span>コードを書く</span></li>
+            <li><b>Node.js 24</b><span>JavaScript を PC で動かす</span></li>
+            <li><b>Yarn 4.5.3</b><span>部品（パッケージ）を管理</span></li>
+            <li><b>Next.js 16</b><span>アプリ本体。<code>yarn dev</code> で起動 → <span class="localhost">localhost:3000</span></span></li>
+            <li><b>Git</b><span>変更履歴を記録</span></li>
+          </ul>
+        </div>
+        <div class="map-arrow" aria-hidden="true"><span>→</span>git push</div>
+        <div class="box">
+          <div class="box-title">GitHub<span class="chip ok">つないだ</span></div>
+          <p class="note">コードの保管場所。最後は GitHub Pages で紹介ページも公開する。</p>
+        </div>
+      </div>
+
+      <p class="note">アカウント・プロジェクトを作っただけで、まだアプリとはつないでいないもの：</p>
+      <div class="pending-row">
+        <div class="box">
+          <div class="box-title">Supabase<span class="chip step">Step 3〜4</span></div>
+          <p class="note">データベース＋ログイン管理</p>
+        </div>
+        <div class="box">
+          <div class="box-title">Google Cloud<span class="chip step">Step 3</span></div>
+          <p class="note">「Google でログイン」の許可証を発行</p>
+        </div>
+        <div class="box">
+          <div class="box-title">TypeSafe（Jev）<span class="chip step">Step 7</span></div>
+          <p class="note">判定する AI。クレジット待ち</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="decided">
+    <div class="sec-head"><span class="sec-no">01</span><h2>決めたこと（アプリの軸）</h2></div>
+    <dl class="facts">
+      <dt>何を作るか</dt>
+      <dd>Google マップの履歴（Timeline.json）から今までの旅行を振り返り、友人と「行った県・国」を比べるアプリ</dd>
+      <dt>最低限の機能</dt>
+      <dd>① 地図で県・国が塗られる　② Jev が旅行かどうかを判定　③ 友人と比較</dd>
+      <dt>Travy との違い</dt>
+      <dd>過去の履歴をまとめて取り込む ／ Jev が自動判定 ／ 友人だけと県単位で共有</dd>
+      <dt>やりたいこと</dt>
+      <dd>3D の地球儀、県の立体表示</dd>
+    </dl>
+  </section>
+
+  <section id="services">
+    <div class="sec-head"><span class="sec-no">02</span><h2>登録したサービス</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>サービス</th><th>何をするものか</th><th>今日やったこと</th><th>このアプリでの役割</th></tr></thead>
+        <tbody>
+          <tr><td>GitHub</td><td>コードの保管・共有</td><td>リポジトリ作成、push</td><td>コードの置き場所。最後は GitHub Pages で紹介ページも公開</td></tr>
+          <tr><td>Supabase</td><td>データベース（PostgreSQL）、ログイン管理（Auth）、ファイル置き場（Storage）をまとめて提供</td><td>プロジェクト作成（東京リージョン）</td><td>ユーザー・旅のデータの保存、Google ログインの管理、Timeline.json の保存</td></tr>
+          <tr><td>Google Cloud</td><td>Google のサービスを使うための管理画面</td><td>プロジェクト <code>travel-log</code> を作成</td><td>「Google でログイン」に必要な OAuth クライアント ID を発行する</td></tr>
+          <tr><td>TypeSafe（Jev）</td><td>文章を書かず「判定だけ」返す AI</td><td>アカウント作成。クレジット $0 で使えず Zendash に相談 <span class="chip pending">対応待ち</span></td><td>外出ごとに「旅行 / 帰省 / 日帰り / 日常」を判定</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Supabase で選んだ設定の意味</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>設定</th><th>選択</th><th>意味</th></tr></thead>
+        <tbody>
+          <tr><td>Data API</td><td><span class="chip ok">ON</span></td><td>テーブルを URL 経由で読み書きできる入口。supabase-js はここを使う</td></tr>
+          <tr><td>新しいテーブルを自動で公開</td><td><span class="chip ng">OFF</span></td><td>テーブルを作っても勝手に外から触れない。使うテーブルごとに権限（<code>grant</code>）を付ける</td></tr>
+          <tr><td>自動 RLS</td><td><span class="chip ok">ON</span></td><td>新しいテーブルに「行ごとの鍵」が最初からかかる。「自分のデータだけ見える」ルールを書く前提</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>予習：Google ログインの流れ</h3>
+    <ol class="route">
+      <li><span class="station">1</span><div class="stop"><span class="who">ユーザー</span><p>アプリの「Google でログイン」を押す</p></div></li>
+      <li><span class="station">2</span><div class="stop"><span class="who">SUPABASE AUTH</span><p>Google のログイン画面へ案内する</p></div></li>
+      <li><span class="station">3</span><div class="stop"><span class="who">GOOGLE</span><p>「このアプリにログインしていい？」と聞き、ユーザーが許可する</p></div></li>
+      <li><span class="station">4</span><div class="stop"><span class="who">GOOGLE → SUPABASE</span><p>「この人は本人です」と返す。ここで Google Cloud の OAuth クライアント ID を使う</p></div></li>
+      <li><span class="station">5</span><div class="stop"><span class="who">SUPABASE → アプリ</span><p>ログイン済みの証明（Cookie）を渡す</p></div></li>
+      <li><span class="station">6</span><div class="stop"><span class="who">NEXT.JS（proxy.ts）</span><p>ページを開くたびに Cookie を確認して、ログイン状態を保つ</p></div></li>
+    </ol>
+    <p class="callout">Google Cloud は「このアプリが Google ログインを使ってよい」という許可証を出す役。Supabase はログインした人を覚えておく役。</p>
+
+    <h3>予習：Jev のしくみ</h3>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">入力と出力</div>
+        <ul class="plain">
+          <li>入力は <b>State</b>（判断材料の文章）と <b>Questions</b>（何を判断させるか）</li>
+          <li>質問の型は 3 つ：<b>Choice</b>（選択肢から 1 つ）／ <b>Score</b>（点数）／ <b>Noul</b>（正しい確率）</li>
+          <li>出力は選んだ答えと確率だけ。文章は書かない</li>
+        </ul>
+      </div>
+      <div class="box">
+        <div class="box-title">注意点</div>
+        <ul class="plain">
+          <li>料金は入力だけにかかり、出力は無料</li>
+          <li>計算や日付の比較は苦手。距離や泊数はこちらで計算して渡す</li>
+          <li>TypeSafe が 9/22 から新規登録を一時停止中。新しいアカウントに無料クレジットが付かず、Zendash 側で対応待ち</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="tools">
+    <div class="sec-head"><span class="sec-no">03</span><h2>PC に入れたツール</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ツール</th><th>一言でいうと</th><th>使ったコマンド</th></tr></thead>
+        <tbody>
+          <tr><td>winget</td><td>Windows のアプリをコマンドで入れる道具</td><td><code>winget install ...</code></td></tr>
+          <tr><td>Git</td><td>ファイルの変更履歴を記録する</td><td><code>git clone</code> <code>add</code> <code>commit</code> <code>push</code></td></tr>
+          <tr><td>fnm</td><td>Node.js のバージョンを切り替える道具</td><td><code>fnm install 24</code></td></tr>
+          <tr><td>Node.js 24</td><td>ブラウザの外で JavaScript を動かす実行環境。Next.js もこの上で動く</td><td><code>node -v</code></td></tr>
+          <tr><td>corepack</td><td>Node.js に付属。プロジェクトで決めた Yarn のバージョンを使わせる</td><td><code>corepack use yarn@4.5.3</code></td></tr>
+          <tr><td>Yarn 4.5.3</td><td>パッケージ（他の人が作った部品）を入れる・管理する</td><td><code>yarn add</code> <code>yarn dev</code></td></tr>
+          <tr><td>VS Code</td><td>コードを書くエディタ。Biome・Tailwind の拡張機能を追加</td><td><code>code .</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="files">
+    <div class="sec-head"><span class="sec-no">04</span><h2>プロジェクトの中身</h2></div>
+    <p class="note">create-next-app が作ったファイルと、その役割。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ファイル</th><th>役割</th></tr></thead>
+        <tbody>
+          <tr><td><code>app/page.tsx</code></td><td>トップページ（<code>/</code>）の中身。今日書き換えたところ</td></tr>
+          <tr><td><code>app/layout.tsx</code></td><td>全ページ共通の外枠。<code>&lt;html lang="ja"&gt;</code> やタブのタイトルを決める</td></tr>
+          <tr><td><code>app/globals.css</code></td><td>全体の CSS。Tailwind の読み込みもここ</td></tr>
+          <tr><td><code>package.json</code></td><td>使う部品の一覧とバージョン、<code>yarn dev</code> などのコマンド定義</td></tr>
+          <tr><td><code>yarn.lock</code></td><td>実際に入った部品の正確なバージョン。誰が入れても同じになるように記録</td></tr>
+          <tr><td><code>.yarnrc.yml</code></td><td>Yarn の設定。<code>nodeLinker: node-modules</code> で部品を <code>node_modules/</code> に置く</td></tr>
+          <tr><td><code>node_modules/</code></td><td>実際の部品置き場。大きいので Git には入れない</td></tr>
+          <tr><td><code>tsconfig.json</code></td><td>TypeScript の設定。<code>strict: true</code> で型チェックを厳しくしている</td></tr>
+          <tr><td><code>biome.json</code></td><td>Biome（書き方チェック＋自動整形）の設定</td></tr>
+          <tr><td><code>next.config.ts</code></td><td>Next.js の設定</td></tr>
+          <tr><td><code>postcss.config.mjs</code></td><td>Tailwind CSS を動かすための設定</td></tr>
+          <tr><td><code>public/</code></td><td>画像などをそのまま公開する場所</td></tr>
+          <tr><td><code>.gitignore</code></td><td>Git に入れないファイルの一覧（<code>node_modules</code>、<code>.env</code>、<code>Timeline*.json</code> など）</td></tr>
+          <tr><td><code>.gitattributes</code></td><td>改行コードを LF にそろえる設定（Windows 対策）</td></tr>
+          <tr><td><code>AGENTS.md</code> / <code>CLAUDE.md</code></td><td>AI 向けの説明。「Next.js 16 は昔と違うので、手元のドキュメントを読んで」と書いてある</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>指定の技術スタックと今のバージョン</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>分類</th><th>指定</th><th>入っているもの</th><th>状態</th></tr></thead>
+        <tbody>
+          <tr><td>Node.js</td><td class="num">24</td><td class="num">24.21.0</td><td><span class="chip ok">OK</span></td></tr>
+          <tr><td>Yarn</td><td class="num">4.5.3</td><td class="num">4.5.3</td><td><span class="chip ok">OK</span></td></tr>
+          <tr><td>Next.js</td><td class="num">16.2.3</td><td class="num">16.2.3</td><td><span class="chip ok">OK</span></td></tr>
+          <tr><td>React</td><td class="num">19.2.5</td><td class="num">19.2.5</td><td><span class="chip ok">OK</span></td></tr>
+          <tr><td>TypeScript</td><td class="num">5.9 / strict</td><td class="num">5.9.3 / strict</td><td><span class="chip ok">OK</span></td></tr>
+          <tr><td>Tailwind CSS</td><td class="num">4</td><td class="num">4</td><td><span class="chip ok">OK</span></td></tr>
+          <tr><td>Biome</td><td class="num">2.4</td><td class="num">2.4.16</td><td><span class="chip ok">OK</span></td></tr>
+          <tr><td>shadcn/ui・Radix UI・lucide-react</td><td>―</td><td>―</td><td><span class="chip step">Step 2</span></td></tr>
+          <tr><td>Supabase のライブラリ</td><td>―</td><td>―</td><td><span class="chip step">Step 3</span></td></tr>
+          <tr><td>react-hook-form・Zod・SWR</td><td>―</td><td>―</td><td><span class="chip step">Step 5〜6</span></td></tr>
+          <tr><td>Playwright</td><td>―</td><td>―</td><td><span class="chip step">Step 8</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="mechanics">
+    <div class="sec-head"><span class="sec-no">05</span><h2>今日触ったしくみ</h2></div>
+    <dl class="facts">
+      <dt><code>yarn dev</code></dt>
+      <dd>開発用サーバーを起動し、<code>http://localhost:3000</code> でアプリを見られるようにする。<code>localhost</code> は「自分の PC」のこと</dd>
+      <dt>ホットリロード</dt>
+      <dd>ファイルを保存すると、リロードしなくても画面が更新される</dd>
+      <dt>JSX / TSX</dt>
+      <dd>TypeScript の中に HTML のような書き方ができる形式。ソースで文章を改行すると、表示ではスペースになる</dd>
+      <dt>Tailwind CSS</dt>
+      <dd><code>className="text-3xl text-blue-600"</code> のように、クラス名を並べて見た目を指定する</dd>
+      <dt><code>lang="ja"</code></dt>
+      <dd>ページの言語をブラウザに伝える。<code>jp</code> は国のコード、<code>ja</code> が言語のコード</dd>
+      <dt>Biome</dt>
+      <dd><code>yarn lint</code> で書き方のミスを見つけ、<code>yarn format</code> で字下げなどを自動で整える</dd>
+      <dt>ブランチ</dt>
+      <dd>今の作業は <code>claude/dreamy-euler-flpzg9</code> ブランチにあり、<code>main</code> にはまだ入っていない</dd>
+    </dl>
+
+    <h3>Git の流れ</h3>
+    <div class="flow">
+      <span class="stepbox">ファイルを変更<small>VS Code で保存</small></span>
+      <span class="arr" aria-hidden="true">→</span>
+      <span class="stepbox"><code>git add</code><small>記録する変更を選ぶ</small></span>
+      <span class="arr" aria-hidden="true">→</span>
+      <span class="stepbox"><code>git commit</code><small>PC の中に記録する</small></span>
+      <span class="arr" aria-hidden="true">→</span>
+      <span class="stepbox"><code>git push</code><small>GitHub に送る</small></span>
+    </div>
+  </section>
+
+  <section id="troubles">
+    <div class="sec-head"><span class="sec-no">06</span><h2>つまずいたことと学び</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>起きたこと</th><th>原因</th><th>対処</th></tr></thead>
+        <tbody>
+          <tr><td>Jev が使えない（Billing error）</td><td>TypeSafe が 9/22 から新規登録を一時停止し、無料クレジットが付かない</td><td>Slack で Zendash に相談 → 対応してもらうことに</td></tr>
+          <tr><td>Linter が ESLint で作られた</td><td>コマンドにオプションを 1 つでも付けると、残りは質問せずデフォルトで作られる</td><td>全部の設定をオプションで指定して作り直した</td></tr>
+          <tr><td>作り直しで <code>next-env.d.ts</code> が衝突</td><td><code>.gitignore</code> 対象のファイルは <code>git clean</code> で消えない</td><td>手で削除</td></tr>
+          <tr><td>Biome 2.2 が入った</td><td>作成ツールの初期設定が古い</td><td><code>yarn add -D -E @biomejs/biome@2.4</code> → <code>biome migrate</code></td></tr>
+          <tr><td><code>yarn lint</code> で Tailwind の書き方がエラー</td><td>Biome 2.4 は Tailwind の構文が初期状態で無効</td><td><code>biome.json</code> に <code>css.parser.tailwindDirectives: true</code></td></tr>
+          <tr><td>React が 19.2.4</td><td>作成ツールの初期値</td><td><code>yarn add -E react@19.2.5 react-dom@19.2.5</code></td></tr>
+          <tr><td>日本語が単語の途中で折り返す</td><td>日本語はスペースがないので、どこでも折り返される</td><td><code>&lt;br /&gt;</code> や <code>[word-break:auto-phrase]</code></td></tr>
+          <tr><td><code>lang="jp"</code> でエラー</td><td>言語コードは <code>ja</code></td><td><code>lang="ja"</code> に修正</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head"><span class="sec-no">07</span><h2>理解度チェック</h2></div>
+    <p class="note">まず自分で答えてから「答えを見る」を開く。</p>
+    <ol class="quiz">
+      <li>
+        <p><code>package.json</code> と <code>yarn.lock</code> の違いは？</p>
+        <details><summary>答えを見る</summary><p><code>package.json</code> は「この部品を、このくらいのバージョン範囲で使いたい」という希望の一覧（例：<code>typescript: ^5</code>）。<code>yarn.lock</code> は実際に入った正確なバージョン（例：5.9.3）の記録で、誰がいつ入れても同じ部品になるようにする。</p></details>
+      </li>
+      <li>
+        <p><code>node_modules/</code> を Git に入れないのはなぜ？ 入れなくても他の人が動かせるのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>数百 MB と大きく、OS ごとに中身が違う部品もあるため。<code>package.json</code> と <code>yarn.lock</code> さえあれば、<code>yarn install</code> で同じものを入れ直せる。</p></details>
+      </li>
+      <li>
+        <p>Google ログインで、Supabase と Google Cloud はそれぞれ何を担当する？</p>
+        <details><summary>答えを見る</summary><p>Google Cloud は「このアプリが Google ログインを使ってよい」という許可証（OAuth クライアント ID）を発行し、Google が本人確認をする。Supabase は Google から結果を受け取り、ユーザーを登録してログイン状態（Cookie）を管理する。</p></details>
+      </li>
+      <li>
+        <p>「自動 RLS: ON」にすると何が守られる？</p>
+        <details><summary>答えを見る</summary><p>新しいテーブルに最初から行ごとの鍵がかかり、ルール（ポリシー）を書くまではアプリ経由で誰も行を読み書きできない。ルールの書き忘れで全員のデータが丸見えになる事故を防げる。</p></details>
+      </li>
+      <li>
+        <p><code>app/layout.tsx</code> と <code>app/page.tsx</code> の違いは？</p>
+        <details><summary>答えを見る</summary><p><code>layout.tsx</code> は全ページ共通の外枠（<code>&lt;html&gt;</code>、フォント、タブのタイトル）で、中の <code>children</code> に各ページが入る。<code>page.tsx</code> はその URL で表示される中身。</p></details>
+      </li>
+      <li>
+        <p><code>yarn lint</code> と <code>yarn format</code> の違いは？</p>
+        <details><summary>答えを見る</summary><p><code>yarn lint</code>（<code>biome check</code>）は書き方のミスや整形のずれを見つけて報告するだけ。<code>yarn format</code> は字下げなどを実際にファイルへ書き直して整える。</p></details>
+      </li>
+      <li>
+        <p>Jev に「東京から大阪まで何 km？」と聞くのが向いていないのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>Jev は選択・点数・真偽の判定専用で、数値を計算して答える型がなく、計算も苦手だから。距離はコードで計算し、その結果を材料として渡して「旅行かどうか」を判定させる。</p></details>
+      </li>
+    </ol>
+  </section>
+
+  <section id="next">
+    <div class="sec-head"><span class="sec-no">08</span><h2>次回</h2></div>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">Step 2<span class="chip step">見た目</span></div>
+        <p>shadcn/ui と lucide-react で見た目を整える</p>
+      </div>
+      <div class="box">
+        <div class="box-title">Step 3<span class="chip step">ログイン</span></div>
+        <p>Google Cloud で OAuth クライアント ID を作り、Supabase とつないで Google ログインを作る</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>nextjs-supabase-auth-practice ／ docs/notes/2026-09-28.html</footer>
+</div>
