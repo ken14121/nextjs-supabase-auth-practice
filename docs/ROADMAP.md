@@ -105,17 +105,18 @@ Google マップのタイムライン（スマホから書き出した `Timeline
 - [x] Next.js 16 のプロジェクトを作成（App Router / TypeScript）
 - [x] `tsconfig.json` の `strict: true` を確認
 - [x] ESLint の代わりに Biome 2.4 を入れて `yarn lint` / `yarn format` を使えるようにする（`biome.json` で `css.parser.tailwindDirectives` を有効化）
-- [ ] React を指定バージョン 19.2.5 にそろえる（作成時は 19.2.4 が入る）
-- [ ] トップページの文字を自分で書き換えてみる
+- [x] React を指定バージョン 19.2.5 にそろえる（作成時は 19.2.4 が入る）
+- [x] トップページの文字を自分で書き換えてみる
 
 **調べるキーワード:** App Router, `layout.tsx` と `page.tsx`, Server Components と Client Components の違い
 **完了条件:** `yarn dev` で http://localhost:3000 が開き、`yarn lint` がエラーなしで通る
 
 ### Step 2: 見た目を整える
 
-- [ ] Tailwind CSS 4 を設定（Next.js の作成時に選べる）
-- [ ] shadcn/ui を初期化し、`Button` と `Card` を追加
-- [ ] lucide-react のアイコンをボタンに付けてみる
+- [x] Tailwind CSS 4 を設定（Next.js の作成時に選べる）
+- [x] shadcn/ui を初期化し、`Button` と `Card` を追加（component library は **Radix UI** を選ぶ。プロジェクトのフォルダの中で実行すること）
+- [x] lucide-react のアイコンをボタンに付けてみる
+- [x] shadcn が作ったコードを `yarn biome check --write` で Biome の書き方にそろえる
 
 **調べるキーワード:** Tailwind 4 の `@import "tailwindcss"`、shadcn/ui はライブラリではなく「コードをコピーして使う」仕組み、Radix UI との関係
 **完了条件:** shadcn/ui のボタンが画面に出る
