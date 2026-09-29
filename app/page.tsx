@@ -19,7 +19,9 @@ export default function Home() {
             旅の記録アプリ（準備中）
           </CardTitle>
           <CardDescription className="[word-break:auto-phrase]">
-            今までの旅行を振り返って、<br />友達と行った県や国を比べられるアプリです。
+            今までの旅行を振り返って、
+            <br />
+            友達と行った県や国を比べられるアプリです。
           </CardDescription>
         </CardHeader>
         <CardContent>
