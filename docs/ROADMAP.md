@@ -124,15 +124,15 @@ Google マップのタイムライン（スマホから書き出した `Timeline
 ### Step 3: Supabase と Google ログイン（今回のメイン）
 
 - [x] Supabase でプロジェクトを作成（Data API: ON / 新しいテーブルの自動公開: OFF / 自動 RLS: ON）
-- [ ] Google Cloud Console で OAuth クライアント ID を作る
-- [ ] Supabase の Auth 設定で Google プロバイダを有効にする
-- [ ] `@supabase/supabase-js` と `@supabase/ssr` を入れる
+- [x] Google Cloud Console で OAuth クライアント ID を作る（同意画面はテスト中・外部。テストユーザーに自分を追加）
+- [x] Supabase の Auth 設定で Google プロバイダを有効にする（URL Configuration: Site URL と Redirect URLs に localhost:3000）
+- [x] `@supabase/supabase-js` と `@supabase/ssr` を入れる
 - [ ] `.env.local` に URL と anon key を書く（**`.env.local` は絶対にコミットしない**）
-- [ ] サーバー用 / ブラウザ用の Supabase クライアントを作る
-- [ ] `proxy.ts` でセッションを更新する処理を書く
+- [x] サーバー用 / ブラウザ用の Supabase クライアントを作る（`lib/supabase/`）
+- [x] `proxy.ts` でセッションを更新する処理を書く
 - [ ] ログインボタン → Google → 戻ってきたらユーザー名を表示
-- [ ] ログアウトボタン
-- [ ] ログインしていないと入れないページ（例: `/dashboard`）を作る
+- [x] ログアウトボタン
+- [x] ログインしていないと入れないページ（例: `/dashboard`）を作る
 
 **調べるキーワード:** OAuth 2.0 の流れ、コールバック URL、Cookie とセッション、Next.js 16 の `proxy.ts`（旧 `middleware.ts`）、Route Handler, Server Actions
 **完了条件:** Google でログイン・ログアウトができ、未ログインで `/dashboard` を開くとログイン画面に戻される

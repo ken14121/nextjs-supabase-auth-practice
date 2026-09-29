@@ -1,4 +1,6 @@
-import { Globe, LogIn, MapPinned } from "lucide-react";
+import { Globe, LayoutDashboard, LogIn, MapPinned } from "lucide-react";
+import Link from "next/link";
+import { signInWithGoogle } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,8 +10,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { createClient } from "@/lib/supabase/server";
 
-export default function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { error } = await searchParams;
+
+  // ログインしているかどうかを、サーバー側で確認する
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const isLoggedIn = Boolean(data?.claims);
+
   return (
     <main className="flex flex-1 items-center justify-center bg-muted p-6">
       <Card className="w-full max-w-md">
@@ -24,17 +38,33 @@ export default function Home() {
             友達と行った県や国を比べられるアプリです。
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-3">
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <MapPinned className="size-4" />
             Google マップの履歴から、行った都道府県・国を集計します。
           </p>
+          {error === "login_failed" && (
+            <p className="text-sm text-destructive">
+              ログインできませんでした。もう一度お試しください。
+            </p>
+          )}
         </CardContent>
         <CardFooter>
-          <Button className="w-full" disabled>
-            <LogIn />
-            Google でログイン（Step 3 で作ります）
-          </Button>
+          {isLoggedIn ? (
+            <Button asChild className="w-full">
+              <Link href="/dashboard">
+                <LayoutDashboard />
+                マイページへ
+              </Link>
+            </Button>
+          ) : (
+            <form action={signInWithGoogle} className="w-full">
+              <Button type="submit" className="w-full">
+                <LogIn />
+                Google でログイン
+              </Button>
+            </form>
+          )}
         </CardFooter>
       </Card>
     </main>
