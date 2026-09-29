@@ -1,0 +1,464 @@
+<title>旅アプリ開発 2日目ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --surface-2: #e9eff3;
+    --ink: #15212c;
+    --muted: #566676;
+    --line: #d4dde5;
+    --accent: #1a6a9c;
+    --accent-soft: #dcebf5;
+    --pending: #a36b00;
+    --pending-soft: #fbefd4;
+    --ok: #2d7a4c;
+    --ok-soft: #dcefe3;
+    --ng: #b03a2e;
+    --ng-soft: #f6dedb;
+    --code-bg: #edf2f6;
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e151c;
+      --surface: #15202a;
+      --surface-2: #1b2934;
+      --ink: #e4ecf2;
+      --muted: #9aabba;
+      --line: #2a3a47;
+      --accent: #62b0e3;
+      --accent-soft: #173247;
+      --pending: #e3b453;
+      --pending-soft: #3a2e14;
+      --ok: #6cc48f;
+      --ok-soft: #173325;
+      --ng: #ee8a7e;
+      --ng-soft: #3d1e1a;
+      --code-bg: #1c2833;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e151c;
+    --surface: #15202a;
+    --surface-2: #1b2934;
+    --ink: #e4ecf2;
+    --muted: #9aabba;
+    --line: #2a3a47;
+    --accent: #62b0e3;
+    --accent-soft: #173247;
+    --pending: #e3b453;
+    --pending-soft: #3a2e14;
+    --ok: #6cc48f;
+    --ok-soft: #173325;
+    --ng: #ee8a7e;
+    --ng-soft: #3d1e1a;
+    --code-bg: #1c2833;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.35; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 900; }
+  h2 { font-size: 1.45rem; font-weight: 900; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ヘッダー：きっぷ風 */
+  header.ticket {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+  }
+  .ticket-main { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .ticket-main .lead { color: var(--muted); max-width: 60ch; }
+  .ticket-stub {
+    border-left: 2px dashed var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: var(--surface-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 140px;
+  }
+  .stub-label { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+  .stub-value { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  @media (max-width: 560px) {
+    header.ticket { grid-template-columns: 1fr; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; flex-wrap: wrap; gap: 4px 20px; }
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -32px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.88rem;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .sec-no { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+  .note { color: var(--muted); font-size: 0.95rem; }
+
+  /* 全体像 */
+  .map { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .map-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+  @media (max-width: 640px) { .map-row { grid-template-columns: 1fr; } .map-arrow { transform: rotate(90deg); justify-self: center; } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .box-title { font-family: var(--font-display); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.93rem; }
+  .tool-list li { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px; }
+  .tool-list b { font-weight: 700; }
+  .map-arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .map-arrow span { font-size: 1.6rem; line-height: 1; color: var(--accent); }
+  .localhost { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+  .pending-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .pending-row { grid-template-columns: 1fr; } }
+  .pending-row .box { border-style: dashed; }
+  .chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip.pending { color: var(--pending); background: var(--pending-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.ng { color: var(--ng); background: var(--ng-soft); }
+  .chip.step { color: var(--accent); background: var(--accent-soft); }
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  /* リスト */
+  dl.facts { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 16px; }
+  dl.facts dt { font-weight: 700; color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 10px; } }
+
+  /* 表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 路線図（ログインの流れ） */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.route li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  ol.route li:last-child { padding-bottom: 0; }
+  ol.route li::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent);
+  }
+  ol.route li:last-child::before { display: none; }
+  .station {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--accent);
+    position: relative; z-index: 1;
+  }
+  .stop { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .who { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+  /* Git の流れ */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.93rem; }
+  .flow .stepbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; }
+  .flow .stepbox small { color: var(--muted); font-size: 0.78rem; }
+  .flow .arr { color: var(--accent); font-weight: 700; }
+
+  /* クイズ */
+  ol.quiz { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: q; }
+  ol.quiz li { counter-increment: q; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  ol.quiz li > p::before { content: "Q" counter(q) "　"; font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; font-weight: 700; width: fit-content; }
+  details[open] summary { margin-bottom: 6px; }
+  details p { color: var(--ink); font-size: 0.95rem; }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+<style>
+  .memo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+  .memo pre { margin: 0; font-family: var(--font-body); white-space: pre-wrap; font-size: 0.95rem; line-height: 1.8; }
+  .codeblock { background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.6; margin: 0; }
+</style>
+
+<div class="wrap">
+
+  <header class="ticket">
+    <div class="ticket-main">
+      <span class="eyebrow">ZENDASH 臨地実習 ／ 学習ノート</span>
+      <h1>旅アプリ開発 2日目ノート</h1>
+      <p class="lead">shadcn/ui で見た目の土台を作り、Google Cloud・Supabase・Next.js をつないで Google ログインを動かした日。コードを 1 ファイルずつ読み、ログインの仕組みを自分の言葉で説明できるところまで進めた。</p>
+    </div>
+    <div class="ticket-stub">
+      <span class="stub-label">日付</span>
+      <span class="stub-value">2026.09.29 火</span>
+      <span class="stub-label">進んだところ</span>
+      <span class="stub-value">Step 2 → 3</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#overview">今日の全体像</a>
+    <a href="#step2">Step 2 見た目</a>
+    <a href="#setup">ログインの設定</a>
+    <a href="#flow">ログインの流れ</a>
+    <a href="#files">コードの読み方</a>
+    <a href="#cookie">Cookie の話</a>
+    <a href="#troubles">つまずき</a>
+    <a href="#quiz">理解度チェック</a>
+    <a href="#report">日報</a>
+  </nav>
+
+  <section id="overview">
+    <div class="sec-head"><span class="sec-no">00</span><h2>今日の全体像</h2></div>
+
+    <div class="map">
+      <div class="map-row">
+        <div class="box">
+          <div class="box-title">あなたの PC（Next.js アプリ）<span class="chip ok">ログインできる</span></div>
+          <ul class="tool-list">
+            <li><b>shadcn/ui</b><span>ボタン・カードの部品（Radix UI ＋ Tailwind）</span></li>
+            <li><b>lucide-react</b><span>アイコン</span></li>
+            <li><b>proxy.ts</b><span>ページを開く前に毎回ログイン状態を確認</span></li>
+            <li><b>/dashboard</b><span>ログインした人だけのマイページ</span></li>
+          </ul>
+        </div>
+        <div class="map-arrow" aria-hidden="true"><span>⇄</span>Cookie</div>
+        <div class="box">
+          <div class="box-title">Supabase Auth<span class="chip ok">つないだ</span></div>
+          <p class="note">ログインした人を覚えておく係。Google から結果を受け取り、トークンを発行する。</p>
+        </div>
+      </div>
+      <div class="pending-row">
+        <div class="box">
+          <div class="box-title">Google Cloud<span class="chip ok">つないだ</span></div>
+          <p class="note">「このアプリが Google ログインを使ってよい」許可証（OAuth クライアント）を発行</p>
+        </div>
+        <div class="box">
+          <div class="box-title">Zendash<span class="chip ok">了承済み</span></div>
+          <p class="note">アプリの方向性を共有し「その方向で」。3D 描画は three.js を使うと良い、とアドバイス</p>
+        </div>
+        <div class="box">
+          <div class="box-title">TypeSafe（Jev）<span class="chip pending">対応待ち</span></div>
+          <p class="note">クレジットは Zendash 側で用意してもらう予定。使うのは Step 7</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="step2">
+    <div class="sec-head"><span class="sec-no">01</span><h2>Step 2：shadcn/ui で見た目の土台</h2></div>
+    <dl class="facts">
+      <dt>shadcn/ui とは</dt>
+      <dd>ライブラリとして読み込むのではなく、<b>部品のコードが自分のプロジェクトの <code>components/ui/</code> にコピーされる</b>仕組み。中身を自由に書き換えられる</dd>
+      <dt>中で使っているもの</dt>
+      <dd>Radix UI（動き・キーボード操作の担当）と Tailwind CSS（見た目の担当）。初期化で <b>Radix UI</b> を選んだ（技術指定のため。おすすめ表示の Base UI ではない）</dd>
+      <dt>増えたファイル</dt>
+      <dd><code>components.json</code>（shadcn の設定）、<code>components/ui/button.tsx</code>・<code>card.tsx</code>（部品）、<code>lib/utils.ts</code>（クラス名を合体させる <code>cn()</code>）、<code>app/globals.css</code> に色のテーマ</dd>
+      <dt>色は役割で指定</dt>
+      <dd><code>bg-muted</code>・<code>text-muted-foreground</code> のように「控えめな色」という役割名で書く。テーマを変えると一括で切り替わる</dd>
+      <dt>Biome との調整</dt>
+      <dd>shadcn のコードは行末の <code>;</code> を省く書き方なので、<code>yarn biome check --write</code> でプロジェクトの書き方にそろえた。学習ノートの <code>docs/</code> はチェック対象から外した</dd>
+    </dl>
+  </section>
+
+  <section id="setup">
+    <div class="sec-head"><span class="sec-no">02</span><h2>Step 3：Google ログインの設定（画面操作）</h2></div>
+    <p class="note">3 つのサービスを「戻り先の確認 → 許可証の発行 → 許可証の登録」の順でつないだ。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>どこで</th><th>何をしたか</th><th>意味</th></tr></thead>
+        <tbody>
+          <tr><td>Supabase</td><td>Google プロバイダの <b>Callback URL</b> をコピー</td><td>Google でのログインが終わったあとの Supabase の受付窓口（<code>…supabase.co/auth/v1/callback</code>）</td></tr>
+          <tr><td>Google Cloud</td><td>Google Auth Platform で同意画面を作成（外部・テスト中）、<b>テストユーザー</b>に自分を追加</td><td>テスト中は登録した人しかログインできない。友人に試してもらうときもここに追加する</td></tr>
+          <tr><td>Google Cloud</td><td><b>OAuth クライアント</b>（ウェブ アプリケーション）を作成。JavaScript 生成元に <code>http://localhost:3000</code>、リダイレクト URI に Supabase の Callback URL</td><td>許可証。<b>クライアント ID は公開されても大丈夫、シークレットは秘密</b></td></tr>
+          <tr><td>Supabase</td><td>Google プロバイダを ON にして ID とシークレットを登録</td><td>Supabase が Google と話せるようになる</td></tr>
+          <tr><td>Supabase</td><td>URL Configuration：Site URL と Redirect URLs に <code>http://localhost:3000</code></td><td>ログイン後に「アプリのどこへ戻してよいか」の許可リスト</td></tr>
+          <tr><td>手元の PC</td><td><code>.env.local</code> に URL と publishable key を記入</td><td><code>NEXT_PUBLIC_</code> 付きはブラウザに渡っても良い値。<code>.env.local</code> はコミットしない</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="flow">
+    <div class="sec-head"><span class="sec-no">03</span><h2>ログインの流れ</h2></div>
+    <ol class="route">
+      <li><span class="station">1</span><div class="stop"><span class="who">ボタン → APP/AUTH/ACTIONS.TS</span><p>Server Action が Supabase に「Google でログインしたい。終わったら <code>/auth/callback</code> に戻して」と頼み、Google のログイン画面の URL へ移動。<b>まだ未ログイン</b></p></div></li>
+      <li><span class="station">2</span><div class="stop"><span class="who">GOOGLE</span><p>本人確認して許可。Supabase 経由で、アプリに一時的な <b>code</b>（引換券）付きで戻す</p></div></li>
+      <li><span class="station">3</span><div class="stop"><span class="who">APP/AUTH/CALLBACK/ROUTE.TS</span><p>code をトークンに交換し、<b>Cookie</b> に保存。<b>ここでログイン完了</b>。失敗したら <code>/?error=login_failed</code></p></div></li>
+      <li><span class="station">4</span><div class="stop"><span class="who">PROXY.TS（毎回・入口）</span><p>Cookie のトークンを確かめ、期限切れなら更新。未ログインなら <code>/dashboard</code> から追い返す</p></div></li>
+      <li><span class="station">5</span><div class="stop"><span class="who">APP/DASHBOARD/PAGE.TSX</span><p>ページ側でももう一度ログインを確認してから、名前とメールを表示</p></div></li>
+    </ol>
+    <p class="callout">自分の言葉で：「Google でログイン」を押すと Google で本人確認が行われ、<code>/auth/callback</code> に一時的な code が届く。callback で code をトークンと交換して Cookie に保存した時点でログイン完了。以降はページを開くたびに proxy が Cookie のトークンを確かめ（期限切れなら更新、未ログインなら追い返す）、マイページ側でももう一度確認してから名前を表示する。</p>
+  </section>
+
+  <section id="files">
+    <div class="sec-head"><span class="sec-no">04</span><h2>コードの読み方</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ファイル</th><th>役割</th><th>読んで分かったこと</th></tr></thead>
+        <tbody>
+          <tr><td><code>app/auth/actions.ts</code></td><td>ログイン・ログアウトの Server Action</td><td><code>"use server"</code> で中身はサーバーで動く。<code>&lt;form action={関数}&gt;</code> で、onClick を書かずにボタンから呼べる。<code>origin</code> はヘッダーから自動で取る</td></tr>
+          <tr><td><code>app/auth/callback/route.ts</code></td><td>Google から戻ってきたときの受け口</td><td><code>route.ts</code> は画面を返さず処理だけする Route Handler。関数名 <code>GET</code> は「URL を開いたとき」。<code>exchangeCodeForSession</code> でログイン完了</td></tr>
+          <tr><td><code>proxy.ts</code></td><td>入口。Next.js 16 で毎回呼ばれる</td><td>旧 <code>middleware.ts</code>。<code>matcher</code> で画像や <code>_next/static</code> を除外</td></tr>
+          <tr><td><code>lib/supabase/proxy.ts</code></td><td>セッション更新の本体</td><td>新しい Cookie を <b>request（このあと動くページ用）と response（ブラウザ用）の両方</b>に書く。片方だけだと「たまにログアウト扱いになり、リロードで直る」バグになる。<code>getClaims()</code> が署名確認と更新をする</td></tr>
+          <tr><td><code>app/dashboard/page.tsx</code></td><td>マイページ（Server Component）</td><td>proxy だけに頼らず、ページでも <code>getClaims()</code> で確認。<code>redirect()</code> の後は claims が必ずあると TypeScript も分かる。<code>?.</code> と <code>??</code> で名前がなくても壊れない</td></tr>
+          <tr><td><code>lib/supabase/server.ts</code> / <code>client.ts</code> / <code>env.ts</code></td><td>Supabase の窓口と接続情報</td><td>サーバー用とブラウザ用で作り方が違う。Server Component からは Cookie を書けないので <code>try/catch</code> で無視し、更新は proxy に任せる</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>PKCE（code を挟む理由）</h3>
+    <p>URL はブラウザの履歴やログに残りやすい。トークンを直接 URL に載せると漏れる危険があるので、<b>短命・使い捨ての code だけを URL で渡し、本物のトークンはサーバー同士のやり取りで受け取る</b>。<code>@supabase/ssr</code> が自動でやってくれている。</p>
+  </section>
+
+  <section id="cookie">
+    <div class="sec-head"><span class="sec-no">05</span><h2>Cookie の話</h2></div>
+    <dl class="facts">
+      <dt>Cookie とは</dt>
+      <dd>ブラウザがサイトごとに保存する小さなメモ。<b>そのサイトにアクセスするたびに自動で送られる</b>。イベント会場の入場リストバンドのようなもの</dd>
+      <dt>受け渡し</dt>
+      <dd>サーバーが <code>Set-Cookie</code> で渡し、ブラウザは以降 <code>Cookie</code> ヘッダーで毎回送る</dd>
+      <dt>主な属性</dt>
+      <dd><code>Expires</code>（期限）／ <code>Secure</code>（HTTPS のときだけ）／ <code>HttpOnly</code>（JavaScript から読めない）／ <code>SameSite</code>（他サイトからの送信を防ぐ）</dd>
+      <dt>このアプリの Cookie</dt>
+      <dd><code>sb-jhxnynvousgjixwzcyte-auth-token</code>。中身は <b>アクセストークン</b>（JWT。誰か・期限が書かれた通行証。Supabase の電子署名付きで改ざんできない。1 時間くらいで切れる）と <b>リフレッシュトークン</b>（新しい通行証との引換券）</dd>
+      <dt>サーバーだと安全な理由</dt>
+      <dd>① <code>NEXT_PUBLIC_</code> なしの環境変数（後で使う Jev の API キーなど）はブラウザに届かない ② サーバーで署名を確かめてから画面を作れる ③ Cookie を書き換えられるのはサーバー側だけ</dd>
+      <dt>注意</dt>
+      <dd>Supabase の Cookie はブラウザ側のライブラリも読むので <code>HttpOnly</code> ではない。悪意のあるスクリプト（XSS）を混ぜないことが大事。<b>Cookie の値は人に見せない</b>（持っている人があなたとしてログインできる）</dd>
+      <dt>試せること</dt>
+      <dd>F12 → Application → Cookies → <code>http://localhost:3000</code> で見える。消して再読み込みするとログアウト状態になる</dd>
+    </dl>
+  </section>
+
+  <section id="troubles">
+    <div class="sec-head"><span class="sec-no">06</span><h2>つまずいたことと学び</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>起きたこと</th><th>原因</th><th>対処</th></tr></thead>
+        <tbody>
+          <tr><td><code>git pull</code> が失敗し、shadcn が新しいプロジェクトを作ろうとした</td><td>ホームフォルダ（<code>C:\Users\kenda</code>）で実行していた</td><td><code>cd ~\nextjs-supabase-auth-practice</code> で移動してからやり直し。コマンドの前にプロンプトの場所を見る</td></tr>
+          <tr><td><code>yarn lint</code> がエラーのままコミットしてしまった</td><td>shadcn のコードと Biome の書き方の違い、学習ノート HTML のチェック</td><td><code>yarn biome check --write</code> で自動修正、<code>docs</code> を対象外に。<b>lint → エラー 0 件 → コミット</b>の順を守る</td></tr>
+          <tr><td>JSON を PowerShell に貼ってエラー</td><td>ファイルに書く中身とコマンドを取り違えた</td><td>コードブロックの種類（<code>powershell</code> か <code>json</code>/<code>tsx</code> か）で見分ける</td></tr>
+          <tr><td>Supabase の Client ID・Secret 欄に勝手に値が入る</td><td>ブラウザのパスワード自動入力</td><td>本物の値で上書き。ID は <code>.apps.googleusercontent.com</code> で終わるか確認してから Save</td></tr>
+          <tr><td>Connect 画面に <code>npm install</code> やファイル例が出ていた</td><td>一般向けの手順</td><td>このプロジェクトは Yarn なので npm は使わない。<code>.env.local</code> の 2 行だけ使った</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head"><span class="sec-no">07</span><h2>理解度チェック</h2></div>
+    <p class="note">コードを読みながら答えた問題。まず自分で答えてから「答えを見る」を開く。</p>
+    <ol class="quiz">
+      <li><p><code>signInWithOAuth</code> を呼んだ直後、ユーザーはもうログインしている？</p>
+        <details><summary>答えを見る</summary><p>していない。Google のログイン画面の URL を用意しただけ。ログイン完了は callback で code を交換したとき。</p></details></li>
+      <li><p><code>redirectTo</code> を書かなかったら、どこに戻ってくる？</p>
+        <details><summary>答えを見る</summary><p>Supabase の Site URL（<code>http://localhost:3000</code>）。ただしトップに <code>?code=…</code> が付くだけで、交換する処理がないのでログインにならない。</p></details></li>
+      <li><p><code>/auth/callback?code=適当な文字</code> を開いたら？</p>
+        <details><summary>答えを見る</summary><p>交換に失敗して <code>/?error=login_failed</code> に戻され、赤いエラー文が出る。</p></details></li>
+      <li><p>ログイン成功の直後、Cookie に何が増える？</p>
+        <details><summary>答えを見る</summary><p><code>sb-…-auth-token</code>。中身はアクセストークンとリフレッシュトークン。</p></details></li>
+      <li><p><code>PROTECTED_PATHS</code> に <code>"/settings"</code> を足したら？</p>
+        <details><summary>答えを見る</summary><p><code>/settings</code> と <code>/settings/…</code> が、未ログインだとトップに戻されるようになる。ページ側の確認も別に書く。</p></details></li>
+      <li><p><code>setAll</code> で <code>request.cookies</code> に書き忘れたら？</p>
+        <details><summary>答えを見る</summary><p>トークンの期限が切れたタイミングだけ、ページが古いトークンを読んで「未ログイン」と判断する。リロードすると直る「たまに起きる」バグになる。</p></details></li>
+      <li><p>画像ファイルを開くとき、proxy は動く？</p>
+        <details><summary>答えを見る</summary><p>動かない。<code>matcher</code> で画像や <code>_next/static</code> を除外している。誰が見ても同じなので確認は不要で、毎回動くと遅くなるだけ。</p></details></li>
+    </ol>
+  </section>
+
+  <section id="report">
+    <div class="sec-head"><span class="sec-no">08</span><h2>日報と作業時間</h2></div>
+    <div class="memo">
+<pre>9/29(火)　8:00〜17:30（8.0時間）
+・やったこと：shadcn/ui（Radix UI）と lucide-react を導入し、トップページをカードとボタンで作り直した。Google Cloud で OAuth クライアントを作成し、Supabase Auth と Next.js をつないで Google ログイン・ログアウトとログイン必須のマイページを実装、動作を確認した。
+・詰まったこと（原因／対処）：プロジェクト外のフォルダでコマンドを実行し shadcn が別プロジェクトを作ろうとした（フォルダを移動してやり直し）。shadcn のコードが Biome の書き方と合わず lint エラー（biome check --write で自動修正し、docs をチェック対象外に）。
+・学んだこと：code を Cookie のトークンに交換してログインが完了すること、proxy.ts がページごとにトークンを確認・更新すること、Cookie の仕組みと扱いの注意点。
+・次にやること：Step 4（データベースのテーブル設計と RLS）</pre>
+    </div>
+    <p class="note">作業時間：8:00〜17:30 から昼休み 1 時間を引くと 8.5 時間。7.5 時間を超えたので 30 分の休憩が自動で入り <b>8.0 時間</b>。累計 16.0 / 225 時間。</p>
+  </section>
+
+  <section id="next">
+    <div class="sec-head"><span class="sec-no">09</span><h2>次回</h2></div>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">Step 4<span class="chip step">データベース</span></div>
+        <p>外出・行った県/国・友人関係のテーブルを作り、作ってすぐ RLS で「自分のデータだけ」を守る</p>
+      </div>
+      <div class="box">
+        <div class="box-title">今週中<span class="chip pending">忘れずに</span></div>
+        <p>週 1 日以上はコクーンで作業する。金曜の業務終了後に日報を提出する</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>nextjs-supabase-auth-practice ／ docs/notes/2026-09-29.html</footer>
+</div>
