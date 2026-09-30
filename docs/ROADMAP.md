@@ -52,6 +52,7 @@ Google マップのタイムライン（スマホから書き出した `Timeline
 - **日本地図と世界地図を切り替え**られるようにする
 - 行った県を **3D で立体表示**（行った回数で高さを変えるなど。three.js で県の形を押し出す、または deck.gl）
 - 旅ごとのメモ
+- 友達追加を **QR コードの読み取り**でもできるようにする（フレンドコードを QR にする）
 - 友人とのランキング
 
 > Google ログインをしても、マップの訪問履歴は API では取れません（2024 年以降、タイムラインはスマホ本体にだけ保存される仕組みに変わったため）。
@@ -139,12 +140,15 @@ Google マップのタイムライン（スマホから書き出した `Timeline
 
 ### Step 4: データベースと RLS
 
-- [ ] テーブルを設計する（例）
-  - `outings`（外出 1 回分）: `id`, `user_id`, `started_at`, `ended_at`, `nights`, `distance_km`, `transport`, `label`（Jev の判定結果）
-  - `visited_regions`（行った県・国）: `user_id`, `region_code`, `outing_id`, `first_visited_at`
-  - `friendships`（友人関係）: `user_id`, `friend_id`, `status`
-- [ ] RLS（行レベルセキュリティ）を有効にし、「自分の行だけ読める・書ける」ポリシーを書く（**テーブルを作ったらすぐ書く。後回しにしない**）
-- [ ] 新しいテーブルは自動では API に公開されない設定なので、使うテーブルごとに `authenticated` ロールへ権限を付ける（例: `grant select, insert, update, delete on table outings to authenticated;`）。付け忘れると `permission denied` になる
+- [x] テーブルを設計する（`supabase/migrations/20260930000000_create_travel_tables.sql`）
+  - `profiles`（名札）: `display_name`, `friend_code`（8 文字。ログイン時に自動作成）
+  - `outings`（外出 1 回分）: 開始・終了日時, `nights`, `distance_km`, `main_transport`, `label`（Jev の判定）, `memo`
+  - `visited_regions`（行った県・国）: `region_code`（JP-13 / US など）, `outing_id`, `visited_on`（日付）
+  - `friendships`（友達申請）: `requester_id`, `addressee_id`, `status`（pending / accepted）
+  - 友達探しはフレンドコード方式。友達には「行った県・国と日付」を見せる（日常・未判定の外出は除く）
+- [x] RLS（行レベルセキュリティ）を有効にし、「自分の行だけ読める・書ける」ポリシーを書く（**テーブルを作ったらすぐ書く。後回しにしない**）
+- [x] 新しいテーブルは自動では API に公開されない設定なので、使うテーブルごとに `authenticated` ロールへ権限を付ける（例: `grant select, insert, update, delete on table outings to authenticated;`）。付け忘れると `permission denied` になる
+- [ ] Supabase CLI を入れて `link` し、`yarn supabase db push` でマイグレーションを反映する
 - [ ] Supabase CLI で型を生成し（`supabase gen types typescript`）、コードで使う
 - [ ] 手で 1 件入れて、画面に表示する
 
