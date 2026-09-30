@@ -148,9 +148,9 @@ Google マップのタイムライン（スマホから書き出した `Timeline
   - 友達探しはフレンドコード方式。友達には「行った県・国と日付」を見せる（日常・未判定の外出は除く）
 - [x] RLS（行レベルセキュリティ）を有効にし、「自分の行だけ読める・書ける」ポリシーを書く（**テーブルを作ったらすぐ書く。後回しにしない**）
 - [x] 新しいテーブルは自動では API に公開されない設定なので、使うテーブルごとに `authenticated` ロールへ権限を付ける（例: `grant select, insert, update, delete on table outings to authenticated;`）。付け忘れると `permission denied` になる
-- [ ] Supabase CLI を入れて `link` し、`yarn supabase db push` でマイグレーションを反映する
-- [ ] Supabase CLI で型を生成し（`supabase gen types typescript`）、コードで使う
-- [ ] 手で 1 件入れて、画面に表示する
+- [x] Supabase CLI を入れて `link` し、`yarn supabase db push` でマイグレーションを反映する
+- [x] Supabase CLI で型を生成し（`supabase gen types typescript`）、コードで使う
+- [x] DB の行を画面に表示する（マイページに profiles の表示名とフレンドコード）
 
 **調べるキーワード:** RLS, `auth.uid()`, マイグレーション, Supabase CLI
 **完了条件:** 別の Google アカウントでログインすると、他人のデータが見えない（友人になった相手の `visited_regions` だけは見える）

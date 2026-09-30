@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "dev": "next dev",
-  "build": "next build",
-  "start": "next start",
-  "lint": "biome check",
-  "format": "biome format --write",
-  "gen:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "gen:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts && biome format --write lib/supabase/database.types.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

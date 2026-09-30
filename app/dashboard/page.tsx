@@ -23,7 +23,15 @@ export default async function DashboardPage() {
     redirect("/");
   }
 
-  const name = claims.user_metadata?.full_name ?? "名前未設定";
+  // profiles テーブルから自分の行を読む。RLS があるので、他人の行は返ってこない
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name, friend_code")
+    .eq("id", claims.sub)
+    .single();
+
+  const name =
+    profile?.display_name || claims.user_metadata?.full_name || "名前未設定";
 
   return (
     <main className="flex flex-1 items-center justify-center bg-muted p-6">
@@ -43,6 +51,10 @@ export default async function DashboardPage() {
             <dd>{name}</dd>
             <dt className="text-muted-foreground">メール</dt>
             <dd>{claims.email}</dd>
+            <dt className="text-muted-foreground">フレンドコード</dt>
+            <dd className="font-mono tracking-wider">
+              {profile?.friend_code ?? "読み込めませんでした"}
+            </dd>
           </dl>
         </CardContent>
         <CardFooter>
