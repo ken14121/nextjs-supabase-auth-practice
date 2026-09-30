@@ -131,13 +131,20 @@ export function buildOutings(segments: TimelineSegment[]): OutingDraft[] {
   };
 
   for (const seg of sorted) {
-    const atHome =
-      seg.kind === "visit" && (seg.isHome || isNearHome(seg.location));
-    if (atHome) {
-      finish();
-    } else {
-      current.push(seg);
+    if (seg.kind === "visit") {
+      if (seg.isHome || isNearHome(seg.location)) {
+        finish();
+      } else {
+        current.push(seg);
+      }
+      continue;
     }
+    // 自宅の周りで始まって終わる移動（近所の散歩など）は外出に含めない
+    if (current.length === 0 && isNearHome(seg.to)) continue;
+    current.push(seg);
+    // 自宅の周りに戻ってきた移動で、外出を締めくくる。
+    // 帰宅後に「自宅での滞在」が記録されないことがあり、そのままだと翌日の外出とつながってしまうため
+    if (isNearHome(seg.to)) finish();
   }
   finish();
 
