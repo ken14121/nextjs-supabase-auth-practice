@@ -1,0 +1,448 @@
+<title>旅アプリ開発 3日目ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --surface-2: #e9eff3;
+    --ink: #15212c;
+    --muted: #566676;
+    --line: #d4dde5;
+    --accent: #1a6a9c;
+    --accent-soft: #dcebf5;
+    --pending: #a36b00;
+    --pending-soft: #fbefd4;
+    --ok: #2d7a4c;
+    --ok-soft: #dcefe3;
+    --ng: #b03a2e;
+    --ng-soft: #f6dedb;
+    --code-bg: #edf2f6;
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e151c;
+      --surface: #15202a;
+      --surface-2: #1b2934;
+      --ink: #e4ecf2;
+      --muted: #9aabba;
+      --line: #2a3a47;
+      --accent: #62b0e3;
+      --accent-soft: #173247;
+      --pending: #e3b453;
+      --pending-soft: #3a2e14;
+      --ok: #6cc48f;
+      --ok-soft: #173325;
+      --ng: #ee8a7e;
+      --ng-soft: #3d1e1a;
+      --code-bg: #1c2833;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e151c;
+    --surface: #15202a;
+    --surface-2: #1b2934;
+    --ink: #e4ecf2;
+    --muted: #9aabba;
+    --line: #2a3a47;
+    --accent: #62b0e3;
+    --accent-soft: #173247;
+    --pending: #e3b453;
+    --pending-soft: #3a2e14;
+    --ok: #6cc48f;
+    --ok-soft: #173325;
+    --ng: #ee8a7e;
+    --ng-soft: #3d1e1a;
+    --code-bg: #1c2833;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.35; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 900; }
+  h2 { font-size: 1.45rem; font-weight: 900; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ヘッダー：きっぷ風 */
+  header.ticket {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+  }
+  .ticket-main { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .ticket-main .lead { color: var(--muted); max-width: 60ch; }
+  .ticket-stub {
+    border-left: 2px dashed var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: var(--surface-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 140px;
+  }
+  .stub-label { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+  .stub-value { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  @media (max-width: 560px) {
+    header.ticket { grid-template-columns: 1fr; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; flex-wrap: wrap; gap: 4px 20px; }
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -32px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.88rem;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .sec-no { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+  .note { color: var(--muted); font-size: 0.95rem; }
+
+  /* 全体像 */
+  .map { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .map-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+  @media (max-width: 640px) { .map-row { grid-template-columns: 1fr; } .map-arrow { transform: rotate(90deg); justify-self: center; } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .box-title { font-family: var(--font-display); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.93rem; }
+  .tool-list li { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px; }
+  .tool-list b { font-weight: 700; }
+  .map-arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .map-arrow span { font-size: 1.6rem; line-height: 1; color: var(--accent); }
+  .localhost { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+  .pending-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .pending-row { grid-template-columns: 1fr; } }
+  .pending-row .box { border-style: dashed; }
+  .chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip.pending { color: var(--pending); background: var(--pending-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.ng { color: var(--ng); background: var(--ng-soft); }
+  .chip.step { color: var(--accent); background: var(--accent-soft); }
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  /* リスト */
+  dl.facts { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 16px; }
+  dl.facts dt { font-weight: 700; color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 10px; } }
+
+  /* 表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 路線図（ログインの流れ） */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.route li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  ol.route li:last-child { padding-bottom: 0; }
+  ol.route li::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent);
+  }
+  ol.route li:last-child::before { display: none; }
+  .station {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--accent);
+    position: relative; z-index: 1;
+  }
+  .stop { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .who { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+  /* Git の流れ */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.93rem; }
+  .flow .stepbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; }
+  .flow .stepbox small { color: var(--muted); font-size: 0.78rem; }
+  .flow .arr { color: var(--accent); font-weight: 700; }
+
+  /* クイズ */
+  ol.quiz { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: q; }
+  ol.quiz li { counter-increment: q; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  ol.quiz li > p::before { content: "Q" counter(q) "　"; font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; font-weight: 700; width: fit-content; }
+  details[open] summary { margin-bottom: 6px; }
+  details p { color: var(--ink); font-size: 0.95rem; }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+<style>
+  .memo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+  .memo pre { margin: 0; font-family: var(--font-body); white-space: pre-wrap; font-size: 0.95rem; line-height: 1.8; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .stat b { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 0.8rem; color: var(--muted); }
+</style>
+
+<div class="wrap">
+
+  <header class="ticket">
+    <div class="ticket-main">
+      <span class="eyebrow">ZENDASH 臨地実習 ／ 学習ノート</span>
+      <h1>旅アプリ開発 3日目ノート</h1>
+      <p class="lead">データベースに 4 つのテーブルと RLS を作り、Supabase CLI でマイグレーションとして反映した。続けて Timeline.json の取り込みを作り、2 年分の自分の履歴から 382 回の外出と 25 都道府県を記録できた。</p>
+    </div>
+    <div class="ticket-stub">
+      <span class="stub-label">日付</span>
+      <span class="stub-value">2026.09.30 水</span>
+      <span class="stub-label">進んだところ</span>
+      <span class="stub-value">Step 4 → 5</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#result">今日の成果</a>
+    <a href="#tables">テーブル設計</a>
+    <a href="#rls">RLS と権限</a>
+    <a href="#cli">CLI とマイグレーション</a>
+    <a href="#import">取り込みの仕組み</a>
+    <a href="#outing">外出の区切り方</a>
+    <a href="#troubles">つまずき</a>
+    <a href="#quiz">理解度チェック</a>
+    <a href="#report">日報</a>
+  </nav>
+
+  <section id="result">
+    <div class="sec-head"><span class="sec-no">00</span><h2>今日の成果</h2></div>
+    <div class="stats">
+      <div class="stat"><span>取り込んだ期間</span><b>約 2 年</b></div>
+      <div class="stat"><span>外出</span><b>382</b></div>
+      <div class="stat"><span>都道府県</span><b>25 / 47</b></div>
+      <div class="stat"><span>処理時間</span><b>1 秒未満</b></div>
+    </div>
+    <p class="callout">一番大きな旅は 2026/2/22 から 9 泊・2,593 km・飛行機。千葉 → 東京 → 福岡 → 山口 → 大分 → 佐賀 → 長崎 → 秋田 → 北海道 → 宮崎 → 鹿児島が 1 つの外出として記録された。</p>
+  </section>
+
+  <section id="tables">
+    <div class="sec-head"><span class="sec-no">01</span><h2>Step 4：テーブル設計</h2></div>
+    <p class="note">コードを書く前に、何をどうしまうかを決めた。決めたこと：友達はフレンドコード（8 文字）で探す。友達には「行った県・国と日付」まで見せる。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>テーブル</th><th>主な列</th><th>何に使う</th></tr></thead>
+        <tbody>
+          <tr><td><code>profiles</code></td><td><code>display_name</code>、<code>friend_code</code></td><td>友達を探すときの名札。初めてログインしたときにトリガーで自動作成</td></tr>
+          <tr><td><code>outings</code></td><td>開始・終了日時、<code>nights</code>、<code>distance_km</code>、<code>main_transport</code>、<code>label</code>（Jev の判定）、<code>memo</code></td><td>外出 1 回ぶん（家を出てから戻るまで）</td></tr>
+          <tr><td><code>visited_regions</code></td><td><code>region_code</code>（<code>JP-13</code> / <code>US</code>）、<code>outing_id</code>、<code>visited_on</code></td><td>地図の塗りつぶし・制覇率</td></tr>
+          <tr><td><code>friendships</code></td><td><code>requester_id</code>、<code>addressee_id</code>、<code>status</code></td><td>友達申請（申請中 / 承認済み）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <dl class="facts">
+      <dt>地域コード</dt>
+      <dd>国際規格 ISO 3166。都道府県は <code>JP-01</code>〜<code>JP-47</code>（東京都は <code>JP-13</code>）、国は 2 文字（アメリカは <code>US</code>）。形の違う値は check 制約で入れられない</dd>
+      <dt>制約</dt>
+      <dd>終了は開始より後、泊数は 0 以上、同じ人の同じ開始時刻の外出は 1 件だけ、A→B と B→A の申請は両方作れない、など。<b>DB 側で守れるルールは DB に書く</b></dd>
+    </dl>
+  </section>
+
+  <section id="rls">
+    <div class="sec-head"><span class="sec-no">02</span><h2>RLS と権限</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>仕組み</th><th>役割</th><th>このアプリでは</th></tr></thead>
+        <tbody>
+          <tr><td>RLS（ポリシー）</td><td>「どの行を」読み書きできるか</td><td><code>outings</code>・<code>visited_regions</code> は本人だけ。申請は関係者だけ見られ、承認できるのは申請された側だけ</td></tr>
+          <tr><td>grant（権限）</td><td>「どのテーブル・どの列を」使えるか</td><td>自動公開を OFF にしたので、テーブルごとに付けた。<code>update (status)</code> のように列を絞ると、それ以外の列は書き換えられない</td></tr>
+          <tr><td>security definer 関数</td><td>テーブルの持ち主の権限で動く関数</td><td>友達の訪問地を返す関数の中で「承認済みの友達か」を確かめ、県・国と日付だけを返す。日常・未判定の外出は含めない</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note"><code>auth.uid()</code> は今ログインしている人の ID。<code>(select auth.uid())</code> と書くと行ごとではなく 1 回だけ計算されて速い。反映前に、3 人のユーザーを想定した 20 項目のテストで狙いどおりに動くことを確かめた。</p>
+  </section>
+
+  <section id="cli">
+    <div class="sec-head"><span class="sec-no">03</span><h2>Supabase CLI とマイグレーション</h2></div>
+    <div class="flow">
+      <span class="stepbox">SQL を書く<small>supabase/migrations/</small></span>
+      <span class="arr" aria-hidden="true">→</span>
+      <span class="stepbox"><code>yarn supabase db push</code><small>本番の DB に反映</small></span>
+      <span class="arr" aria-hidden="true">→</span>
+      <span class="stepbox"><code>yarn gen:types</code><small>テーブルの形から型を生成</small></span>
+      <span class="arr" aria-hidden="true">→</span>
+      <span class="stepbox"><code>createClient&lt;Database&gt;</code><small>列名の間違いが赤線に</small></span>
+    </div>
+    <dl class="facts">
+      <dt>マイグレーション</dt>
+      <dd>DB の変更を SQL ファイルとしてリポジトリに残す方法。作り直せるし、何をいつ変えたかの履歴になる。画面でテーブルを作るとこれが残らない</dd>
+      <dt>準備したこと</dt>
+      <dd>DB パスワードを強いものにリセット（Database → Settings）→ <code>yarn add -D supabase</code> → <code>init</code> → <code>login</code> → <code>link</code></dd>
+      <dt>型の効果</dt>
+      <dd><code>.select("friend_codeXX")</code> のように存在しない列を書くと、その場で VS Code が教えてくれる</dd>
+    </dl>
+  </section>
+
+  <section id="import">
+    <div class="sec-head"><span class="sec-no">04</span><h2>Step 5：Timeline.json の取り込みの仕組み</h2></div>
+    <ol class="route">
+      <li><span class="station">1</span><div class="stop"><span class="who">ブラウザ（/import）</span><p>ファイルを選ぶ。<code>lib/timeline/parse.ts</code> が iPhone・Android の両形式を Zod で読み、滞在と移動だけを取り出す。軌跡は捨てて <b>7.8 MB → 1.2 MB</b></p></div></li>
+      <li><span class="station">2</span><div class="stop"><span class="who">SUPABASE STORAGE</span><p><code>timelines</code> バケットの自分のフォルダ（<code>ユーザー ID/〇〇.json</code>）に置く。他人のフォルダには RLS で置けない</p></div></li>
+      <li><span class="station">3</span><div class="stop"><span class="who">SERVER ACTION（app/import/actions.ts）</span><p>ファイルを読み、<b>ブラウザから来たものは信用せず</b> Zod でもう一度チェック</p></div></li>
+      <li><span class="station">4</span><div class="stop"><span class="who">LIB/TIMELINE/OUTINGS.TS ＋ LIB/GEO/REGIONS.TS</span><p>外出に区切り、立ち寄った地点の緯度経度から都道府県・国を判定</p></div></li>
+      <li><span class="station">5</span><div class="stop"><span class="who">DB</span><p><code>outings</code> に upsert（取り込み直しても重複しない。Jev の判定やメモは消えない）、<code>visited_regions</code> を入れ直す</p></div></li>
+      <li><span class="station">6</span><div class="stop"><span class="who">後片付け</span><p>元ファイルを Storage から削除（成功しても失敗しても）。位置情報の生データは残さない</p></div></li>
+    </ol>
+    <dl class="facts">
+      <dt>Storage を通す理由</dt>
+      <dd>Server Action に直接送れるのは初期設定で 1 MB まで。大きなファイルは Storage に置いてサーバーが取りに行く</dd>
+      <dt>県・国の判定</dt>
+      <dd>都道府県の境界（地球地図日本）と国の境界（Natural Earth）の中に点が入っているかを調べる。境界データは粗いので、海沿いや空港などどこにも入らない点は 15 km 以内の一番近い地域にする（羽田・関西空港もこれで正しく判定）</dd>
+      <dt>出典表示</dt>
+      <dd>境界データには出典の明記が必要なので、README とマイページに書いた</dd>
+    </dl>
+  </section>
+
+  <section id="outing">
+    <div class="sec-head"><span class="sec-no">05</span><h2>外出の区切り方</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ルール</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>自宅は「Home」と記録された場所。なければ一番長く滞在した場所</td><td>Android や記録の少ないファイルでも動くように</td></tr>
+          <tr><td>自宅から 1.5 km 以内の地点は記録しない</td><td>自宅の位置を残さない・友達に見せない。近所の外出は数えない</td></tr>
+          <tr><td>自宅の滞在、または<b>自宅の周りに戻ってきた移動</b>で外出を締めくくる</td><td>帰宅後に自宅での滞在が記録されない日があり、翌日の外出とつながって「泊まり」に見えていたため（今日直した）</td></tr>
+          <tr><td>泊数は日本時間 3:00 をまたいだ回数</td><td>22 時に出て 1 時に帰るのは 0 泊、2 日後の夜に帰るのは 2 泊</td></tr>
+          <tr><td>主な移動手段は、一番長い距離を移動した手段</td><td>駅まで歩いて電車に乗った日を「電車」にするため</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">残る「東京に 1 泊」は、学校に泊まり込んで始発で帰った日。データとしては正しいが、旅行ではない。Step 7 で Jev に「その行き先に過去どれくらい行っているか」も渡して「日常」と判定させる。よく行く場所（学校・バイト先）を登録して除外する案もやりたいことリストへ。</p>
+  </section>
+
+  <section id="troubles">
+    <div class="sec-head"><span class="sec-no">06</span><h2>つまずいたことと学び</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>起きたこと</th><th>原因</th><th>対処</th></tr></thead>
+        <tbody>
+          <tr><td>DB パスワードの場所が分からない</td><td>Project Settings ではなく Database の設定にある</td><td>Database → Configuration → Settings → Reset database password</td></tr>
+          <tr><td><code>supabase init</code> で「ファイルが既にある」</td><td>前に一度実行していた</td><td>init は 1 回で十分なので飛ばした</td></tr>
+          <tr><td>生成した型ファイルが lint エラーのまま push された</td><td>Supabase が生成するコードと Biome の書き方の違い</td><td><code>gen:types</code> の最後に <code>biome format</code> を付けて、生成と同時に整えるようにした</td></tr>
+          <tr><td>PowerShell で <code>&gt;</code> を使うと型ファイルが壊れる</td><td>Windows PowerShell は UTF-16 で書き出す</td><td>package.json のスクリプト経由で実行（UTF-8 になる）</td></tr>
+          <tr><td>「東京に 1 泊」が多すぎた</td><td>帰宅後の自宅での滞在が記録されない日がある</td><td>自宅の周りに戻る移動でも外出を区切るようにした</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head"><span class="sec-no">07</span><h2>理解度チェック</h2></div>
+    <ol class="quiz">
+      <li><p>テーブルを作ったのに <code>permission denied</code> になった。何を確認する？</p>
+        <details><summary>答えを見る</summary><p>grant（権限）の付け忘れ。このプロジェクトは新しいテーブルを自動公開しない設定なので、<code>authenticated</code> へ使う操作の権限を付ける。</p></details></li>
+      <li><p>RLS があるのに、友達の訪問地を関数（security definer）で返しているのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>テーブルは本人だけに閉じたまま、「承認済みの友達か」を確かめたうえで、県・国と日付という必要な列だけを渡すため。RLS だけだと行ごとの許可はできても、「一部の列だけ」「日常は除く」といった見せ方がしにくい。</p></details></li>
+      <li><p>Timeline.json をブラウザから直接 Server Action に送らないのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>Server Action に送れるのは初期設定で 1 MB まで。大きなファイルは Storage に置き、サーバーがそこから読む。</p></details></li>
+      <li><p>ブラウザでチェック済みなのに、サーバーでも Zod でチェックするのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>ブラウザから来たデータは書き換えられている可能性があり、信用できないから。</p></details></li>
+      <li><p>同じファイルを 2 回取り込んでも外出が重複しないのはなぜ？</p>
+        <details><summary>答えを見る</summary><p><code>outings</code> に「同じ人・同じ開始時刻は 1 件」の制約があり、upsert で上書きしているから。訪問地はその外出の分を消してから入れ直す。</p></details></li>
+      <li><p>DB に自宅の位置が残らないのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>自宅から 1.5 km 以内の地点は立ち寄り先に入れず、DB には県・国と日付だけを保存し、元ファイルも取り込み後に削除しているから。</p></details></li>
+    </ol>
+  </section>
+
+  <section id="report">
+    <div class="sec-head"><span class="sec-no">08</span><h2>日報と作業時間</h2></div>
+    <div class="memo">
+<pre>9/30(水)　8:00〜17:10（7時間40分）
+・やったこと：データベースに外出・訪問地・プロフィール・友達申請の4テーブルと、本人のデータだけ読み書きできるRLSを作成し、Supabase CLIでマイグレーションとして反映、型を生成した。続けてGoogleマップのTimeline.jsonを取り込む機能を実装。ブラウザで必要な部分だけに絞ってStorageに置き、サーバーで検証して外出ごとに区切り、行った都道府県・国をDBに保存する。自分の約2年分のデータで、外出382件・25都道府県を記録できた。
+・詰まったこと（原因／対処）：帰宅後に自宅での滞在が記録されない日があり、前後の外出がつながって「泊まり」に見えた（自宅の周りに戻る移動でも区切るよう修正）。生成した型ファイルがBiomeの書き方と合わずlintエラー（生成と同時に整形するよう変更）。
+・学んだこと：RLS（どの行）とgrant（どのテーブル・列）の役割の違い、マイグレーションでDBの変更を履歴に残す方法、大きなファイルをStorage経由で処理する理由。
+・次にやること：Step 6（行った県・国を地図で塗る、友達との比較）</pre>
+    </div>
+    <p class="note">作業時間：8:00〜17:10 から昼休み 1 時間を引くと 8 時間 10 分。7.5 時間を超えたので 30 分の休憩が入り <b>7 時間 40 分</b>。累計 23 時間 40 分 / 225 時間。</p>
+  </section>
+
+  <section id="next">
+    <div class="sec-head"><span class="sec-no">09</span><h2>次回</h2></div>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">Step 6<span class="chip step">地図・友達</span></div>
+        <p>行った県・国を塗った地図を表示し、友達とつながって比較できるようにする</p>
+      </div>
+      <div class="box">
+        <div class="box-title">今週中<span class="chip pending">忘れずに</span></div>
+        <p>週 1 日以上はコクーンで作業する。金曜の業務終了後に日報を提出する</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>nextjs-supabase-auth-practice ／ docs/notes/2026-09-30.html</footer>
+</div>
