@@ -157,13 +157,15 @@ Google マップのタイムライン（スマホから書き出した `Timeline
 
 ### Step 5: Timeline.json の取り込み
 
-- [ ] 自分の `Timeline.json` の中身を観察する
-- [ ] **実データはリポジトリに入れない**（`.gitignore` に追加、テスト用には座標をずらしたサンプルを作る）
-- [ ] Supabase Storage にアップロードする
-- [ ] Zod でファイルの形をチェックしながらパースする（Server Action か Route Handler）
-- [ ] 自宅の周り 1〜2 km の点を捨てる
-- [ ] 緯度経度から都道府県・国を判定する（境界 GeoJSON と点の内外判定）
-- [ ] 「家を出てから戻るまで」を 1 回の外出として区切り、`outings` と `visited_regions` に保存する
+- [x] 自分の `Timeline.json` の中身を観察する
+- [x] **実データはリポジトリに入れない**（`.gitignore` に `Timeline*.json`）
+- [x] ブラウザで滞在と移動だけを取り出して小さくし（`lib/timeline/parse.ts`）、Supabase Storage の `timelines` バケットに置く
+- [x] サーバー（`app/import/actions.ts`）で Zod を使ってもう一度チェックし、外出に区切って `outings` と `visited_regions` に保存。元ファイルは取り込み後に削除
+- [x] 自宅の周り 1.5 km の点を捨てる（`lib/timeline/outings.ts`）
+- [x] 緯度経度から都道府県・国を判定する（`lib/geo/regions.ts`。境界 TopoJSON と点の内外判定。海沿いは 15 km 以内の一番近い地域）
+- [x] 「家を出てから戻るまで」を 1 回の外出として区切る。泊数は日本時間 3:00 をまたいだ回数
+- [ ] `yarn supabase db push` と `yarn gen:types` を実行し、自分の Timeline.json で動作確認する
+- [ ] Android で書き出したファイル（友人のもの）で動作確認する
 
 **ファイルの形（iPhone で書き出したもの）**
 - 配列で、要素は `visit`（滞在）/ `activity`（移動。`in train` `walking` `in passenger vehicle` など）/ `timelinePath`（軌跡）の 3 種類

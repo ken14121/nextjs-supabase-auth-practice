@@ -146,6 +146,15 @@ export type Database = {
           visited_on: string;
         }[];
       };
+      get_my_regions: {
+        Args: never;
+        Returns: {
+          first_visited_on: string;
+          last_visited_on: string;
+          region_code: string;
+          visited_days: number;
+        }[];
+      };
     };
     Enums: {
       [_ in never]: never;

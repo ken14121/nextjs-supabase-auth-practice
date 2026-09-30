@@ -4,7 +4,7 @@ import type { Database } from "./database.types";
 import { getSupabaseEnv } from "./env";
 
 // ログインしていないと入れないページ
-const PROTECTED_PATHS = ["/dashboard"];
+const PROTECTED_PATHS = ["/dashboard", "/import"];
 
 // ページを開くたびに proxy.ts から呼ばれ、ログイン状態（Cookie）を最新に保つ。
 export async function updateSession(request: NextRequest) {
