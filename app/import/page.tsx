@@ -42,6 +42,12 @@ export default async function ImportPage() {
             <li>同じファイルを取り込み直しても、外出は重複しません。</li>
           </ul>
           <Link
+            href="/guide"
+            className="text-sm underline underline-offset-4 hover:text-foreground"
+          >
+            Timeline.json の書き出し方（iPhone）
+          </Link>
+          <Link
             href="/dashboard"
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >

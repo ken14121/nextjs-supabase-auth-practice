@@ -1,4 +1,11 @@
-import { FileUp, LogOut, MapPinned, Route, UserRound } from "lucide-react";
+import {
+  BookOpen,
+  FileUp,
+  LogOut,
+  MapPinned,
+  Route,
+  UserRound,
+} from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth/actions";
@@ -96,11 +103,17 @@ export default async function DashboardPage() {
               </dd>
             </dl>
           </CardContent>
-          <CardFooter className="gap-2">
+          <CardFooter className="flex-wrap gap-2">
             <Button asChild className="flex-1">
               <Link href="/import">
                 <FileUp />
                 タイムラインを取り込む
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/guide">
+                <BookOpen />
+                書き出し方
               </Link>
             </Button>
             <form action={signOut}>
