@@ -90,7 +90,10 @@ export function ViewControls({
 
       <div className="grid grid-cols-3 rounded-md bg-background/90 p-1 shadow backdrop-blur">
         <span />
-        <IconButton label="奥へ傾ける" onClick={() => onTilt(15)}>
+        <IconButton
+          label="カメラを上げる（真上から見る向きへ）"
+          onClick={() => onTilt(-15)}
+        >
           <ChevronUp className="size-5" />
         </IconButton>
         <span />
@@ -104,7 +107,10 @@ export function ViewControls({
           <RotateCw className="size-4" />
         </IconButton>
         <span />
-        <IconButton label="手前に起こす" onClick={() => onTilt(-15)}>
+        <IconButton
+          label="カメラを下げる（横から見る向きへ）"
+          onClick={() => onTilt(15)}
+        >
           <ChevronDown className="size-5" />
         </IconButton>
         <span />
