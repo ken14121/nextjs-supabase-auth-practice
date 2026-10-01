@@ -15,12 +15,12 @@ import {
   setWorkerUrl,
   TerrainControl,
 } from "maplibre-gl";
-import { getGsiDemProtocolAction } from "maplibre-gl-gsi-terrain";
 import { PMTiles, Protocol } from "pmtiles";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { BINS } from "@/lib/geo/visited-colors";
 import type { VisitedFeatures } from "@/lib/geo/visited-geojson";
+import { GSI_DEM_PROTOCOL, gsiDemProtocol } from "./gsi-dem";
 
 // 疑似 Google Earth。MapLibre GL JS で、地球儀 → 日本 → 3D の山 → 3D のビル と拡大していける地図
 
@@ -85,7 +85,7 @@ function setupMapLibreOnce() {
   // 別スレッドで動く部分。yarn install 時に public/maplibre/ へコピーしたものを使う
   setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
   // gsidem://… 地理院の標高 PNG を、MapLibre が読める形（Terrarium）に変換する
-  addProtocol("gsidem", getGsiDemProtocolAction("gsidem"));
+  addProtocol(GSI_DEM_PROTOCOL, gsiDemProtocol);
   // pmtiles://… 1 つの大きなファイルから、必要なタイルだけを取り出す
   // （pmtiles の型は MapLibre の型より少しゆるいので、MapLibre の型として渡す）
   addProtocol("pmtiles", pmtilesProtocol.tilev4 as AddProtocolAction);
@@ -132,7 +132,7 @@ function buildStyle(visited: {
       terrain: {
         type: "raster-dem",
         tiles: [
-          "gsidem://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png",
+          `${GSI_DEM_PROTOCOL}://https://cyberjapandata.gsi.go.jp/xyz/dem_png/{z}/{x}/{y}.png`,
         ],
         encoding: "terrarium",
         tileSize: 256,

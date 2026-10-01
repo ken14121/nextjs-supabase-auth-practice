@@ -3787,16 +3787,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-png@npm:^8.0.0":
-  version: 8.0.0
-  resolution: "fast-png@npm:8.0.0"
-  dependencies:
-    fflate: "npm:^0.8.2"
-    iobuffer: "npm:^6.0.1"
-  checksum: 10c0/badc2f20acd5a45749260daf2519f9ae157a6a2f51cdd780da007d10be6a775f486406fd546dc18de766bc708ed809a4fba17e5ed9ef4aea3a73dcc281a747a9
-  languageName: node
-  linkType: hard
-
 "fast-uri@npm:^3.0.1":
   version: 3.1.8
   resolution: "fast-uri@npm:3.1.8"
@@ -4128,13 +4118,6 @@ __metadata:
   version: 2.0.3
   resolution: "internmap@npm:2.0.3"
   checksum: 10c0/8cedd57f07bbc22501516fbfc70447f0c6812871d471096fad9ea603516eacc2137b633633daf432c029712df0baefd793686388ddf5737e3ea15074b877f7ed
-  languageName: node
-  linkType: hard
-
-"iobuffer@npm:^6.0.1":
-  version: 6.0.1
-  resolution: "iobuffer@npm:6.0.1"
-  checksum: 10c0/d843535d643f2eee1a5f35faba15ea8e343f466b81bda6d3d9e1e9a7517d20a7f1cb2c4f3603cb9c3b61912c85e13d3894f84f8ea11fb6630a3c8190e0f19b4a
   languageName: node
   linkType: hard
 
@@ -4615,15 +4598,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"maplibre-gl-gsi-terrain@npm:^2.3.2":
-  version: 2.3.2
-  resolution: "maplibre-gl-gsi-terrain@npm:2.3.2"
-  dependencies:
-    fast-png: "npm:^8.0.0"
-  checksum: 10c0/11033a6c37b56bcbf351fa470adcbba12156bff7aafbb5cd4cf6f85723111453ead948b47fbe5b2698dde754a25f6bb4ea2a20ed2497605ecdbde8d86c200d82
-  languageName: node
-  linkType: hard
-
 "maplibre-gl@npm:^6.11.2":
   version: 6.11.2
   resolution: "maplibre-gl@npm:6.11.2"
@@ -4864,7 +4838,6 @@ __metadata:
     i18n-iso-countries: "npm:^7.14.0"
     lucide-react: "npm:^1.48.0"
     maplibre-gl: "npm:^6.11.2"
-    maplibre-gl-gsi-terrain: "npm:^2.3.2"
     next: "npm:16.2.3"
     pmtiles: "npm:^4.5.0"
     radix-ui: "npm:^1.6.7"
