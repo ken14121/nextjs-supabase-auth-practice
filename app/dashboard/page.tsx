@@ -18,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { VisitedMap } from "@/components/visited-map";
 import { isPrefectureCode, PREFECTURES, regionName } from "@/lib/geo/names";
 import { createClient } from "@/lib/supabase/server";
 
@@ -157,6 +158,7 @@ export default async function DashboardPage() {
                 </dd>
               </div>
             </dl>
+            <VisitedMap regions={regions ?? []} />
             {codes.length > 0 && (
               <p className="text-sm [word-break:auto-phrase]">
                 {codes.map(regionName).join("・")}

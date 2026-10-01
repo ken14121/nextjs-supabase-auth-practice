@@ -2660,6 +2660,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/d3-geo@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "@types/d3-geo@npm:3.1.1"
+  dependencies:
+    "@types/geojson": "npm:*"
+  checksum: 10c0/bb0405ec99a6b5947d9b47481171f2514c7cbd7dc028a80463193e0ea7411cde997c2813d25146c670c8c0bee08867cdc839fce029586647c8465b5627551493
+  languageName: node
+  linkType: hard
+
 "@types/geojson@npm:*, @types/geojson@npm:^7946.0.10, @types/geojson@npm:^7946.0.16":
   version: 7946.0.16
   resolution: "@types/geojson@npm:7946.0.16"
@@ -2701,6 +2710,16 @@ __metadata:
     "@types/geojson": "npm:*"
     "@types/topojson-specification": "npm:*"
   checksum: 10c0/f60c71a79ec2d6387a9437a2d3d61d1a39928211c8b26e6a4572e4e65ff6d9ad283caa2207c447fe67cb20259c72f53ce21e222cd5c7af6f31b18cce0ab79b5d
+  languageName: node
+  linkType: hard
+
+"@types/topojson-simplify@npm:^3.0.3":
+  version: 3.0.3
+  resolution: "@types/topojson-simplify@npm:3.0.3"
+  dependencies:
+    "@types/geojson": "npm:*"
+    "@types/topojson-specification": "npm:*"
+  checksum: 10c0/0eb6a3b6be0e324e668edf5af03c9813c031ff04f97ab957d35e7ef1b1b464d2cc61a323d89a70895a675473eb560436265815d9bccf8372f75253c27b0954f8
   languageName: node
   linkType: hard
 
@@ -3170,6 +3189,24 @@ __metadata:
   version: 3.2.3
   resolution: "csstype@npm:3.2.3"
   checksum: 10c0/cd29c51e70fa822f1cecd8641a1445bed7063697469d35633b516e60fe8c1bde04b08f6c5b6022136bb669b64c63d4173af54864510fbb4ee23281801841a3ce
+  languageName: node
+  linkType: hard
+
+"d3-array@npm:2.5.0 - 3":
+  version: 3.2.4
+  resolution: "d3-array@npm:3.2.4"
+  dependencies:
+    internmap: "npm:1 - 2"
+  checksum: 10c0/08b95e91130f98c1375db0e0af718f4371ccacef7d5d257727fe74f79a24383e79aba280b9ffae655483ffbbad4fd1dec4ade0119d88c4749f388641c8bf8c50
+  languageName: node
+  linkType: hard
+
+"d3-geo@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "d3-geo@npm:3.1.1"
+  dependencies:
+    d3-array: "npm:2.5.0 - 3"
+  checksum: 10c0/d32270dd2dc8ac3ea63e8805d63239c4c8ec6c0d339d73b5e5a30a87f8f54db22a78fb434369799465eae169503b25f9a107c642c8a16c32a3285bc0e6d8e8c1
   languageName: node
   linkType: hard
 
@@ -3870,6 +3907,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"internmap@npm:1 - 2":
+  version: 2.0.3
+  resolution: "internmap@npm:2.0.3"
+  checksum: 10c0/8cedd57f07bbc22501516fbfc70447f0c6812871d471096fad9ea603516eacc2137b633633daf432c029712df0baefd793686388ddf5737e3ea15074b877f7ed
+  languageName: node
+  linkType: hard
+
 "ip-address@npm:^10.1.1, ip-address@npm:^10.2.0":
   version: 10.7.2
   resolution: "ip-address@npm:10.7.2"
@@ -4526,13 +4570,16 @@ __metadata:
     "@tailwindcss/postcss": "npm:^4"
     "@turf/bbox": "npm:^7.4.0"
     "@turf/boolean-point-in-polygon": "npm:^7.4.0"
+    "@types/d3-geo": "npm:^3.1.1"
     "@types/geojson": "npm:^7946.0.16"
     "@types/node": "npm:24"
     "@types/react": "npm:^19"
     "@types/react-dom": "npm:^19"
     "@types/topojson-client": "npm:^3.1.5"
+    "@types/topojson-simplify": "npm:^3.0.3"
     class-variance-authority: "npm:^0.7.1"
     cn: "npm:^0.4.0"
+    d3-geo: "npm:^3.1.1"
     i18n-iso-countries: "npm:^7.14.0"
     lucide-react: "npm:^1.48.0"
     next: "npm:16.2.3"
@@ -4543,6 +4590,7 @@ __metadata:
     supabase: "npm:^2.118.0"
     tailwindcss: "npm:^4"
     topojson-client: "npm:^3.1.0"
+    topojson-simplify: "npm:^3.0.3"
     tw-animate-css: "npm:^1.4.0"
     typescript: "npm:^5"
     world-atlas: "npm:^2.0.2"
@@ -5637,7 +5685,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"topojson-client@npm:^3.1.0":
+"topojson-client@npm:3, topojson-client@npm:^3.1.0":
   version: 3.1.0
   resolution: "topojson-client@npm:3.1.0"
   dependencies:
@@ -5647,6 +5695,18 @@ __metadata:
     topomerge: bin/topomerge
     topoquantize: bin/topoquantize
   checksum: 10c0/da2acba268cbf4d002483d5d81452e0d797b2fff6041fafb1d420e58973fa780a6f42041ce4c2677376ab977e5e1732b89c42a2db3c334a34f6c47f4d94b3eaa
+  languageName: node
+  linkType: hard
+
+"topojson-simplify@npm:^3.0.3":
+  version: 3.0.3
+  resolution: "topojson-simplify@npm:3.0.3"
+  dependencies:
+    commander: "npm:2"
+    topojson-client: "npm:3"
+  bin:
+    toposimplify: bin/toposimplify
+  checksum: 10c0/99fc5589786f7fc58b7b31de1e2c8a09c3686f7723d71d24aa26a4f5054a1d911ef4ecb40594113e22e3b23434296b12513795e714bf8e3c5611145a99ade1bd
   languageName: node
   linkType: hard
 
