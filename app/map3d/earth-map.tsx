@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import { BINS } from "@/lib/geo/visited-colors";
 import type { VisitedFeatures } from "@/lib/geo/visited-geojson";
 import { GSI_DEM_PROTOCOL, gsiDemProtocol } from "./gsi-dem";
+import { attachOrbitGestures } from "./orbit-gestures";
+import { type GestureMode, ViewControls } from "./view-controls";
 
 // 疑似 Google Earth。MapLibre GL JS で、地球儀 → 日本 → 3D の山 → 3D のビル と拡大していける地図
 
@@ -303,6 +305,9 @@ export default function EarthMap({
   const [buildingsStatus, setBuildingsStatus] = useState<
     "loading" | "ready" | "failed"
   >("loading");
+  const [mode, setMode] = useState<GestureMode>("pan");
+  // 地図のイベントの中から、いまのモードを読むための入れ物
+  const modeRef = useRef<GestureMode>("pan");
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -335,6 +340,11 @@ export default function EarthMap({
     map.addControl(
       new TerrainControl({ source: "terrain", exaggeration: 1.5 }),
       "top-right",
+    );
+
+    const detachOrbitGestures = attachOrbitGestures(
+      map,
+      () => modeRef.current === "orbit",
     );
 
     // 読み込みを待つあいだにページを離れたら、何もしない
@@ -377,10 +387,32 @@ export default function EarthMap({
 
     return () => {
       cancelled = true;
+      detachOrbitGestures();
       map.remove();
       mapRef.current = null;
     };
   }, [prefectures, countries]);
+
+  // 「回転・傾き」モードでは、1 本指のドラッグを移動ではなく回転・傾きに使う
+  useEffect(() => {
+    modeRef.current = mode;
+    const map = mapRef.current;
+    if (!map) return;
+    if (mode === "orbit") map.dragPan.disable();
+    else map.dragPan.enable();
+  }, [mode]);
+
+  const rotate = (degrees: number) => {
+    const map = mapRef.current;
+    map?.easeTo({ bearing: map.getBearing() + degrees, duration: 300 });
+  };
+  const tilt = (degrees: number) => {
+    const map = mapRef.current;
+    map?.easeTo({ pitch: map.getPitch() + degrees, duration: 300 });
+  };
+  const resetView = () => {
+    mapRef.current?.easeTo({ bearing: 0, pitch: 0, duration: 600 });
+  };
 
   const flyTo = (place: Place) => {
     mapRef.current?.flyTo({
@@ -433,6 +465,21 @@ export default function EarthMap({
               : "都市を大きく拡大すると、3D の建物が立ち上がります"}
           </p>
         </div>
+      </div>
+
+      <div className="absolute right-3 bottom-9">
+        <ViewControls
+          mode={mode}
+          onModeChange={setMode}
+          onRotate={rotate}
+          onTilt={tilt}
+          onReset={resetView}
+        />
+        <p className="mt-1.5 max-w-56 rounded-md bg-background/85 px-2 py-1 text-[11px] text-muted-foreground shadow backdrop-blur">
+          {mode === "orbit"
+            ? "ドラッグ・2本指スワイプで回転と傾き。ピンチでズーム"
+            : "Ctrl＋ドラッグ、Shift＋矢印キーでも回転・傾きができます"}
+        </p>
       </div>
     </div>
   );
