@@ -1,0 +1,485 @@
+<title>旅アプリ開発 4日目ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --surface-2: #e9eff3;
+    --ink: #15212c;
+    --muted: #566676;
+    --line: #d4dde5;
+    --accent: #1a6a9c;
+    --accent-soft: #dcebf5;
+    --pending: #a36b00;
+    --pending-soft: #fbefd4;
+    --ok: #2d7a4c;
+    --ok-soft: #dcefe3;
+    --ng: #b03a2e;
+    --ng-soft: #f6dedb;
+    --code-bg: #edf2f6;
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e151c;
+      --surface: #15202a;
+      --surface-2: #1b2934;
+      --ink: #e4ecf2;
+      --muted: #9aabba;
+      --line: #2a3a47;
+      --accent: #62b0e3;
+      --accent-soft: #173247;
+      --pending: #e3b453;
+      --pending-soft: #3a2e14;
+      --ok: #6cc48f;
+      --ok-soft: #173325;
+      --ng: #ee8a7e;
+      --ng-soft: #3d1e1a;
+      --code-bg: #1c2833;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e151c;
+    --surface: #15202a;
+    --surface-2: #1b2934;
+    --ink: #e4ecf2;
+    --muted: #9aabba;
+    --line: #2a3a47;
+    --accent: #62b0e3;
+    --accent-soft: #173247;
+    --pending: #e3b453;
+    --pending-soft: #3a2e14;
+    --ok: #6cc48f;
+    --ok-soft: #173325;
+    --ng: #ee8a7e;
+    --ng-soft: #3d1e1a;
+    --code-bg: #1c2833;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.35; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 900; }
+  h2 { font-size: 1.45rem; font-weight: 900; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ヘッダー：きっぷ風 */
+  header.ticket {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+  }
+  .ticket-main { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .ticket-main .lead { color: var(--muted); max-width: 60ch; }
+  .ticket-stub {
+    border-left: 2px dashed var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: var(--surface-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 140px;
+  }
+  .stub-label { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+  .stub-value { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  @media (max-width: 560px) {
+    header.ticket { grid-template-columns: 1fr; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; flex-wrap: wrap; gap: 4px 20px; }
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -32px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.88rem;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .sec-no { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+  .note { color: var(--muted); font-size: 0.95rem; }
+
+  /* 全体像 */
+  .map { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .map-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+  @media (max-width: 640px) { .map-row { grid-template-columns: 1fr; } .map-arrow { transform: rotate(90deg); justify-self: center; } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .box-title { font-family: var(--font-display); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.93rem; }
+  .tool-list li { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px; }
+  .tool-list b { font-weight: 700; }
+  .map-arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .map-arrow span { font-size: 1.6rem; line-height: 1; color: var(--accent); }
+  .localhost { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+  .pending-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .pending-row { grid-template-columns: 1fr; } }
+  .pending-row .box { border-style: dashed; }
+  .chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip.pending { color: var(--pending); background: var(--pending-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.ng { color: var(--ng); background: var(--ng-soft); }
+  .chip.step { color: var(--accent); background: var(--accent-soft); }
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  /* リスト */
+  dl.facts { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 16px; }
+  dl.facts dt { font-weight: 700; color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 10px; } }
+
+  /* 表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 路線図（ログインの流れ） */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.route li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  ol.route li:last-child { padding-bottom: 0; }
+  ol.route li::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent);
+  }
+  ol.route li:last-child::before { display: none; }
+  .station {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--accent);
+    position: relative; z-index: 1;
+  }
+  .stop { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .who { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+  /* Git の流れ */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.93rem; }
+  .flow .stepbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; }
+  .flow .stepbox small { color: var(--muted); font-size: 0.78rem; }
+  .flow .arr { color: var(--accent); font-weight: 700; }
+
+  /* クイズ */
+  ol.quiz { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: q; }
+  ol.quiz li { counter-increment: q; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  ol.quiz li > p::before { content: "Q" counter(q) "　"; font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; font-weight: 700; width: fit-content; }
+  details[open] summary { margin-bottom: 6px; }
+  details p { color: var(--ink); font-size: 0.95rem; }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+<style>
+  .memo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+  .memo pre { margin: 0; font-family: var(--font-body); white-space: pre-wrap; font-size: 0.95rem; line-height: 1.8; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .stat b { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 0.8rem; color: var(--muted); }
+</style>
+<style>
+  .zoom { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 640px) { .zoom { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .zoom li { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .zoom .lv { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); font-weight: 600; }
+  .zoom b { font-family: var(--font-display); }
+  .zoom p { font-size: 0.88rem; color: var(--muted); }
+  .pad { display: inline-grid; grid-template-columns: repeat(3, 2.2em); gap: 4px; font-family: var(--font-mono); text-align: center; vertical-align: middle; }
+  .pad span { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); line-height: 2.2em; }
+  .pad span.blank { border: 0; background: transparent; }
+</style>
+
+<div class="wrap">
+
+  <header class="ticket">
+    <div class="ticket-main">
+      <span class="eyebrow">ZENDASH 臨地実習 ／ 学習ノート</span>
+      <h1>旅アプリ開発 4日目ノート</h1>
+      <p class="lead">新しい PC で環境を作り直してから、書き出し方ページ・マイページの地図・昔の旅の手入力を追加した。最後に、地球儀から 3D のビル群まで拡大できる「疑似 Google Earth」を作り、タッチパッドでも回せるようにした。</p>
+    </div>
+    <div class="ticket-stub">
+      <span class="stub-label">日付</span>
+      <span class="stub-value">2026.10.01 木</span>
+      <span class="stub-label">場所</span>
+      <span class="stub-value">コクーン</span>
+      <span class="stub-label">進んだところ</span>
+      <span class="stub-value">Step 6（地図）</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#result">今日の成果</a>
+    <a href="#guide">書き出し方ページ</a>
+    <a href="#map2d">2D の地図</a>
+    <a href="#trips">昔の旅の手入力</a>
+    <a href="#earth">疑似 Google Earth</a>
+    <a href="#controls">操作パネル</a>
+    <a href="#troubles">つまずき</a>
+    <a href="#quiz">理解度チェック</a>
+    <a href="#report">日報</a>
+  </nav>
+
+  <section id="result">
+    <div class="sec-head"><span class="sec-no">00</span><h2>今日の成果</h2></div>
+    <div class="stats">
+      <div class="stat"><span>新しいページ</span><b>3</b></div>
+      <div class="stat"><span>コミット</span><b>7</b></div>
+      <div class="stat"><span>地図</span><b>2D + 3D</b></div>
+      <div class="stat"><span>API キー</span><b>0 個</b></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ページ</th><th>できること</th></tr></thead>
+        <tbody>
+          <tr><td><code>/guide</code></td><td>iPhone で Timeline.json を書き出す手順。注釈付きの画像 5 枚。ログインしなくても見られる</td></tr>
+          <tr><td><code>/dashboard</code></td><td>行った都道府県・国を、行った日数で濃く塗った地図（日本 / 世界のタブ）</td></tr>
+          <tr><td><code>/trips</code></td><td>タイムラインに残っていない昔の旅を、手で追加・編集・削除</td></tr>
+          <tr><td><code>/map3d</code></td><td>地球儀 → 日本 → 3D の山 → 3D のビル群、と拡大していける地図</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="callout">朝はまず新しい PC の初期設定（Node.js・Yarn・Git・VS Code、<code>.env.local</code> の作り直し）。<code>.env.local</code> はコミットしていないので、PC を替えたら毎回作り直す必要がある。</p>
+  </section>
+
+  <section id="guide">
+    <div class="sec-head"><span class="sec-no">01</span><h2>Timeline.json の書き出し方ページ</h2></div>
+    <dl class="facts">
+      <dt>なぜ作った</dt>
+      <dd>Google マップのタイムラインは 2024 年からスマホの中にしか保存されず、API では取れない。使う人に自分で書き出してもらう必要があり、その手順が分かりにくいため</dd>
+      <dt>画像の扱い</dt>
+      <dd>名前とメールアドレスは黒塗り。撮影日時や機種などの<b>メタデータを消してから</b>、軽い WebP 形式で <code>public/guide/</code> に置いた</dd>
+      <dt>公開範囲</dt>
+      <dd>ログイン前の人も読めるように、<code>proxy.ts</code> の守るページの一覧には入れていない</dd>
+    </dl>
+  </section>
+
+  <section id="map2d">
+    <div class="sec-head"><span class="sec-no">02</span><h2>マイページの 2D の地図</h2></div>
+    <ol class="route">
+      <li><span class="station">1</span><div class="stop"><span class="who">境界データ（TopoJSON）</span><p>都道府県は地球地図日本、国は Natural Earth。点の数を 92% 間引いて全国で約 70KB に軽くする（topojson-simplify）</p></div></li>
+      <li><span class="station">2</span><div class="stop"><span class="who">サーバー（d3-geo）</span><p>緯度経度を画面の座標に変換（地図投影）して、SVG の <code>&lt;path&gt;</code> の文字列にする。地理のライブラリはブラウザに送らない</p></div></li>
+      <li><span class="station">3</span><div class="stop"><span class="who">ブラウザ</span><p>できあがった SVG を表示するだけ。県にマウスを乗せると日数が出る（SVG の <code>&lt;title&gt;</code>）</p></div></li>
+    </ol>
+    <dl class="facts">
+      <dt>色</dt>
+      <dd>青 1 色を薄い → 濃いで 4 段階（1 日 / 2〜4 日 / 5〜19 日 / 20 日以上）。色の違いが見分けられるか、ツールで確認した</dd>
+      <dt>沖縄県</dt>
+      <dd>本土から遠いので、左上の枠に別の縮尺で描く。大東諸島まで入れると島が小さくなりすぎるので、枠の外は切り取る（clipPath）</dd>
+    </dl>
+  </section>
+
+  <section id="trips">
+    <div class="sec-head"><span class="sec-no">03</span><h2>昔の旅の手入力（<code>/trips</code>）</h2></div>
+    <dl class="facts">
+      <dt>フォーム</dt>
+      <dd>react-hook-form ＋ Zod。日付・種類（旅行 / 帰省 / 日帰り）・行った県（地方ごとのボタン）・国（検索して選ぶ）・メモ。「韓国」で「大韓民国」が出るよう、よく使う呼び方も検索対象にした</dd>
+      <dt>同じルールを 2 か所で</dt>
+      <dd><code>lib/trips/schema.ts</code> の Zod スキーマを、ブラウザ（入力中のエラー表示）とサーバー（Server Action）の両方で使う。未来の日付・帰った日が出発より前・日帰りなのに日付が違う、などを弾く</dd>
+      <dt>DB の工夫</dt>
+      <dd><code>outings</code> に <code>source</code>（timeline / manual）の列を追加。「同じ人・同じ開始時刻は 1 件」の制約はタイムライン取り込みの重複防止用なので、<b>タイムライン由来のときだけ値が入る生成列</b> <code>timeline_started_at</code> に付け替えた。手入力の旅は同じ日に何件あっても大丈夫</dd>
+      <dt>編集できる範囲</dt>
+      <dd>手入力の旅だけ（<code>source = 'manual'</code>）。タイムラインから取り込んだ外出は書き換えられない</dd>
+    </dl>
+  </section>
+
+  <section id="earth">
+    <div class="sec-head"><span class="sec-no">04</span><h2>疑似 Google Earth（<code>/map3d</code>）</h2></div>
+    <ol class="zoom">
+      <li><span class="lv">ズーム 1〜4</span><b>地球儀</b><p>行った国が青い。まわりに大気の光</p></li>
+      <li><span class="lv">ズーム 4〜13</span><b>日本列島</b><p>行った都道府県が青い。寄るほど薄くなる</p></li>
+      <li><span class="lv">ズーム 10〜</span><b>3D の山</b><p>航空写真 ＋ 標高タイルで地形が立体に</p></li>
+      <li><span class="lv">ズーム 16〜</span><b>3D のビル</b><p>PLATEAU の建物を高さどおりに立てる</p></li>
+    </ol>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>使ったもの</th><th>役割</th></tr></thead>
+        <tbody>
+          <tr><td>MapLibre GL JS</td><td>WebGL で地図を描くライブラリ。地球儀表示・地形・建物の立ち上げまでできる。three.js を直接書くより、地図に必要な機能がそろっている</td></tr>
+          <tr><td>地理院タイル（航空写真）</td><td>国土地理院の写真を小さな画像（タイル）に分けたもの。ズームに合わせて必要な分だけ読む</td></tr>
+          <tr><td>地理院の標高タイル</td><td>色で高さを表した PNG。MapLibre が読める形式（Terrarium）に、<code>app/map3d/gsi-dem.ts</code> で 1 枚ずつ変換する</td></tr>
+          <tr><td>PLATEAU（PMTiles）</td><td>国土交通省の 3D 都市モデル。211 都市の建物を 1 つの大きなファイルにまとめたもの。ファイル全体ではなく<b>必要な部分だけを範囲指定で読む</b>（HTTP Range リクエスト）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <dl class="facts">
+      <dt>ファイルの分け方</dt>
+      <dd><code>page.tsx</code>（サーバー：行った県・国の形を GeoJSON にする）→ <code>earth-loader.tsx</code>（<code>dynamic(…, { ssr: false })</code> でブラウザだけで読む）→ <code>earth-map.tsx</code>（地図の本体）</dd>
+      <dt>送るデータ</dt>
+      <dd>行った県・国の形だけ。座標を約 100m 単位に丸め、47 都道府県ぜんぶ行っても約 200KB</dd>
+      <dt>ビルの高さ</dt>
+      <dd>データの中の項目名が分からなかったので、ファイル先頭の「項目の一覧」から <code>height</code> を含む項目を探して使う</dd>
+      <dt>出典表示</dt>
+      <dd>地理院タイル・PLATEAU（CC BY 4.0）を地図の右下と README に書いた</dd>
+    </dl>
+  </section>
+
+  <section id="controls">
+    <div class="sec-head"><span class="sec-no">05</span><h2>操作パネル（タッチパッド対策）</h2></div>
+    <p class="note">もともとの操作では、タッチパッドで角度（回転・傾き）を変えられなかった。右下に「移動 / 回転・傾き」の切り替えとボタンを付けた。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>操作</th><th>移動モード</th><th>回転・傾きモード</th></tr></thead>
+        <tbody>
+          <tr><td>ドラッグ</td><td>地図を動かす</td><td>左右で回転、上下で傾き</td></tr>
+          <tr><td>2 本指スワイプ</td><td>ズーム</td><td>左右で回転、上下で傾き</td></tr>
+          <tr><td>ピンチ</td><td>ズーム</td><td>ズーム</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>ボタン：
+      <span class="pad" aria-label="操作ボタンの並び">
+        <span class="blank"></span><span>↑</span><span class="blank"></span>
+        <span>↺</span><span>◎</span><span>↻</span>
+        <span class="blank"></span><span>↓</span><span class="blank"></span>
+      </span>
+      　↑ でカメラが上がる（真上から見る向き）、↓ で下がる（横から見る向き）、◎ で真上・北が上に戻る。
+    </p>
+    <p class="note">Windows のタッチパッドのピンチは「Ctrl ＋ ホイール」としてブラウザに届く。だから Ctrl が押されたホイールだけは止めずに MapLibre に任せ、ズームはいつもどおり使えるようにした。</p>
+  </section>
+
+  <section id="troubles">
+    <div class="sec-head"><span class="sec-no">06</span><h2>つまずいたことと学び</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>起きたこと</th><th>原因</th><th>対処</th></tr></thead>
+        <tbody>
+          <tr><td>地図が真っ白（読み込みエラー）</td><td>MapLibre 6 は裏で動く計算用のファイル（worker）を後から読みにいくが、Next.js のビルドに入らない</td><td><code>yarn install</code> のたびに <code>public/maplibre/</code> へコピーするスクリプト（postinstall）を追加</td></tr>
+          <tr><td>地図の高さが 0 になる</td><td>MapLibre の CSS が地図の箱を <code>position: relative</code> に上書きしていた</td><td>外側にもう 1 つ箱を作って、その箱で画面いっぱいに広げた</td></tr>
+          <tr><td>コンソールに <code>Failed to fetch: 404</code> が大量に出る</td><td>標高タイルは海の上には無い。使っていたライブラリはそれを全部エラーにしていた</td><td>変換処理を自作し、404 のときは高さ 0m の平らなタイルを返すようにした</td></tr>
+          <tr><td>タッチパッドで角度を変えられない</td><td>MapLibre の回転・傾きは右ドラッグか Ctrl ＋ドラッグ前提</td><td>モード切り替えとボタンを追加（上の 05）</td></tr>
+          <tr><td><code>yarn dev</code> が 2 つ動いていた</td><td>前に起動したものが残っていた</td><td><code>taskkill /PID 番号 /F</code> で止めた</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">残っている <code>calculateFogMatrix is not supported…</code> などの 2 行は MapLibre の注意書き。地球儀表示では一部の機能が使えない、という意味で、動作には影響しない。</p>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head"><span class="sec-no">07</span><h2>理解度チェック</h2></div>
+    <ol class="quiz">
+      <li><p>操作モードを <code>useState</code> で持っているのに、同じ値を <code>useRef</code> にも入れているのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>ドラッグやスワイプを受け取る関数は、地図を作ったときに 1 回だけ登録している。そのときの関数は、登録した瞬間のモードの値を覚えたまま（古い値のまま）になる。ref は「いつ読んでも最新の値が入っている箱」なので、イベントの中からでも今のモードが分かる。</p></details></li>
+      <li><p>3D の地図を <code>dynamic(…, { ssr: false })</code> で読み込んでいるのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>MapLibre は WebGL やブラウザの画面（window）を使うので、サーバーでは動かない。また、大きなライブラリなので、このページを開いたときだけ読み込めば他のページが重くならない。</p></details></li>
+      <li><p>3D の地図に、すべての国・都道府県ではなく「行った場所の形」だけを送るのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>色を塗るのは行った場所だけなので、それ以外の形は要らない。送るデータが小さいほど早く表示できる。行っていない場所は航空写真がそのまま見えている。</p></details></li>
+      <li><p>手入力の旅のために、一意制約を <code>timeline_started_at</code>（生成列）に付け替えたのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>「同じ人・同じ開始時刻は 1 件」はタイムライン取り込みの重複を防ぐためのルール。手入力の旅はどれも 0:00 開始なので、同じ日の旅が 2 件あるとぶつかる。生成列はタイムライン由来のときだけ値が入り、手入力では NULL になる。NULL どうしは「同じ」とみなされないので、手入力は何件でも入れられる。</p></details></li>
+      <li><p>PLATEAU の建物データは日本中の建物が入った巨大なファイルなのに、地図がすぐ表示できるのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>PMTiles は先頭に「どのタイルがファイルのどこにあるか」の目次を持っている。ブラウザは目次を読んでから、今見ている場所のタイルだけを範囲指定（Range リクエスト）で取りにいく。</p></details></li>
+      <li><p>手入力の旅のフォームで、ブラウザでチェックしているのにサーバーでも同じ Zod スキーマでチェックするのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>ブラウザのチェックは使いやすさのため（すぐエラーが出る）。サーバーに届くデータは書き換えられている可能性があるので、守るためのチェックはサーバーで必ずする。スキーマを 1 つにしておけば、ルールが食い違わない。</p></details></li>
+    </ol>
+  </section>
+
+  <section id="report">
+    <div class="sec-head"><span class="sec-no">08</span><h2>日報と作業時間</h2></div>
+    <div class="memo">
+<pre>10/1(木)　9:00〜18:30（8時間）コクーン
+・やったこと：新しいPCの初期設定。Timeline.jsonの書き出し方ページ（iPhone・注釈付き画像）、マイページに行った都道府県・国を日数で塗り分けた地図（日本／世界の切り替え）、タイムラインに残っていない昔の旅を手で追加・編集・削除する機能を追加。さらにMapLibre GL JSで、地球儀から日本列島、立体の地形、PLATEAUの3Dビル群まで拡大していける3D地図のページを作り、タッチパッドでも回転・傾きができる操作パネルを付けた。
+・詰まったこと（原因／対処）：地図が表示されなかった（地図ライブラリが裏で読むファイルがNext.jsのビルドに入らない→インストール時にpublicへコピー）。コンソールに404エラーが大量に出た（国土地理院の標高データは海の上に無い→404のときは高さ0mとして扱う変換処理を自作）。
+・学んだこと：地図タイルの仕組みと必要な部分だけを読む方法（PMTiles）、ブラウザだけで動くライブラリの読み込み方（dynamic import）、イベントの中から最新の状態を読むためのuseRef。
+・次にやること：Step 6の残り（友達申請と、友達との行った県の比較）</pre>
+    </div>
+    <p class="note">作業時間：9:00〜18:30 から昼休み 1 時間を引くと 8 時間 30 分。7.5 時間を超えたので 30 分の休憩が入り <b>8 時間</b>。9/30 は終了報告のあとも作業して 8 時間になったので、累計 <b>32 時間</b> / 225 時間。</p>
+    <div class="memo">
+<pre>10/1 (木) 18:30業務終了します。お疲れ様でした。業務時間8h 累計業務時間32h</pre>
+    </div>
+  </section>
+
+  <section id="next">
+    <div class="sec-head"><span class="sec-no">09</span><h2>次回</h2></div>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">Step 6 の残り<span class="chip step">友達</span></div>
+        <p>フレンドコードで友達申請 → 承認。友達と「どちらも行った県 / 自分だけ / 制覇率」を比べる</p>
+      </div>
+      <div class="box">
+        <div class="box-title">金曜（10/2）<span class="chip pending">忘れずに</span></div>
+        <p>業務終了後に今週の日報を提出。3D 地図のスクリーンショットを 1 枚付ける（メールアドレスとフレンドコードは隠す）</p>
+      </div>
+      <div class="box">
+        <div class="box-title">確認<span class="chip pending">手元で</span></div>
+        <p>手入力の旅のマイグレーション（<code>yarn supabase db push</code> → <code>yarn gen:types</code>）が反映済みか</p>
+      </div>
+      <div class="box">
+        <div class="box-title">共有<span class="chip ok">一言</span></div>
+        <p>ゆうへいさんに「3D は three.js の代わりに地図用の MapLibre GL JS を使った」と伝える</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>nextjs-supabase-auth-practice ／ docs/notes/2026-10-01.html</footer>
+</div>
