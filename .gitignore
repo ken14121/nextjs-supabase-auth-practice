@@ -44,3 +44,6 @@ next-env.d.ts
 # 位置情報の実データ（Timeline.json など）はコミットしない
 Timeline*.json
 /data/private/
+
+# MapLibre の worker（yarn install 時に node_modules からコピーされる）
+/public/maplibre/

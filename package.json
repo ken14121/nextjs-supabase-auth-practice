@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
-    "gen:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts && biome format --write lib/supabase/database.types.ts"
+    "gen:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts && biome format --write lib/supabase/database.types.ts",
+    "postinstall": "node scripts/copy-maplibre-worker.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -21,7 +22,10 @@
     "d3-geo": "^3.1.1",
     "i18n-iso-countries": "^7.14.0",
     "lucide-react": "^1.48.0",
+    "maplibre-gl": "^6.11.2",
+    "maplibre-gl-gsi-terrain": "^2.3.2",
     "next": "16.2.3",
+    "pmtiles": "^4.5.0",
     "radix-ui": "^1.6.7",
     "react": "19.2.5",
     "react-dom": "19.2.5",

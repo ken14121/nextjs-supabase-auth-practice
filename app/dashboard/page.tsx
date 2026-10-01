@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Earth,
   FileUp,
   LogOut,
   Luggage,
@@ -166,6 +167,12 @@ export default async function DashboardPage() {
               </div>
             </dl>
             <VisitedMap regions={regions ?? []} />
+            <Button asChild variant="outline" className="w-fit">
+              <Link href="/map3d">
+                <Earth />
+                3D の地球儀で見る
+              </Link>
+            </Button>
             {codes.length > 0 && (
               <p className="text-sm [word-break:auto-phrase]">
                 {codes.map(regionName).join("・")}
