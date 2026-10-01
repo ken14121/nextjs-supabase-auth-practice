@@ -2,6 +2,7 @@ import {
   BookOpen,
   FileUp,
   LogOut,
+  Luggage,
   MapPinned,
   Route,
   UserRound,
@@ -109,6 +110,12 @@ export default async function DashboardPage() {
               <Link href="/import">
                 <FileUp />
                 タイムラインを取り込む
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/trips">
+                <Luggage />
+                旅を手で追加
               </Link>
             </Button>
             <Button asChild variant="ghost" size="sm">

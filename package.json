@@ -11,6 +11,7 @@
     "gen:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts && biome format --write lib/supabase/database.types.ts"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.9.1",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "@turf/bbox": "^7.4.0",
@@ -24,6 +25,7 @@
     "radix-ui": "^1.6.7",
     "react": "19.2.5",
     "react-dom": "19.2.5",
+    "react-hook-form": "^7.89.0",
     "shadcn": "^4.21.0",
     "topojson-client": "^3.1.0",
     "topojson-simplify": "^3.0.3",

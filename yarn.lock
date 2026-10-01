@@ -534,6 +534,90 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@hookform/resolvers@npm:^5.9.1":
+  version: 5.9.1
+  resolution: "@hookform/resolvers@npm:5.9.1"
+  dependencies:
+    "@standard-schema/utils": "npm:^0.3.0"
+  peerDependencies:
+    "@sinclair/typebox": ">=0.25.24"
+    "@standard-schema/spec": ^1.0.0
+    "@typeschema/main": ">=0.13.7"
+    "@vinejs/vine": ^2.0.0 || ^3.0.0 || ^4.0.0
+    ajv: ^8.12.0
+    ajv-errors: ^3.0.0
+    ajv-formats: ^2.1.1
+    arktype: ^2.0.0
+    ata-validator: ^1.2.0
+    class-transformer: ">=0.4.0"
+    class-validator: ">=0.12.0"
+    computed-types: ^1.0.0
+    effect: ^3.10.3
+    fluentvalidation-ts: ^3.0.0
+    fp-ts: ^2.7.0
+    io-ts: ^2.0.0
+    joi: ^17.0.0 || ^18.0.0
+    nope-validator: ">=0.12.0"
+    react-hook-form: ^7.55.0
+    superstruct: ">=0.12.0"
+    typanion: ^3.3.2
+    valibot: ">=0.31.0 || ^1.0.0-beta.4 || ^1.0.0-rc"
+    vest: ">=6.0.0"
+    yup: ^1.0.0
+    zod: ^3.25.0 || ^4.0.0
+  peerDependenciesMeta:
+    "@sinclair/typebox":
+      optional: true
+    "@standard-schema/spec":
+      optional: true
+    "@typeschema/main":
+      optional: true
+    "@vinejs/vine":
+      optional: true
+    ajv:
+      optional: true
+    ajv-errors:
+      optional: true
+    ajv-formats:
+      optional: true
+    arktype:
+      optional: true
+    ata-validator:
+      optional: true
+    class-transformer:
+      optional: true
+    class-validator:
+      optional: true
+    computed-types:
+      optional: true
+    effect:
+      optional: true
+    fluentvalidation-ts:
+      optional: true
+    fp-ts:
+      optional: true
+    io-ts:
+      optional: true
+    joi:
+      optional: true
+    nope-validator:
+      optional: true
+    superstruct:
+      optional: true
+    typanion:
+      optional: true
+    valibot:
+      optional: true
+    vest:
+      optional: true
+    yup:
+      optional: true
+    zod:
+      optional: true
+  checksum: 10c0/08d4e1455a072bea182468d878527e2e99c6d079fe56ffc5297e03a8219fe7544db092afcdf7a950e5421390d4dae3a21398c8ccd0b2c8639d0e0ff9e21410c2
+  languageName: node
+  linkType: hard
+
 "@img/colour@npm:^1.0.0":
   version: 1.1.0
   resolution: "@img/colour@npm:1.1.0"
@@ -2268,6 +2352,13 @@ __metadata:
   version: 4.0.0
   resolution: "@sindresorhus/merge-streams@npm:4.0.0"
   checksum: 10c0/482ee543629aa1933b332f811a1ae805a213681ecdd98c042b1c1b89387df63e7812248bb4df3910b02b3cc5589d3d73e4393f30e197c9dde18046ccd471fc6b
+  languageName: node
+  linkType: hard
+
+"@standard-schema/utils@npm:^0.3.0":
+  version: 0.3.0
+  resolution: "@standard-schema/utils@npm:0.3.0"
+  checksum: 10c0/6eb74cd13e52d5fc74054df51e37d947ef53f3ab9e02c085665dcca3c38c60ece8d735cebbdf18fbb13c775fbcb9becb3f53109b0e092a63f0f7389ce0993fd0
   languageName: node
   linkType: hard
 
@@ -4565,6 +4656,7 @@ __metadata:
   resolution: "nextjs-supabase-auth-practice@workspace:."
   dependencies:
     "@biomejs/biome": "npm:2.4"
+    "@hookform/resolvers": "npm:^5.9.1"
     "@supabase/ssr": "npm:^0.12.7"
     "@supabase/supabase-js": "npm:^2.117.2"
     "@tailwindcss/postcss": "npm:^4"
@@ -4586,6 +4678,7 @@ __metadata:
     radix-ui: "npm:^1.6.7"
     react: "npm:19.2.5"
     react-dom: "npm:19.2.5"
+    react-hook-form: "npm:^7.89.0"
     shadcn: "npm:^4.21.0"
     supabase: "npm:^2.118.0"
     tailwindcss: "npm:^4"
@@ -5056,6 +5149,19 @@ __metadata:
   peerDependencies:
     react: ^19.2.5
   checksum: 10c0/8067606e9f58e4c2e8cb5f09570217dbc71c4843ebcaa20ae2085912d3e3a351f17d8f7c1713313cdda7f272840c8c34ff6c860fcb840862071bceea218e0c63
+  languageName: node
+  linkType: hard
+
+"react-hook-form@npm:^7.89.0":
+  version: 7.89.0
+  resolution: "react-hook-form@npm:7.89.0"
+  peerDependencies:
+    "@types/react": "*"
+    react: ^16.8.0 || ^17 || ^18 || ^19
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+  checksum: 10c0/efeefbacb6ded5e1c0eb0b740cab9e839b9b8018f692fe538f68295a0a655b42d1530a6aa00a47e34a272e429bd752f3ea8c8799b182ed8cf299a9966e90332a
   languageName: node
   linkType: hard
 

@@ -74,7 +74,7 @@ export async function importTimeline(path: string): Promise<ImportResult> {
       };
     }
 
-    // 外出を保存（同じ開始時刻のものは上書き。Jev の判定やメモは消えない）
+    // 外出を保存（取り込んだ外出のうち同じ開始時刻のものは上書き。Jev の判定やメモ、手入力の旅は消えない）
     const outingIds = new Map<number, string>();
     for (const rows of chunk(drafts, CHUNK_SIZE)) {
       const { data, error } = await supabase
@@ -87,8 +87,9 @@ export async function importTimeline(path: string): Promise<ImportResult> {
             nights: d.nights,
             distance_km: d.distanceKm,
             main_transport: d.mainTransport,
+            source: "timeline",
           })),
-          { onConflict: "user_id,started_at" },
+          { onConflict: "user_id,timeline_started_at" },
         )
         .select("id, started_at");
       if (error) throw error;

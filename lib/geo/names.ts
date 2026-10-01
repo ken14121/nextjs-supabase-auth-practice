@@ -65,3 +65,58 @@ export function regionName(code: string): string {
   }
   return countries.getName(code, "ja") ?? code;
 }
+
+export function prefectureCode(index: number): string {
+  return `JP-${String(index + 1).padStart(2, "0")}`;
+}
+
+// 入力フォームで使う、地方ごとの都道府県（都道府県コードの範囲）
+export const PREFECTURE_GROUPS = [
+  { name: "北海道・東北", from: 1, to: 7 },
+  { name: "関東", from: 8, to: 14 },
+  { name: "中部", from: 15, to: 23 },
+  { name: "近畿", from: 24, to: 30 },
+  { name: "中国", from: 31, to: 35 },
+  { name: "四国", from: 36, to: 39 },
+  { name: "九州・沖縄", from: 40, to: 47 },
+].map((group) => ({
+  name: group.name,
+  codes: Array.from({ length: group.to - group.from + 1 }, (_, i) =>
+    prefectureCode(group.from - 1 + i),
+  ),
+}));
+
+// 正式名称に含まれない、ふだん使う呼び方（検索用）
+const COUNTRY_ALIASES: Record<string, string[]> = {
+  KR: ["韓国"],
+  KP: ["北朝鮮"],
+  CN: ["中国"],
+  US: ["アメリカ", "米国", "ハワイ"],
+  GB: ["英国", "UK"],
+  AE: ["UAE", "ドバイ"],
+  TW: ["台湾"],
+  HK: ["香港"],
+  MO: ["マカオ"],
+  RU: ["ロシア"],
+  NZ: ["ニュージーランド"],
+  VN: ["ベトナム"],
+  CZ: ["チェコ"],
+};
+
+// 入力フォームで使う国の一覧（日本は都道府県で選ぶので除く）。日本語の名前順
+export function countryOptions(): {
+  code: string;
+  name: string;
+  keywords: string;
+}[] {
+  return Object.entries(countries.getNames("ja", { select: "official" }))
+    .filter(([code]) => code !== "JP")
+    .map(([code, name]) => ({
+      code,
+      name,
+      keywords: [name, code, ...(COUNTRY_ALIASES[code] ?? [])]
+        .join(" ")
+        .toLowerCase(),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "ja"));
+}

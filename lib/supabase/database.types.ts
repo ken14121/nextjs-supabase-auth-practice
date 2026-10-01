@@ -45,7 +45,9 @@ export type Database = {
           main_transport: string | null;
           memo: string;
           nights: number;
+          source: string;
           started_at: string;
+          timeline_started_at: string | null;
           user_id: string;
         };
         Insert: {
@@ -57,7 +59,9 @@ export type Database = {
           main_transport?: string | null;
           memo?: string;
           nights?: number;
+          source?: string;
           started_at: string;
+          timeline_started_at?: never;
           user_id?: string;
         };
         Update: {
@@ -69,7 +73,9 @@ export type Database = {
           main_transport?: string | null;
           memo?: string;
           nights?: number;
+          source?: string;
           started_at?: string;
+          timeline_started_at?: never;
           user_id?: string;
         };
         Relationships: [];
