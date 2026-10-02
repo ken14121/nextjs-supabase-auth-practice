@@ -43,7 +43,9 @@ export default async function Home({
             <MapPinned className="size-4" />
             Google マップの履歴から、行った都道府県・国を集計します。
           </p>
-          {error === "login_failed" && (
+          {/* 自分のコールバック（login_failed）でも、Supabase から戻ってきたエラー
+              （例: bad_oauth_state = ログインの途中で時間が経ちすぎた）でも出す */}
+          {error && (
             <p className="text-sm text-destructive">
               ログインできませんでした。もう一度お試しください。
             </p>
