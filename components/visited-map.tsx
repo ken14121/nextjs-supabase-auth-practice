@@ -1,13 +1,11 @@
 import { Globe2, Map as MapIcon } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  getJapanShapes,
-  getWorldMarker,
-  getWorldShapes,
-  JAPAN_SIZE,
-  OKINAWA_INSET,
-  WORLD_SIZE,
-} from "@/lib/geo/map-shapes";
+  JapanRegionMap,
+  MapLegend,
+  type RegionPaint,
+  WorldRegionMap,
+} from "@/components/region-maps";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isPrefectureCode, regionName } from "@/lib/geo/names";
 import {
   BINS,
@@ -18,156 +16,23 @@ import {
 
 // 行った県・国を、行った日数の多さで濃く塗る地図（日本 / 世界の切り替え付き）
 
-const SEA_FILL = "#f4f7fb";
-
-function tooltip(code: string, region: VisitedRegion | undefined) {
-  const name = regionName(code);
-  if (!region) return `${name}：まだ行っていません`;
-  return `${name}：${region.visited_days}日（初めて ${region.first_visited_on}、最後 ${region.last_visited_on}）`;
+function paintByDays(visited: Map<string, VisitedRegion>): RegionPaint {
+  return (code) => {
+    const region = visited.get(code);
+    const name = regionName(code);
+    return {
+      fill: fillFor(region?.visited_days),
+      title: region
+        ? `${name}：${region.visited_days}日（初めて ${region.first_visited_on}、最後 ${region.last_visited_on}）`
+        : `${name}：まだ行っていません`,
+    };
+  };
 }
 
-const shapeClass =
-  "stroke-white transition-[stroke,stroke-width] hover:stroke-foreground focus-visible:stroke-foreground focus-visible:outline-none";
-
-function Legend() {
-  return (
-    <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-      <li className="flex items-center gap-1.5">
-        <span
-          className="size-3 rounded-sm border"
-          style={{ backgroundColor: NOT_VISITED_FILL }}
-        />
-        行っていない
-      </li>
-      {BINS.map((bin) => (
-        <li key={bin.label} className="flex items-center gap-1.5">
-          <span
-            className="size-3 rounded-sm"
-            style={{ backgroundColor: bin.fill }}
-          />
-          {bin.label}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function JapanMap({ visited }: { visited: Map<string, VisitedRegion> }) {
-  const shapes = getJapanShapes();
-  return (
-    <svg
-      viewBox={`0 0 ${JAPAN_SIZE.width} ${JAPAN_SIZE.height}`}
-      className="h-auto w-full"
-      role="img"
-      aria-label="行った都道府県の地図"
-    >
-      <defs>
-        <clipPath id="okinawa-inset">
-          <rect
-            x={OKINAWA_INSET.x}
-            y={OKINAWA_INSET.y}
-            width={OKINAWA_INSET.width}
-            height={OKINAWA_INSET.height}
-            rx={10}
-          />
-        </clipPath>
-      </defs>
-      <rect
-        x={OKINAWA_INSET.x}
-        y={OKINAWA_INSET.y}
-        width={OKINAWA_INSET.width}
-        height={OKINAWA_INSET.height}
-        rx={10}
-        className="fill-none stroke-border"
-        strokeWidth={1.5}
-      />
-      <text
-        x={OKINAWA_INSET.x + 12}
-        y={OKINAWA_INSET.y + 20}
-        className="fill-muted-foreground text-[14px]"
-      >
-        沖縄県
-      </text>
-      {shapes.map((shape) => {
-        const region = visited.get(shape.code);
-        return (
-          <path
-            key={shape.code}
-            d={shape.d}
-            fill={fillFor(region?.visited_days)}
-            strokeWidth={0.8}
-            className={shapeClass}
-            clipPath={
-              shape.code === "JP-47" ? "url(#okinawa-inset)" : undefined
-            }
-            tabIndex={0}
-          >
-            <title>{tooltip(shape.code, region)}</title>
-          </path>
-        );
-      })}
-    </svg>
-  );
-}
-
-function WorldMap({ visited }: { visited: Map<string, VisitedRegion> }) {
-  const { countries, sphere, graticule } = getWorldShapes();
-  const drawn = new Set(countries.map((c) => c.code));
-  // 小さくて地図に形がない国は、点で表す
-  const markers = [...visited.keys()]
-    .filter((code) => !drawn.has(code))
-    .map((code) => ({ code, point: getWorldMarker(code) }))
-    .filter((m): m is { code: string; point: [number, number] } => !!m.point);
-
-  return (
-    <svg
-      viewBox={`0 0 ${WORLD_SIZE.width} ${WORLD_SIZE.height}`}
-      className="h-auto w-full"
-      role="img"
-      aria-label="行った国の地図"
-    >
-      <path d={sphere} fill={SEA_FILL} className="stroke-border" />
-      <path
-        d={graticule}
-        fill="none"
-        className="stroke-border"
-        strokeWidth={0.5}
-      />
-      {countries.map((shape) => {
-        const region = visited.get(shape.code);
-        return (
-          <path
-            key={shape.code}
-            d={shape.d}
-            fill={fillFor(region?.visited_days)}
-            strokeWidth={0.5}
-            className={shapeClass}
-            tabIndex={0}
-          >
-            <title>{tooltip(shape.code, region)}</title>
-          </path>
-        );
-      })}
-      {markers.map(({ code, point }) => {
-        const region = visited.get(code);
-        return (
-          <circle
-            key={code}
-            cx={point[0]}
-            cy={point[1]}
-            r={5}
-            fill={fillFor(region?.visited_days)}
-            className="stroke-white"
-            strokeWidth={2}
-            tabIndex={0}
-          >
-            <title>{tooltip(code, region)}</title>
-          </circle>
-        );
-      })}
-    </svg>
-  );
-}
+const LEGEND = [
+  { label: "行っていない", fill: NOT_VISITED_FILL },
+  ...BINS.map((bin) => ({ label: bin.label, fill: bin.fill })),
+];
 
 export function VisitedMap({ regions }: { regions: VisitedRegion[] }) {
   // 日本地図は都道府県ごと。世界地図は国ごと（日本の県はまとめて「JP」にする）
@@ -207,12 +72,19 @@ export function VisitedMap({ regions }: { regions: VisitedRegion[] }) {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="japan">
-        <JapanMap visited={prefectures} />
+        <JapanRegionMap
+          paint={paintByDays(prefectures)}
+          label="行った都道府県の地図"
+        />
       </TabsContent>
       <TabsContent value="world">
-        <WorldMap visited={worldCountries} />
+        <WorldRegionMap
+          paint={paintByDays(worldCountries)}
+          highlighted={[...worldCountries.keys()]}
+          label="行った国の地図"
+        />
       </TabsContent>
-      <Legend />
+      <MapLegend items={LEGEND} />
       <p className="text-xs text-muted-foreground">
         県や国にカーソルを合わせると、行った日数と日付が出ます。世界地図の日本は、一番多く行った県の日数で塗っています。
       </p>

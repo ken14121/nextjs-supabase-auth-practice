@@ -7,6 +7,7 @@ import {
   MapPinned,
   Route,
   UserRound,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -117,6 +118,12 @@ export default async function DashboardPage() {
               <Link href="/trips">
                 <Luggage />
                 旅を手で追加
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/friends">
+                <Users />
+                友達
               </Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
