@@ -1,0 +1,30 @@
+import type { OutingLabel } from "@/lib/outings/labels";
+
+// Jev の 2 つの「はい / いいえ」の答え（はいの確率）と、コードで数えた泊数から、
+// 外出の種類を 1 つに決める。
+//
+//   日常か？ ──はい──→ 日常
+//      │いいえ
+//   泊まったか？（コードで判断）──いいえ──→ 日帰り
+//      │はい
+//   帰省か？ ──はい──→ 帰省 / いいえ → 旅行
+//
+// 4 択（Choice）でまとめて聞かないのは、選択肢の並び順で答えが偏ることがあるため
+// （サイコロの目を Choice で聞くと、いつも 1 つめを選んだという検証がある）。
+
+export const YES_THRESHOLD = 0.5;
+// これより低いときは「要確認」として本人に見てもらう
+export const UNSURE_BELOW = 0.7;
+
+export function decideLabel(input: {
+  nights: number;
+  pDaily: number;
+  pHomecoming: number;
+}): { label: OutingLabel; confidence: number } {
+  const { nights, pDaily, pHomecoming } = input;
+  if (pDaily >= YES_THRESHOLD) return { label: "daily", confidence: pDaily };
+  if (nights === 0) return { label: "day_trip", confidence: 1 - pDaily };
+  return pHomecoming >= YES_THRESHOLD
+    ? { label: "homecoming", confidence: (1 - pDaily) * pHomecoming }
+    : { label: "trip", confidence: (1 - pDaily) * (1 - pHomecoming) };
+}
