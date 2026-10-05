@@ -24,7 +24,9 @@ export function decideLabel(input: {
   const { nights, pDaily, pHomecoming } = input;
   if (pDaily >= YES_THRESHOLD) return { label: "daily", confidence: pDaily };
   if (nights === 0) return { label: "day_trip", confidence: 1 - pDaily };
+  // 2 つの答えを通って決まるときは、確かさの低い方を使う
+  //（掛け算にすると、はっきりした旅行でも 0.85 × 0.8 = 0.68 のように低く出てしまうため）
   return pHomecoming >= YES_THRESHOLD
-    ? { label: "homecoming", confidence: (1 - pDaily) * pHomecoming }
-    : { label: "trip", confidence: (1 - pDaily) * (1 - pHomecoming) };
+    ? { label: "homecoming", confidence: Math.min(1 - pDaily, pHomecoming) }
+    : { label: "trip", confidence: Math.min(1 - pDaily, 1 - pHomecoming) };
 }
