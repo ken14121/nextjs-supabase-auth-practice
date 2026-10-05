@@ -65,7 +65,7 @@ export type Database = {
           nights?: number;
           source?: string;
           started_at: string;
-          timeline_started_at?: never;
+          timeline_started_at?: string | null;
           user_id?: string;
         };
         Update: {
@@ -81,7 +81,7 @@ export type Database = {
           nights?: number;
           source?: string;
           started_at?: string;
-          timeline_started_at?: never;
+          timeline_started_at?: string | null;
           user_id?: string;
         };
         Relationships: [];
