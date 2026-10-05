@@ -29,6 +29,7 @@ function refresh() {
   revalidatePath("/dashboard");
   revalidatePath("/trips");
   revalidatePath("/friends", "layout");
+  revalidatePath("/outings/review");
 }
 
 // Jev のエラーを、画面に出せる日本語にする（キーそのものは絶対に出さない）。
@@ -158,6 +159,11 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
           label: result.label,
           label_confidence: result.confidence,
           label_source: "jev",
+          // 本人が直しても消えないように、Jev の答えを別の列にも残す
+          jev_label: result.label,
+          jev_confidence: result.confidence,
+          jev_p_daily: result.pDaily,
+          jev_p_homecoming: result.pHomecoming,
         })
         .eq("id", outing.id)
         .is("label", null);
@@ -197,7 +203,8 @@ const setLabelSchema = z.object({
   label: z.enum(OUTING_LABEL_VALUES),
 });
 
-// Jev の判定を本人が直す。直したものは Jev が上書きしない
+// Jev の判定を本人が直す・「合ってる」と確かめる（同じ種類を送る）。
+// どちらも label_source = 'user' になり、Jev は上書きしない。Jev の答え（jev_*）は残る
 export async function setOutingLabel(
   input: unknown,
 ): Promise<{ ok: boolean; message: string }> {

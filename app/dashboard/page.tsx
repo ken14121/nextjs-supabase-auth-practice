@@ -215,6 +215,12 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <ClassifyButton pending={pendingCount ?? 0} />
+            <Link
+              href="/outings/review"
+              className="w-fit text-sm text-muted-foreground underline hover:text-foreground"
+            >
+              Jev の判定を確かめる（正解率を見る）
+            </Link>
             {outings && outings.length > 0 ? (
               <ul className="divide-y text-sm">
                 {outings.map((o) => {

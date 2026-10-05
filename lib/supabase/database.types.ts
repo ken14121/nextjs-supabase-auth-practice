@@ -41,6 +41,10 @@ export type Database = {
           distance_km: number;
           ended_at: string;
           id: string;
+          jev_confidence: number | null;
+          jev_label: string | null;
+          jev_p_daily: number | null;
+          jev_p_homecoming: number | null;
           label: string | null;
           label_confidence: number | null;
           label_source: string | null;
@@ -57,6 +61,10 @@ export type Database = {
           distance_km?: number;
           ended_at: string;
           id?: string;
+          jev_confidence?: number | null;
+          jev_label?: string | null;
+          jev_p_daily?: number | null;
+          jev_p_homecoming?: number | null;
           label?: string | null;
           label_confidence?: number | null;
           label_source?: string | null;
@@ -73,6 +81,10 @@ export type Database = {
           distance_km?: number;
           ended_at?: string;
           id?: string;
+          jev_confidence?: number | null;
+          jev_label?: string | null;
+          jev_p_daily?: number | null;
+          jev_p_homecoming?: number | null;
           label?: string | null;
           label_confidence?: number | null;
           label_source?: string | null;

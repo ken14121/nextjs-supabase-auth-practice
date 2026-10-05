@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useState, useTransition } from "react";
 import { UNSURE_BELOW } from "@/lib/jev/decide";
 import { OUTING_LABELS, type OutingLabel } from "@/lib/outings/labels";
@@ -37,19 +38,19 @@ export function LabelSelect({
       ? `Jev の確率 ${Math.round(confidence * 100)}%`
       : undefined;
 
+  const save = (next: OutingLabel) =>
+    startTransition(async () => {
+      const res = await setOutingLabel({ id: outingId, label: next });
+      setError(!res.ok);
+    });
+
   return (
-    <span className="flex items-center gap-2 text-xs">
+    <span className="flex flex-wrap items-center gap-2 text-xs">
       <select
         aria-label="外出の種類"
         value={label ?? ""}
         disabled={isPending}
-        onChange={(e) => {
-          const next = e.target.value as OutingLabel;
-          startTransition(async () => {
-            const res = await setOutingLabel({ id: outingId, label: next });
-            setError(!res.ok);
-          });
-        }}
+        onChange={(e) => save(e.target.value as OutingLabel)}
         className="h-7 rounded-md border bg-background px-1.5 text-xs"
       >
         {label === null && (
@@ -71,6 +72,18 @@ export function LabelSelect({
       >
         {error ? "直せませんでした" : note}
       </span>
+      {/* 合っていたことも記録すると、Jev の正解率が出せる（/outings/review） */}
+      {source === "jev" && label !== null && (
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={() => save(label as OutingLabel)}
+          className="flex items-center gap-1 rounded-md border px-1.5 py-0.5 hover:bg-muted"
+        >
+          <Check className="size-3" />
+          合ってる
+        </button>
+      )}
     </span>
   );
 }
