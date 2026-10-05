@@ -23,6 +23,8 @@ function toOutingRow(trip: TripValues) {
     ended_at: `${trip.endDate}T23:59:59+09:00`,
     nights: nightsBetween(trip.startDate, trip.endDate),
     label: trip.kind,
+    label_source: "user",
+    label_confidence: null,
     memo: trip.memo,
   };
 }

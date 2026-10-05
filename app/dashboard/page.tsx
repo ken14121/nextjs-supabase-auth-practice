@@ -12,6 +12,8 @@ import {
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth/actions";
+import { ClassifyButton } from "@/app/outings/classify-button";
+import { LabelSelect } from "@/app/outings/label-select";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,6 +25,7 @@ import {
 } from "@/components/ui/card";
 import { VisitedMap } from "@/components/visited-map";
 import { isPrefectureCode, PREFECTURES, regionName } from "@/lib/geo/names";
+import { labelName } from "@/lib/outings/labels";
 import { createClient } from "@/lib/supabase/server";
 
 const TRANSPORT_LABELS: Record<string, string> = {
@@ -67,12 +70,19 @@ export default async function DashboardPage() {
       supabase
         .from("outings")
         .select(
-          "id, started_at, ended_at, nights, distance_km, main_transport, visited_regions(region_code)",
+          "id, started_at, ended_at, nights, distance_km, main_transport, source, label, label_source, label_confidence, visited_regions(region_code)",
           { count: "exact" },
         )
         .order("started_at", { ascending: false })
         .limit(20),
     ]);
+
+  // まだ Jev で判定していない、取り込んだ外出の数
+  const { count: pendingCount } = await supabase
+    .from("outings")
+    .select("id", { count: "exact", head: true })
+    .is("label", null)
+    .eq("source", "timeline");
 
   const name =
     profile?.display_name || claims.user_metadata?.full_name || "名前未設定";
@@ -117,7 +127,7 @@ export default async function DashboardPage() {
             <Button asChild variant="outline">
               <Link href="/trips">
                 <Luggage />
-                旅を手で追加
+                旅の一覧
               </Link>
             </Button>
             <Button asChild variant="outline">
@@ -198,10 +208,13 @@ export default async function DashboardPage() {
               最近の外出
             </CardTitle>
             <CardDescription>
-              新しい順に 20 件。旅行かどうかの判定は Step 7 で Jev が行います。
+              新しい順に 20 件。Jev
+              が「旅行・帰省・日帰り・日常」を判定します。間違っていたら選び直せます（選び直したものは
+              Jev が上書きしません）。友達に見えるのは、日常以外の外出だけです。
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col gap-4">
+            <ClassifyButton pending={pendingCount ?? 0} />
             {outings && outings.length > 0 ? (
               <ul className="divide-y text-sm">
                 {outings.map((o) => {
@@ -224,6 +237,18 @@ export default async function DashboardPage() {
                       <span className="text-muted-foreground">
                         {regionCodes.map(regionName).join(" → ") || "―"}
                       </span>
+                      {o.source === "timeline" ? (
+                        <LabelSelect
+                          outingId={o.id}
+                          label={o.label}
+                          source={o.label_source}
+                          confidence={o.label_confidence}
+                        />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          手入力の旅（{labelName(o.label)}）
+                        </span>
+                      )}
                     </li>
                   );
                 })}

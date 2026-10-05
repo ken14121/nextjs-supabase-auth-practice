@@ -42,6 +42,8 @@ export type Database = {
           ended_at: string;
           id: string;
           label: string | null;
+          label_confidence: number | null;
+          label_source: string | null;
           main_transport: string | null;
           memo: string;
           nights: number;
@@ -56,6 +58,8 @@ export type Database = {
           ended_at: string;
           id?: string;
           label?: string | null;
+          label_confidence?: number | null;
+          label_source?: string | null;
           main_transport?: string | null;
           memo?: string;
           nights?: number;
@@ -70,6 +74,8 @@ export type Database = {
           ended_at?: string;
           id?: string;
           label?: string | null;
+          label_confidence?: number | null;
+          label_source?: string | null;
           main_transport?: string | null;
           memo?: string;
           nights?: number;
