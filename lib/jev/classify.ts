@@ -53,6 +53,8 @@ export type JevJudgement = {
   confidence: number;
   pDaily: number;
   pHomecoming: number;
+  // この 1 回で使ったトークン数（クレジットの目安）
+  tokens: number;
 };
 
 // SDK は返ってきた JSON の形を確かめないので、外から来たデータとしてここで確かめる
@@ -67,7 +69,7 @@ export async function classifyOuting(
   outing: OutingForJev,
   ctx: JevContext,
 ): Promise<JevJudgement> {
-  const { answers } = await client.systemOne({
+  const { answers, usage } = await client.systemOne({
     state: buildOutingState(outing, ctx),
     questions: QUESTIONS,
   });
@@ -78,5 +80,6 @@ export async function classifyOuting(
     ...decideLabel({ nights: outing.nights, pDaily, pHomecoming }),
     pDaily,
     pHomecoming,
+    tokens: (usage?.input_tokens ?? 0) + (usage?.output_tokens ?? 0),
   };
 }

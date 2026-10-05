@@ -23,6 +23,9 @@ export type ClassifyResult = {
   message: string;
   classified: number;
   remaining: number;
+  // Jev に送った回数と、使ったトークン数（クレジットの目安）
+  requests: number;
+  tokens: number;
 };
 
 function refresh() {
@@ -89,6 +92,8 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
       message: "ログインし直してください。",
       classified: 0,
       remaining: 0,
+      requests: 0,
+      tokens: 0,
     };
   }
 
@@ -110,6 +115,8 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
       message: describeError(error),
       classified: 0,
       remaining: count ?? 0,
+      requests: 0,
+      tokens: 0,
     };
   }
 
@@ -139,11 +146,14 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
   };
 
   let classified = 0;
+  let requests = 0;
+  let tokens = 0;
   let firstError: unknown = null;
 
   await runWithLimit(outings ?? [], CONCURRENCY, async (outing) => {
     if (firstError) return; // キーの間違いなどで失敗したら、残りは送らない
     try {
+      requests++;
       const result = await classifyOuting(
         client,
         {
@@ -167,6 +177,7 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
         })
         .eq("id", outing.id)
         .is("label", null);
+      tokens += result.tokens;
       if (!error) classified++;
     } catch (error) {
       firstError = error;
@@ -185,6 +196,8 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
           : describeError(firstError),
       classified,
       remaining: remaining ?? 0,
+      requests,
+      tokens,
     };
   }
   return {
@@ -195,6 +208,8 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
         : "判定が必要な外出はありません。",
     classified,
     remaining: remaining ?? 0,
+    requests,
+    tokens,
   };
 }
 

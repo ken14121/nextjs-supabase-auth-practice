@@ -19,16 +19,24 @@ export function ClassifyButton({ pending }: { pending: number }) {
     setRunning(mode);
     setDoneInRun(0);
     let total = 0;
+    let requests = 0;
+    let tokens = 0;
     try {
       while (true) {
         const res = await classifyPendingOutings();
         total += res.classified;
+        requests += res.requests;
+        tokens += res.tokens;
         setDoneInRun(total);
-        setResult(
-          mode === "all" && res.ok
-            ? { ...res, message: `${total} 件を判定しました。` }
-            : res,
-        );
+        setResult({
+          ...res,
+          message:
+            mode === "all" && res.ok
+              ? `${total} 件を判定しました。`
+              : res.message,
+          requests,
+          tokens,
+        });
         // 1 回だけ・失敗・残りなし・止めるボタン、のどれかで終わる
         if (
           mode === "once" ||
@@ -97,6 +105,12 @@ export function ClassifyButton({ pending }: { pending: number }) {
           aria-live="polite"
         >
           {result.message}
+          {result.requests > 0 && (
+            <span className="ml-2 text-muted-foreground tabular-nums">
+              （Jev に {result.requests} 回送信・約{" "}
+              {result.tokens.toLocaleString()} トークン）
+            </span>
+          )}
         </p>
       )}
     </div>
