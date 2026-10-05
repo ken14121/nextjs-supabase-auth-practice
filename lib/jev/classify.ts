@@ -9,17 +9,17 @@ import { buildOutingState, type JevContext, type OutingForJev } from "./state";
 // どれかを判定する。API キーはサーバーだけで使う（"server-only" があるので、
 // うっかりブラウザ用のコードから読み込むとビルドエラーになる）。
 //
-// Jev には「はい / いいえ」の質問（Noul）を 2 つだけ聞き、泊数などの数えられることは
-// コードで判断する（lib/jev/decide.ts）。2 つの質問は 1 回の通信でまとめて送れて、
+// Jev には「はい / いいえ」の質問（Noul）を 3 つだけ聞き、泊数などの数えられることは
+// コードで判断する（lib/jev/decide.ts）。3 つの質問は 1 回の通信でまとめて送れて、
 // Jev の中で同時に判定されるので、1 つ聞くのとほぼ同じ速さ・回数で済む。
 
 const QUESTIONS = {
   isDaily: noul(
-    "この外出は、ふだんの生活の中のいつもの外出（日常）ですか。行った場所の「これまでに行った日数」と「よく行く場所」を重視してください。",
+    "この外出は、ふだんの生活の中のいつもの外出（日常）ですか。「いつもの場所での滞在」と「ふだん行かない場所での滞在」の時間、行った場所の「これまでに行った日数」を重視してください。",
     {
-      true: "日常：通学・通勤・バイト・買い物など、よく行く場所への外出。学校や友人宅に泊まっただけの日も含む",
+      true: "日常：学校・職場・バイト先・最寄り駅など、いつもの場所へのいつもの外出。学校や友人宅に泊まっただけの日も含む",
       false:
-        "日常ではない：旅行・帰省・遊びや観光での遠出など、ふだんあまり行かない場所への外出",
+        "日常ではない：旅行・帰省・遠出のほか、近場でも、ふだん行かない場所へ遊び・買い物・食事に行った外出",
     },
   ),
   isHomecoming: noul(
@@ -27,6 +27,14 @@ const QUESTIONS = {
     {
       true: "帰省：実家・親戚の家・地元に帰った",
       false: "帰省ではない：観光・レジャーなどの旅行や、そのほかの外出",
+    },
+  ),
+  isDayTrip: noul(
+    "この外出は、遠くへの日帰り旅行（観光地や別の地方への遠出）ですか。「自宅から一番遠い地点」の距離と、住んでいる都道府県の外に出たかを重視してください。",
+    {
+      true: "日帰り旅行：観光地や、ふだんの生活圏から離れた場所への遠出",
+      false:
+        "おでかけ：生活圏の中や近くの街で、遊ぶ・買い物・食事をした（例：都心の繁華街で遊ぶ）",
     },
   ),
 };
@@ -53,6 +61,7 @@ export type JevJudgement = {
   confidence: number;
   pDaily: number;
   pHomecoming: number;
+  pDayTrip: number;
   // この 1 回で使ったトークン数（クレジットの目安）
   tokens: number;
 };
@@ -62,6 +71,7 @@ const probability = z.number().min(0).max(1);
 const answersSchema = z.object({
   isDaily: z.object({ noul: probability }),
   isHomecoming: z.object({ noul: probability }),
+  isDayTrip: z.object({ noul: probability }),
 });
 
 export async function classifyOuting(
@@ -76,10 +86,12 @@ export async function classifyOuting(
   const parsed = answersSchema.parse(answers);
   const pDaily = parsed.isDaily.noul;
   const pHomecoming = parsed.isHomecoming.noul;
+  const pDayTrip = parsed.isDayTrip.noul;
   return {
-    ...decideLabel({ nights: outing.nights, pDaily, pHomecoming }),
+    ...decideLabel({ nights: outing.nights, pDaily, pHomecoming, pDayTrip }),
     pDaily,
     pHomecoming,
+    pDayTrip,
     tokens: (usage?.input_tokens ?? 0) + (usage?.output_tokens ?? 0),
   };
 }

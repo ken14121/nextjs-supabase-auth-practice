@@ -10,7 +10,12 @@ import type {
 // 自宅からこの距離以内の場所は記録しない（自宅の位置を残さない・友達に見せないため）
 export const HOME_RADIUS_KM = 1.5;
 
-export type Stop = { location: LatLng; at: string };
+export type Stop = {
+  location: LatLng;
+  at: string;
+  // 滞在した時間（分）。移動の途中の地点（乗り換えなど）は 0
+  minutes: number;
+};
 
 export type OutingDraft = {
   startedAt: string;
@@ -20,6 +25,8 @@ export type OutingDraft = {
   mainTransport: TransportMode | null;
   // 立ち寄った場所（自宅の周りは除く）。ここから県・国を判定する
   stops: Stop[];
+  // 自宅から一番遠くまで行った地点の距離（km）
+  maxKmFromHome: number;
 };
 
 // 2 点間の距離（km）。地球を球とみなして計算する
@@ -71,6 +78,7 @@ function countNights(startIso: string, endIso: string): number {
 function summarize(
   segments: TimelineSegment[],
   isNearHome: (loc: LatLng) => boolean,
+  kmFromHome: (loc: LatLng) => number,
 ): OutingDraft | null {
   const stops: Stop[] = [];
   const distanceByMode = new Map<TransportMode, number>();
@@ -79,7 +87,12 @@ function summarize(
   for (const seg of segments) {
     if (seg.kind === "visit") {
       if (!isNearHome(seg.location)) {
-        stops.push({ location: seg.location, at: seg.start });
+        const minutes = (Date.parse(seg.end) - Date.parse(seg.start)) / 60000;
+        stops.push({
+          location: seg.location,
+          at: seg.start,
+          minutes: Math.max(0, Math.round(minutes)),
+        });
       }
     } else {
       totalMeters += seg.distanceMeters;
@@ -88,8 +101,9 @@ function summarize(
         (distanceByMode.get(seg.mode) ?? 0) + seg.distanceMeters,
       );
       if (!isNearHome(seg.from))
-        stops.push({ location: seg.from, at: seg.start });
-      if (!isNearHome(seg.to)) stops.push({ location: seg.to, at: seg.end });
+        stops.push({ location: seg.from, at: seg.start, minutes: 0 });
+      if (!isNearHome(seg.to))
+        stops.push({ location: seg.to, at: seg.end, minutes: 0 });
     }
   }
 
@@ -108,6 +122,9 @@ function summarize(
     distanceKm: Math.round(totalMeters / 100) / 10,
     mainTransport,
     stops,
+    maxKmFromHome:
+      Math.round(Math.max(...stops.map((st) => kmFromHome(st.location))) * 10) /
+      10,
   };
 }
 
@@ -118,13 +135,16 @@ export function buildOutings(segments: TimelineSegment[]): OutingDraft[] {
   );
   const isNearHome = (loc: LatLng) =>
     homes.some((home) => distanceKm(home, loc) <= HOME_RADIUS_KM);
+  // 一番近い自宅からの距離（引っ越しで自宅が複数あるときも）
+  const kmFromHome = (loc: LatLng) =>
+    homes.length > 0 ? Math.min(...homes.map((h) => distanceKm(h, loc))) : 0;
 
   const outings: OutingDraft[] = [];
   let current: TimelineSegment[] = [];
 
   const finish = () => {
     if (current.length > 0) {
-      const outing = summarize(current, isNearHome);
+      const outing = summarize(current, isNearHome, kmFromHome);
       if (outing) outings.push(outing);
     }
     current = [];

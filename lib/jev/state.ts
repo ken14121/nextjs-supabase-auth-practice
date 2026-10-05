@@ -1,4 +1,5 @@
 import { regionName } from "@/lib/geo/names";
+import type { OutingFeatures } from "@/lib/timeline/features";
 
 // Jev に渡す「外出 1 回ぶんの状況」を作る。
 // Jev は計算が苦手なので、泊数・距離・行った回数・季節などはここで計算して、
@@ -11,6 +12,8 @@ export type OutingForJev = {
   distance_km: number;
   main_transport: string | null;
   region_codes: string[];
+  // 取り込み直す前の外出には無い
+  features?: OutingFeatures | null;
 };
 
 export type JevContext = {
@@ -45,6 +48,12 @@ function formatDate(iso: string): string {
   const d = jstDate(iso);
   return `${d.toISOString().slice(0, 10)}（${WEEKDAYS[d.getUTCDay()]}）`;
 }
+
+function formatTime(iso: string): string {
+  return jstDate(iso).toISOString().slice(11, 16);
+}
+
+const hours = (minutes: number) => Math.round((minutes / 60) * 10) / 10;
 
 // 帰省や旅行が多い時期にかかっているか（月日だけで判断）
 export function seasonOf(startIso: string, endIso: string): string | null {
@@ -81,9 +90,12 @@ export function buildOutingState(outing: OutingForJev, ctx: JevContext) {
     };
   });
 
+  const f = outing.features;
+  const startDay = jstDate(outing.started_at).getUTCDay();
   return {
-    出発: formatDate(outing.started_at),
-    帰宅: formatDate(outing.ended_at),
+    出発: `${formatDate(outing.started_at)} ${formatTime(outing.started_at)}`,
+    帰宅: `${formatDate(outing.ended_at)} ${formatTime(outing.ended_at)}`,
+    土日: startDay === 0 || startDay === 6,
     泊数: outing.nights,
     移動した距離_km: Math.round(outing.distance_km),
     主な移動手段: outing.main_transport
@@ -92,5 +104,15 @@ export function buildOutingState(outing: OutingForJev, ctx: JevContext) {
     行った場所: places,
     住んでいる都道府県: ctx.homeRegion ? regionName(ctx.homeRegion) : "不明",
     時期: seasonOf(outing.started_at, outing.ended_at) ?? "とくになし",
+    // 地点ごとの数字（タイムラインを取り込み直したあとの外出だけ）
+    ...(f
+      ? {
+          自宅から一番遠い地点_km: Math.round(f.maxKmFromHome),
+          いつもの場所での滞在_時間: hours(f.frequentMinutes),
+          ときどき行く場所での滞在_時間: hours(f.sometimesMinutes),
+          ふだん行かない場所での滞在_時間: hours(f.rareMinutes),
+          ふだん行かない場所の数: f.rarePlaces,
+        }
+      : {}),
   };
 }

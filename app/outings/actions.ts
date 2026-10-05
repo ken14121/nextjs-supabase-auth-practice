@@ -12,9 +12,12 @@ import {
 import type { JevContext } from "@/lib/jev/state";
 import { OUTING_LABEL_VALUES } from "@/lib/outings/labels";
 import { createClient } from "@/lib/supabase/server";
+import { isClearlyDaily, outingFeaturesSchema } from "@/lib/timeline/features";
 
-// 1 回のボタンで判定する件数。多すぎると待ち時間とクレジットがかかるので少しずつ
+// 1 回のボタンで Jev に送る件数。多すぎると待ち時間とクレジットがかかるので少しずつ
 const BATCH_SIZE = 20;
+// 1 回のボタンで「いつもの場所だけの日」かどうかを調べる件数（こちらは Jev を使わない）
+const RULE_SCAN_SIZE = 300;
 // 同時に Jev へ送る数
 const CONCURRENCY = 4;
 
@@ -125,13 +128,36 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
     supabase
       .from("outings")
       .select(
-        "id, started_at, ended_at, nights, distance_km, main_transport, visited_regions(region_code)",
+        "id, started_at, ended_at, nights, distance_km, main_transport, features, visited_regions(region_code)",
       )
       .is("label", null)
       .eq("source", "timeline")
       .order("started_at", { ascending: false })
-      .limit(BATCH_SIZE),
+      .limit(RULE_SCAN_SIZE),
   ]);
+
+  // いつもの場所にしか行っていない日は、Jev に聞かずにコードで「日常」と決める（クレジットを使わない）
+  const pending = (outings ?? []).map((o) => {
+    const parsed = outingFeaturesSchema.safeParse(o.features);
+    return { ...o, features: parsed.success ? parsed.data : null };
+  });
+  const ruleIds = pending
+    .filter((o) => o.features && isClearlyDaily(o.nights, o.features))
+    .map((o) => o.id);
+  const jevTargets = pending
+    .filter((o) => !ruleIds.includes(o.id))
+    .slice(0, BATCH_SIZE);
+
+  let ruleCount = 0;
+  for (let i = 0; i < ruleIds.length; i += 100) {
+    const { data: updated } = await supabase
+      .from("outings")
+      .update({ label: "daily", label_source: "rule", label_confidence: null })
+      .in("id", ruleIds.slice(i, i + 100))
+      .is("label", null)
+      .select("id");
+    ruleCount += updated?.length ?? 0;
+  }
 
   // 判定の材料：これまでに行った日数と、住んでいる都道府県（一番多く行った都道府県）
   const visitedDays = new Map(
@@ -145,12 +171,12 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
     homeRegion: home?.region_code ?? null,
   };
 
-  let classified = 0;
+  let classified = ruleCount;
   let requests = 0;
   let tokens = 0;
   let firstError: unknown = null;
 
-  await runWithLimit(outings ?? [], CONCURRENCY, async (outing) => {
+  await runWithLimit(jevTargets, CONCURRENCY, async (outing) => {
     if (firstError) return; // キーの間違いなどで失敗したら、残りは送らない
     try {
       requests++;
@@ -174,6 +200,7 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
           jev_confidence: result.confidence,
           jev_p_daily: result.pDaily,
           jev_p_homecoming: result.pHomecoming,
+          jev_p_day_trip: result.pDayTrip,
         })
         .eq("id", outing.id)
         .is("label", null);
@@ -204,7 +231,7 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
     ok: true,
     message:
       classified > 0
-        ? `${classified} 件を判定しました。`
+        ? `${classified} 件を判定しました（Jev ${classified - ruleCount} 件・いつもの場所だけの日 ${ruleCount} 件）。`
         : "判定が必要な外出はありません。",
     classified,
     remaining: remaining ?? 0,

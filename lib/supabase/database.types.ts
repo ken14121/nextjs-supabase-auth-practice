@@ -40,10 +40,12 @@ export type Database = {
           created_at: string;
           distance_km: number;
           ended_at: string;
+          features: Json | null;
           id: string;
           jev_confidence: number | null;
           jev_label: string | null;
           jev_p_daily: number | null;
+          jev_p_day_trip: number | null;
           jev_p_homecoming: number | null;
           label: string | null;
           label_confidence: number | null;
@@ -60,10 +62,12 @@ export type Database = {
           created_at?: string;
           distance_km?: number;
           ended_at: string;
+          features?: Json | null;
           id?: string;
           jev_confidence?: number | null;
           jev_label?: string | null;
           jev_p_daily?: number | null;
+          jev_p_day_trip?: number | null;
           jev_p_homecoming?: number | null;
           label?: string | null;
           label_confidence?: number | null;
@@ -80,10 +84,12 @@ export type Database = {
           created_at?: string;
           distance_km?: number;
           ended_at?: string;
+          features?: Json | null;
           id?: string;
           jev_confidence?: number | null;
           jev_label?: string | null;
           jev_p_daily?: number | null;
+          jev_p_day_trip?: number | null;
           jev_p_homecoming?: number | null;
           label?: string | null;
           label_confidence?: number | null;

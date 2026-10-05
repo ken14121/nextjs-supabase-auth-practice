@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { lookupRegion } from "@/lib/geo/regions";
 import { createClient } from "@/lib/supabase/server";
+import { computeOutingFeatures } from "@/lib/timeline/features";
 import { buildOutings, toJstDate } from "@/lib/timeline/outings";
 import { compactTimelineSchema } from "@/lib/timeline/parse";
 
@@ -74,9 +75,26 @@ export async function importTimeline(path: string): Promise<ImportResult> {
       };
     }
 
+    // 「いつもの場所」「ふだん行かない場所」にいた時間などを、ファイル全体から数える（座標は保存しない）
+    const features = computeOutingFeatures(drafts);
+    const withFeatures = drafts.map((d, i) => ({
+      ...d,
+      features: features[i],
+    }));
+
+    // 地点の数字が無いまま Jev が判定した外出（本人がまだ確かめていないもの）は、
+    // 数字をつけて判定し直せるよう「未判定」に戻す。本人が決めたものはそのまま
+    const { error: resetError } = await supabase
+      .from("outings")
+      .update({ label: null, label_confidence: null, label_source: null })
+      .eq("source", "timeline")
+      .eq("label_source", "jev")
+      .is("features", null);
+    if (resetError) throw resetError;
+
     // 外出を保存（取り込んだ外出のうち同じ開始時刻のものは上書き。Jev の判定やメモ、手入力の旅は消えない）
     const outingIds = new Map<number, string>();
-    for (const rows of chunk(drafts, CHUNK_SIZE)) {
+    for (const rows of chunk(withFeatures, CHUNK_SIZE)) {
       const { data, error } = await supabase
         .from("outings")
         .upsert(
@@ -87,6 +105,7 @@ export async function importTimeline(path: string): Promise<ImportResult> {
             nights: d.nights,
             distance_km: d.distanceKm,
             main_transport: d.mainTransport,
+            features: d.features,
             source: "timeline",
           })),
           { onConflict: "user_id,timeline_started_at" },

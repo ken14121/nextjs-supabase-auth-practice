@@ -209,7 +209,9 @@ export default async function DashboardPage() {
             </CardTitle>
             <CardDescription>
               新しい順に 20 件。Jev
-              が「旅行・帰省・日帰り・日常」を判定します。間違っていたら選び直せます（選び直したものは
+              が「旅行・帰省・日帰り・おでかけ・日常」を判定します（学校など、いつもの場所だけの日は
+              Jev
+              を使わず自動で日常にします）。間違っていたら選び直せます（選び直したものは
               Jev が上書きしません）。友達に見えるのは、日常以外の外出だけです。
             </CardDescription>
           </CardHeader>

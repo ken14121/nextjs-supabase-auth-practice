@@ -32,7 +32,9 @@ export function LabelSelect({
         ? unsure
           ? "Jev の判定・要確認"
           : "Jev の判定"
-        : "自分で設定";
+        : source === "rule"
+          ? "自動（いつもの場所だけ）"
+          : "自分で設定";
   const detail =
     source === "jev" && confidence !== null
       ? `Jev の確率 ${Math.round(confidence * 100)}%`
