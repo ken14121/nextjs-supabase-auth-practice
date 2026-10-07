@@ -209,8 +209,9 @@ Google マップのタイムライン（スマホから書き出した `Timeline
 
 ### Step 8: テスト
 
-- [ ] Playwright を入れる
-- [ ] 「トップページが表示される」「未ログインだと `/dashboard` に入れない」の 2 本を書く
+- [x] Playwright を入れる（`playwright.config.ts`。e2e のサーバーにはダミーの Supabase を渡し、本物の DB には触らない）
+- [x] 「トップページが表示される」「未ログインだと `/dashboard` に入れない」の 2 本を書く（ログインが必要な 6 ページすべて・書き出し方ページ・ログイン失敗の表示も。計 9 本）
+- [x] 計算部分のテスト（`yarn test:unit`、19 本）：判定の流れ、サンプルデータの取り込み・いつもの場所・ルールで日常、Jev に渡す中身、友達との比較、正解率、手入力の旅のチェック
 - [ ] （余裕があれば）GitHub Actions で `yarn lint` と Playwright を自動実行する
 
 **完了条件:** `yarn test:e2e` が通る

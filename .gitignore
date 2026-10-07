@@ -47,3 +47,9 @@ Timeline*.json
 
 # MapLibre の worker（yarn install 時に node_modules からコピーされる）
 /public/maplibre/
+
+# Playwright の結果
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

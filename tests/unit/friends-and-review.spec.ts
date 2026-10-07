@@ -1,0 +1,70 @@
+import { expect, test } from "@playwright/test";
+import {
+  compareRegions,
+  summarizeVisits,
+  toCountries,
+} from "@/lib/friends/compare";
+import { friendCodeSchema } from "@/lib/friends/schema";
+import { evaluateJev } from "@/lib/jev/evaluate";
+
+test("友達と比べて、どちらも / 自分だけ / 友達だけ に分ける", () => {
+  expect(
+    compareRegions(["JP-13", "JP-01", "US"], ["JP-13", "JP-27", "KR"]),
+  ).toEqual({
+    mine: ["JP-01", "US"],
+    theirs: ["JP-27", "KR"],
+    both: ["JP-13"],
+  });
+  expect(toCountries(["JP-13", "JP-01", "US"]).sort()).toEqual(["JP", "US"]);
+});
+
+test("友達の訪問地を、県・国ごとの日数にまとめる（同じ日は 1 日）", () => {
+  const [tokyo] = summarizeVisits([
+    { region_code: "JP-13", visited_on: "2026-01-02" },
+    { region_code: "JP-13", visited_on: "2026-01-02" },
+    { region_code: "JP-13", visited_on: "2026-03-01" },
+  ]);
+  expect(tokyo).toEqual({
+    region_code: "JP-13",
+    visited_days: 2,
+    first_visited_on: "2026-01-02",
+    last_visited_on: "2026-03-01",
+  });
+});
+
+test("フレンドコードは 8 文字の英数字（大文字・空白は直す）", () => {
+  expect(friendCodeSchema.parse(" 1A2B3C4D ")).toBe("1a2b3c4d");
+  expect(friendCodeSchema.safeParse("1a2b3c4").success).toBe(false);
+  expect(friendCodeSchema.safeParse("zzzzzzzz").success).toBe(false);
+});
+
+test("Jev の正解率と、確率の当てはまりを数える", () => {
+  const r = evaluateJev([
+    {
+      jevLabel: "daily",
+      userLabel: "daily",
+      jevConfidence: 0.9,
+      jevPDaily: 0.9,
+    },
+    {
+      jevLabel: "daily",
+      userLabel: "outing",
+      jevConfidence: 0.6,
+      jevPDaily: 0.6,
+    },
+    { jevLabel: "trip", userLabel: "trip", jevConfidence: 0.8, jevPDaily: 0.1 },
+    {
+      jevLabel: "trip",
+      userLabel: "homecoming",
+      jevConfidence: 0.55,
+      jevPDaily: 0.2,
+    },
+  ]);
+  expect(r.total).toBe(4);
+  expect(r.accuracy).toBe(0.5);
+  expect(r.confusion.daily.outing).toBe(1);
+  // 要確認（70% 未満）の 2 件はどちらも外れ、それ以外の 2 件は当たり
+  expect(r.bySureness.map((b) => b.accuracy)).toEqual([1, 0]);
+  // 0.6 や 0.2 のような境目の値も、どれか 1 つの箱にだけ入る
+  expect(r.dailyCalibration.reduce((n, b) => n + b.count, 0)).toBe(4);
+});

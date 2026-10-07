@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
+    "test": "playwright test",
+    "test:unit": "playwright test --project=unit",
+    "test:e2e": "playwright test --project=e2e",
     "gen:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts && biome format --write lib/supabase/database.types.ts",
     "postinstall": "node scripts/copy-maplibre-worker.mjs"
   },
@@ -40,6 +43,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/d3-geo": "^3.1.1",
     "@types/geojson": "^7946.0.16",
