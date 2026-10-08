@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { lookupRegion } from "@/lib/geo/regions";
 import { createClient } from "@/lib/supabase/server";
 import { computeOutingFeatures } from "@/lib/timeline/features";
+import { matchOutings } from "@/lib/timeline/match";
 import { buildOutings, toJstDate } from "@/lib/timeline/outings";
 import { compactTimelineSchema } from "@/lib/timeline/parse";
 
@@ -92,29 +93,77 @@ export async function importTimeline(path: string): Promise<ImportResult> {
       .is("features", null);
     if (resetError) throw resetError;
 
-    // 外出を保存（取り込んだ外出のうち同じ開始時刻のものは上書き。Jev の判定やメモ、手入力の旅は消えない）
+    // このファイルの期間に入っている、取り込み済みの外出（手入力の旅は対象外）
+    const spanStart = withFeatures[0].startedAt;
+    const spanEnd = withFeatures.reduce(
+      (max, d) => (d.endedAt > max ? d.endedAt : max),
+      withFeatures[0].endedAt,
+    );
+    const { data: existing, error: existingError } = await supabase
+      .from("outings")
+      .select("id, started_at, ended_at, label_source")
+      .eq("source", "timeline")
+      .lt("started_at", spanEnd)
+      .gt("ended_at", spanStart)
+      .range(0, 9999);
+    if (existingError) throw existingError;
+
+    // 時間が重なる外出は同じ外出とみなし、その行（判定・メモ）を引き継ぐ。
+    // Google のタイムラインは、あとから開始時刻が数分ずれることがあるため（lib/timeline/match.ts）
+    const { matchedIds, unmatchedIds } = matchOutings(
+      withFeatures,
+      (existing ?? []).map((e) => ({
+        id: e.id,
+        startedAt: e.started_at,
+        endedAt: e.ended_at,
+        userLabeled: e.label_source === "user",
+      })),
+    );
+
+    // 期間内なのに、どの新しい外出とも重ならない行（前の取り込みでできた重複など）は消す
+    for (const ids of chunk(unmatchedIds, CHUNK_SIZE)) {
+      const { error } = await supabase.from("outings").delete().in("id", ids);
+      if (error) throw error;
+    }
+
+    const toRow = (d: (typeof withFeatures)[number]) => ({
+      user_id: userId,
+      started_at: d.startedAt,
+      ended_at: d.endedAt,
+      nights: d.nights,
+      distance_km: d.distanceKm,
+      main_transport: d.mainTransport,
+      features: d.features,
+      source: "timeline",
+    });
     const outingIds = new Map<number, string>();
-    for (const rows of chunk(withFeatures, CHUNK_SIZE)) {
+    const remember = (rows: { id: string; started_at: string }[]) => {
+      for (const row of rows) outingIds.set(Date.parse(row.started_at), row.id);
+    };
+
+    // 引き継ぐ外出は、同じ id の行を新しい内容で上書き（Jev の判定・本人の判定・メモは残る）
+    const updates = withFeatures.flatMap((d, i) => {
+      const id = matchedIds[i];
+      return id ? [{ id, ...toRow(d) }] : [];
+    });
+    for (const rows of chunk(updates, CHUNK_SIZE)) {
       const { data, error } = await supabase
         .from("outings")
-        .upsert(
-          rows.map((d) => ({
-            user_id: userId,
-            started_at: d.startedAt,
-            ended_at: d.endedAt,
-            nights: d.nights,
-            distance_km: d.distanceKm,
-            main_transport: d.mainTransport,
-            features: d.features,
-            source: "timeline",
-          })),
-          { onConflict: "user_id,timeline_started_at" },
-        )
+        .upsert(rows, { onConflict: "id" })
         .select("id, started_at");
       if (error) throw error;
-      for (const row of data) {
-        outingIds.set(Date.parse(row.started_at), row.id);
-      }
+      remember(data);
+    }
+
+    // 新しい外出は追加（念のため、同じ開始時刻の行があれば上書き）
+    const inserts = withFeatures.filter((_, i) => matchedIds[i] === null);
+    for (const rows of chunk(inserts, CHUNK_SIZE)) {
+      const { data, error } = await supabase
+        .from("outings")
+        .upsert(rows.map(toRow), { onConflict: "user_id,timeline_started_at" })
+        .select("id, started_at");
+      if (error) throw error;
+      remember(data);
     }
 
     // 行った県・国を、外出ごと・日付ごとに 1 件ずつ作る
