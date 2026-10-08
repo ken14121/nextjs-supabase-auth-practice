@@ -17,6 +17,7 @@ import {
   type OutingLabel,
 } from "@/lib/outings/labels";
 import { createClient } from "@/lib/supabase/server";
+import { outingFeaturesSchema } from "@/lib/timeline/features";
 
 export const metadata = { title: "Jev の判定を確かめる" };
 
@@ -24,6 +25,26 @@ export const metadata = { title: "Jev の判定を確かめる" };
 const SAMPLE_SIZE = 20;
 // これより少ないうちは、数字がぶれやすいと注意を出す
 const ENOUGH_REVIEWS = 50;
+
+const timeFormat = new Intl.DateTimeFormat("ja-JP", {
+  timeZone: "Asia/Tokyo",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+// 思い出す手がかりに、いつもの場所 / ふだん行かない場所にいた時間を出す
+function StayNote({ features }: { features: unknown }) {
+  const parsed = outingFeaturesSchema.safeParse(features);
+  if (!parsed.success) return null;
+  const f = parsed.data;
+  const h = (minutes: number) => `${Math.round((minutes / 60) * 10) / 10} 時間`;
+  return (
+    <span className="text-xs text-muted-foreground tabular-nums">
+      いつもの場所 {h(f.frequentMinutes)}・ふだん行かない場所 {h(f.rareMinutes)}
+      ・自宅から最大 {Math.round(f.maxKmFromHome)} km
+    </span>
+  );
+}
 
 const dateFormat = new Intl.DateTimeFormat("ja-JP", {
   timeZone: "Asia/Tokyo",
@@ -58,7 +79,7 @@ export default async function ReviewPage() {
   const { data: outings } = await supabase
     .from("outings")
     .select(
-      "id, started_at, nights, distance_km, label, label_source, label_confidence, jev_label, jev_confidence, jev_p_daily, visited_regions(region_code)",
+      "id, started_at, ended_at, nights, distance_km, features, label, label_source, label_confidence, jev_label, jev_confidence, jev_p_daily, visited_regions(region_code)",
     )
     .not("jev_label", "is", null);
 
@@ -81,7 +102,9 @@ export default async function ReviewPage() {
   const sample = all
     .filter((o) => o.label_source === "jev")
     .sort((a, b) => stableRandom(a.id) - stableRandom(b.id))
-    .slice(0, SAMPLE_SIZE);
+    .slice(0, SAMPLE_SIZE)
+    // 選ぶのはでたらめ、見せる順番は昔から（思い出しやすいように）
+    .sort((a, b) => a.started_at.localeCompare(b.started_at));
   const waiting = all.filter((o) => o.label_source === "jev").length;
 
   const result = evaluateJev(reviewed);
@@ -237,7 +260,7 @@ export default async function ReviewPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              確かめる（でたらめに選んだ {sample.length} 件）
+              確かめる（でたらめに選んだ {sample.length} 件・古い順）
             </CardTitle>
             <CardDescription>
               合っていれば「合ってる」、違っていれば正しい種類を選んでください。確かめたものは一覧から消え、上の数字に入ります。
@@ -252,9 +275,12 @@ export default async function ReviewPage() {
                       {dateFormat.format(new Date(o.started_at))}
                       {o.nights > 0 && ` から ${o.nights} 泊`}
                       <span className="ml-2 text-xs font-normal text-muted-foreground tabular-nums">
+                        {timeFormat.format(new Date(o.started_at))}〜
+                        {timeFormat.format(new Date(o.ended_at))}・
                         {o.distance_km} km
                       </span>
                     </span>
+                    <StayNote features={o.features} />
                     <span className="text-muted-foreground">
                       {[...new Set(o.visited_regions.map((r) => r.region_code))]
                         .map(regionName)
