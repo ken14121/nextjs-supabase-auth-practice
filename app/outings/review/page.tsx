@@ -2,6 +2,7 @@ import { ArrowLeft, ClipboardCheck } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LabelSelect } from "@/app/outings/label-select";
+import { RejudgeButton } from "@/app/outings/rejudge-button";
 import {
   Card,
   CardContent,
@@ -146,6 +147,7 @@ export default async function ReviewPage() {
                 </dd>
               </div>
             </dl>
+            <RejudgeButton />
             {result.total < ENOUGH_REVIEWS && (
               <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
                 確かめた件数が少ないうちは、数字が大きくぶれます（目安は{" "}

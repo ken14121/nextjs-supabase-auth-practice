@@ -70,6 +70,19 @@ function describeError(error: unknown): string {
     : "Jev での判定に失敗しました。";
 }
 
+// 判定の材料：これまでに行った日数と、住んでいる都道府県（一番多く行った都道府県）
+function buildContext(
+  regions: { region_code: string; visited_days: number }[],
+): JevContext {
+  const home = regions
+    .filter((r) => isPrefectureCode(r.region_code))
+    .sort((a, b) => b.visited_days - a.visited_days)[0];
+  return {
+    visitedDays: new Map(regions.map((r) => [r.region_code, r.visited_days])),
+    homeRegion: home?.region_code ?? null,
+  };
+}
+
 // 配列を limit 件ずつ並行して処理する
 async function runWithLimit<T>(
   items: T[],
@@ -159,17 +172,7 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
     ruleCount += updated?.length ?? 0;
   }
 
-  // 判定の材料：これまでに行った日数と、住んでいる都道府県（一番多く行った都道府県）
-  const visitedDays = new Map(
-    (regions ?? []).map((r) => [r.region_code, r.visited_days]),
-  );
-  const home = (regions ?? [])
-    .filter((r) => isPrefectureCode(r.region_code))
-    .sort((a, b) => b.visited_days - a.visited_days)[0];
-  const ctx: JevContext = {
-    visitedDays,
-    homeRegion: home?.region_code ?? null,
-  };
+  const ctx = buildContext(regions ?? []);
 
   let classified = ruleCount;
   let requests = 0;
@@ -274,4 +277,90 @@ export async function setOutingLabel(
   }
   refresh();
   return { ok: true, message: "" };
+}
+
+export type RejudgeResult = {
+  ok: boolean;
+  message: string;
+};
+
+// Jev への質問（判断の基準）を変えたあとに、聞き直す。
+//   ・本人が確かめた外出：本人の答えはそのままに、Jev の答え（jev_*）だけ取り直す。
+//     同じ外出で、質問を変える前と後の正解率を比べられる
+//   ・まだ確かめていない Jev の判定：未判定に戻す（ボタンでもう一度判定すると、新しいルールと質問で決まる）
+export async function rejudgeWithNewQuestions(): Promise<RejudgeResult> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims)
+    return { ok: false, message: "ログインし直してください。" };
+
+  let client: ReturnType<typeof createJevClient>;
+  try {
+    client = createJevClient();
+  } catch (error) {
+    return { ok: false, message: describeError(error) };
+  }
+
+  const { error: resetError } = await supabase
+    .from("outings")
+    .update({ label: null, label_confidence: null, label_source: null })
+    .eq("source", "timeline")
+    .eq("label_source", "jev");
+  if (resetError) return { ok: false, message: "未判定に戻せませんでした。" };
+
+  const [{ data: regions }, { data: reviewed }] = await Promise.all([
+    supabase.rpc("get_my_regions"),
+    supabase
+      .from("outings")
+      .select(
+        "id, started_at, ended_at, nights, distance_km, main_transport, features, visited_regions(region_code)",
+      )
+      .eq("source", "timeline")
+      .eq("label_source", "user")
+      .not("jev_label", "is", null),
+  ]);
+  const ctx = buildContext(regions ?? []);
+
+  let done = 0;
+  let firstError: unknown = null;
+  await runWithLimit(reviewed ?? [], CONCURRENCY, async (outing) => {
+    if (firstError) return;
+    try {
+      const parsed = outingFeaturesSchema.safeParse(outing.features);
+      const result = await classifyOuting(
+        client,
+        {
+          ...outing,
+          features: parsed.success ? parsed.data : null,
+          region_codes: outing.visited_regions.map((r) => r.region_code),
+        },
+        ctx,
+      );
+      const { error } = await supabase
+        .from("outings")
+        .update({
+          jev_label: result.label,
+          jev_confidence: result.confidence,
+          jev_p_daily: result.pDaily,
+          jev_p_homecoming: result.pHomecoming,
+          jev_p_day_trip: result.pDayTrip,
+        })
+        .eq("id", outing.id);
+      if (!error) done++;
+    } catch (error) {
+      firstError = error;
+    }
+  });
+
+  refresh();
+  if (firstError) {
+    return {
+      ok: false,
+      message: `確かめた外出のうち ${done} 件を聞き直したところで止まりました。${describeError(firstError)}`,
+    };
+  }
+  return {
+    ok: true,
+    message: `確かめた外出 ${done} 件を新しい質問で聞き直しました。まだ確かめていない外出は未判定に戻したので、マイページで判定し直してください。`,
+  };
 }

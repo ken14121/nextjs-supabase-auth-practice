@@ -112,6 +112,9 @@ export function buildOutingState(outing: OutingForJev, ctx: JevContext) {
           ときどき行く場所での滞在_時間: hours(f.sometimesMinutes),
           ふだん行かない場所での滞在_時間: hours(f.rareMinutes),
           ふだん行かない場所の数: f.rarePlaces,
+          いつもの場所以外での滞在_時間: hours(
+            f.sometimesMinutes + f.rareMinutes,
+          ),
         }
       : {}),
   };

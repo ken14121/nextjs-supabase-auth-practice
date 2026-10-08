@@ -87,9 +87,17 @@ export function computeOutingFeatures(drafts: OutingDraft[]): OutingFeatures[] {
   });
 }
 
-// Jev に聞かなくても「日常」と決めてよい外出か。
-// 泊まっておらず、ふだん行かない場所・ときどき行く場所にほとんどいなかった日
-//（学校・バイト・最寄り駅だけの日）。Jev のクレジットを使わずに済む
+// Jev に聞かなくても「日常」と決めてよい外出か（泊まっていない日だけ）。
+//   ・ふだん行かない場所・ときどき行く場所にほとんどいなかった日（学校・バイト・最寄り駅だけの日）
+//   ・家の近所だけの日
+// Jev のクレジットを使わずに済む
+// 家の近所（この距離以内）だけの外出は、知らない場所でもバイトや買い物の可能性が高いので日常にする
+//（10/8 に本人が 57 件を確かめたとき、近所の「おでかけ」判定を日常に直すことが多かったため）
+export const NEAR_HOME_KM = 5;
+
 export function isClearlyDaily(nights: number, f: OutingFeatures): boolean {
-  return nights === 0 && f.rareMinutes < 30 && f.sometimesMinutes < 60;
+  if (nights > 0) return false;
+  const onlyUsualPlaces = f.rareMinutes < 30 && f.sometimesMinutes < 60;
+  const onlyNearHome = f.maxKmFromHome <= NEAR_HOME_KM;
+  return onlyUsualPlaces || onlyNearHome;
 }

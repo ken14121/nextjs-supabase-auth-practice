@@ -68,3 +68,18 @@ test("保存する数字に座標は入らない", () => {
     ]);
   }
 });
+
+test("家の近所（5km 以内）だけの日は、知らない場所でも日常（バイトなどの可能性）", () => {
+  const nearHome = {
+    maxKmFromHome: 2,
+    frequentMinutes: 0,
+    sometimesMinutes: 0,
+    rareMinutes: 100,
+    rarePlaces: 1,
+  };
+  expect(isClearlyDaily(0, nearHome)).toBe(true);
+  // 遠くなら、ふだん行かない場所にいた日は Jev に聞く
+  expect(isClearlyDaily(0, { ...nearHome, maxKmFromHome: 30 })).toBe(false);
+  // 泊まりはルールで決めない
+  expect(isClearlyDaily(1, nearHome)).toBe(false);
+});
