@@ -1,0 +1,422 @@
+<title>旅アプリ開発 7日目ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --surface-2: #e9eff3;
+    --ink: #15212c;
+    --muted: #566676;
+    --line: #d4dde5;
+    --accent: #1a6a9c;
+    --accent-soft: #dcebf5;
+    --pending: #a36b00;
+    --pending-soft: #fbefd4;
+    --ok: #2d7a4c;
+    --ok-soft: #dcefe3;
+    --ng: #b03a2e;
+    --ng-soft: #f6dedb;
+    --code-bg: #edf2f6;
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e151c;
+      --surface: #15202a;
+      --surface-2: #1b2934;
+      --ink: #e4ecf2;
+      --muted: #9aabba;
+      --line: #2a3a47;
+      --accent: #62b0e3;
+      --accent-soft: #173247;
+      --pending: #e3b453;
+      --pending-soft: #3a2e14;
+      --ok: #6cc48f;
+      --ok-soft: #173325;
+      --ng: #ee8a7e;
+      --ng-soft: #3d1e1a;
+      --code-bg: #1c2833;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e151c;
+    --surface: #15202a;
+    --surface-2: #1b2934;
+    --ink: #e4ecf2;
+    --muted: #9aabba;
+    --line: #2a3a47;
+    --accent: #62b0e3;
+    --accent-soft: #173247;
+    --pending: #e3b453;
+    --pending-soft: #3a2e14;
+    --ok: #6cc48f;
+    --ok-soft: #173325;
+    --ng: #ee8a7e;
+    --ng-soft: #3d1e1a;
+    --code-bg: #1c2833;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.35; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 900; }
+  h2 { font-size: 1.45rem; font-weight: 900; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ヘッダー：きっぷ風 */
+  header.ticket {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+  }
+  .ticket-main { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .ticket-main .lead { color: var(--muted); max-width: 60ch; }
+  .ticket-stub {
+    border-left: 2px dashed var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: var(--surface-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 140px;
+  }
+  .stub-label { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+  .stub-value { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  @media (max-width: 560px) {
+    header.ticket { grid-template-columns: 1fr; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; flex-wrap: wrap; gap: 4px 20px; }
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -32px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.88rem;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .sec-no { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+  .note { color: var(--muted); font-size: 0.95rem; }
+
+  /* 全体像 */
+  .map { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .map-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+  @media (max-width: 640px) { .map-row { grid-template-columns: 1fr; } .map-arrow { transform: rotate(90deg); justify-self: center; } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .box-title { font-family: var(--font-display); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.93rem; }
+  .tool-list li { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px; }
+  .tool-list b { font-weight: 700; }
+  .map-arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .map-arrow span { font-size: 1.6rem; line-height: 1; color: var(--accent); }
+  .localhost { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+  .pending-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .pending-row { grid-template-columns: 1fr; } }
+  .pending-row .box { border-style: dashed; }
+  .chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip.pending { color: var(--pending); background: var(--pending-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.ng { color: var(--ng); background: var(--ng-soft); }
+  .chip.step { color: var(--accent); background: var(--accent-soft); }
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  /* リスト */
+  dl.facts { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 16px; }
+  dl.facts dt { font-weight: 700; color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 10px; } }
+
+  /* 表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 路線図（ログインの流れ） */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.route li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  ol.route li:last-child { padding-bottom: 0; }
+  ol.route li::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent);
+  }
+  ol.route li:last-child::before { display: none; }
+  .station {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--accent);
+    position: relative; z-index: 1;
+  }
+  .stop { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .who { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+  /* Git の流れ */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.93rem; }
+  .flow .stepbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; }
+  .flow .stepbox small { color: var(--muted); font-size: 0.78rem; }
+  .flow .arr { color: var(--accent); font-weight: 700; }
+
+  /* クイズ */
+  ol.quiz { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: q; }
+  ol.quiz li { counter-increment: q; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  ol.quiz li > p::before { content: "Q" counter(q) "　"; font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; font-weight: 700; width: fit-content; }
+  details[open] summary { margin-bottom: 6px; }
+  details p { color: var(--ink); font-size: 0.95rem; }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+<style>
+  .memo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+  .memo pre { margin: 0; font-family: var(--font-body); white-space: pre-wrap; font-size: 0.95rem; line-height: 1.8; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .stat b { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 0.8rem; color: var(--muted); }
+</style>
+<div class="wrap">
+
+  <header class="ticket">
+    <div class="ticket-main">
+      <span class="eyebrow">ZENDASH 臨地実習 ／ 学習ノート</span>
+      <h1>旅アプリ開発 7日目ノート</h1>
+      <p class="lead">Playwright でテストを 28 本書いた。判定の流れや取り込みの計算をテストで固定し、ブラウザでは「ログインしていないと入れないページ」を確かめた。手元の Windows でも全部通った。</p>
+    </div>
+    <div class="ticket-stub">
+      <span class="stub-label">日付</span>
+      <span class="stub-value">2026.10.07 水</span>
+      <span class="stub-label">場所</span>
+      <span class="stub-value">在宅</span>
+      <span class="stub-label">進んだところ</span>
+      <span class="stub-value">Step 8 完了</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#result">今日の成果</a>
+    <a href="#why">なぜテストを書くか</a>
+    <a href="#setup">設定</a>
+    <a href="#unit">計算のテスト</a>
+    <a href="#e2e">画面のテスト</a>
+    <a href="#troubles">つまずき</a>
+    <a href="#time">作業時間の数え方</a>
+    <a href="#quiz">理解度チェック</a>
+    <a href="#report">日報</a>
+  </nav>
+
+  <section id="result">
+    <div class="sec-head"><span class="sec-no">00</span><h2>今日の成果</h2></div>
+    <div class="stats">
+      <div class="stat"><span>計算のテスト</span><b>19</b></div>
+      <div class="stat"><span>画面のテスト</span><b>9</b></div>
+      <div class="stat"><span>全部通るまで</span><b>約 30 秒</b></div>
+      <div class="stat"><span>本物の DB</span><b>使わない</b></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>コマンド</th><th>何をする</th></tr></thead>
+        <tbody>
+          <tr><td><code>yarn test</code></td><td>全部（計算と画面）</td></tr>
+          <tr><td><code>yarn test:unit</code></td><td>計算の部分だけ。ブラウザも DB も Jev も使わないので速い</td></tr>
+          <tr><td><code>yarn test:e2e</code></td><td>テスト用のサーバー（ポート 3100）を起動して、ブラウザで画面を開いて確かめる</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="why">
+    <div class="sec-head"><span class="sec-no">01</span><h2>なぜテストを書くか</h2></div>
+    <p>ここ数日で、Jev の判定の仕組みを何度も作り直した（4 択 → はい/いいえ 2 問 → 3 問、掛け算 → 低い方、いつもの場所のルール…）。直すたびに手で全部を確かめるのは大変で、見落としも出る。</p>
+    <p class="callout"><b>テスト = 「こうなるはず」をコードで書いておくこと。</b>あとで何かを直しても、<code>yarn test</code> を 1 回打てば、前に決めたルールが壊れていないかがすぐ分かる。</p>
+  </section>
+
+  <section id="setup">
+    <div class="sec-head"><span class="sec-no">02</span><h2>設定（<code>playwright.config.ts</code>）</h2></div>
+    <dl class="facts">
+      <dt>2 つのグループ</dt>
+      <dd><code>unit</code>（<code>tests/unit</code>）と <code>e2e</code>（<code>tests/e2e</code>）。Playwright はブラウザのテストの道具だが、ふつうの計算のテストにも使えるので、道具を 1 つにそろえた</dd>
+      <dt>テスト用のサーバー</dt>
+      <dd>e2e のときは Playwright が自分で <code>next dev --port 3100</code> を起動する。<code>yarn dev</code>（3000）と同時に動かせる</dd>
+      <dt>本物に触らない</dt>
+      <dd>テスト用のサーバーには<b>ダミーの Supabase の接続先</b>を渡し、Jev のキーも空にする。テストで本物のデータを消したり、クレジットを使ったりしない</dd>
+      <dt>ブラウザ</dt>
+      <dd>最初の 1 回だけ <code>yarn playwright install chromium</code>。Firefox などは使わないので <code>chromium</code> だけ入れる</dd>
+    </dl>
+  </section>
+
+  <section id="unit">
+    <div class="sec-head"><span class="sec-no">03</span><h2>計算のテスト（19 本）</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ファイル</th><th>確かめていること</th></tr></thead>
+        <tbody>
+          <tr><td><code>decide.spec.ts</code></td><td>Jev の確率と泊数から、日常・おでかけ・日帰り・帰省・旅行に正しく分かれる。確かさは「掛け算」ではなく「低い方」</td></tr>
+          <tr><td><code>sample-timeline.spec.ts</code></td><td>架空のタイムラインで：37 回の外出に分かれる／15 府県＋韓国／北海道 3 泊・帰省 4 泊／通学 24 日は Jev なしで日常／<b>保存する数字に座標が入らない</b></td></tr>
+          <tr><td><code>jev-state.spec.ts</code></td><td>Jev に渡す中身が日本時間の日付・曜日・時刻になっている。年をまたぐ年末年始も見つけられる</td></tr>
+          <tr><td><code>friends-and-review.spec.ts</code></td><td>友達との比較（どちらも / 自分だけ / 友達だけ）、フレンドコード、正解率と確率の当てはまりの計算</td></tr>
+          <tr><td><code>trip-schema.spec.ts</code></td><td>手入力の旅：未来の日付、帰った日が前、日帰りなのに日付が違う、などを弾く</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">「保存する数字に座標が入らない」のように、<b>守りたい約束（プライバシー）もテストにできる</b>。誰かが座標を保存するように変えたら、テストが落ちて気づける。</p>
+  </section>
+
+  <section id="e2e">
+    <div class="sec-head"><span class="sec-no">04</span><h2>画面のテスト（9 本）</h2></div>
+    <ul class="plain">
+      <li>トップページが表示され、「Google でログイン」のボタンがある</li>
+      <li><code>?error=login_failed</code> で戻ってきたら「ログインできませんでした」と出る</li>
+      <li>書き出し方のページ（<code>/guide</code>）はログインしなくても見られる</li>
+      <li>ログインしていないと <code>/dashboard</code>・<code>/import</code>・<code>/trips</code>・<code>/map3d</code>・<code>/friends</code>・<code>/outings/review</code> に入れず、トップページに戻される（<code>for</code> 文で 6 本作った）</li>
+    </ul>
+  </section>
+
+  <section id="troubles">
+    <div class="sec-head"><span class="sec-no">05</span><h2>つまずいたことと学び</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>起きたこと</th><th>原因</th><th>対処</th></tr></thead>
+        <tbody>
+          <tr><td><code>db : 用語 'db' は…認識されません</code></td><td><code>db push</code> は Supabase CLI のコマンド。先頭の <code>yarn supabase</code> を抜かした</td><td><code>yarn supabase db push</code></td></tr>
+          <tr><td><code>Executable doesn't exist</code>（e2e が全部失敗）</td><td>テスト用のブラウザが入っていなかった</td><td><code>yarn playwright install chromium</code>（最初の 1 回だけ）</td></tr>
+          <tr><td>テストの中で日付が 1 日ずれた</td><td>時刻を UTC のまま文字列で比べていた（日本時間の朝 8 時は UTC では前の日の 23 時）</td><td>日本時間の日付にそろえてから比べる（<code>toJstDate</code>）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="time">
+    <div class="sec-head"><span class="sec-no">06</span><h2>作業時間の数え方（10/6 の訂正）</h2></div>
+    <p>10/6 は 7:58〜19:00、15:00〜16:00 にバイトの面接で離席。Slack では 9h と報告したが、ルールどおりに数え直した。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>計算</th><th>時間</th></tr></thead>
+        <tbody>
+          <tr><td>7:58〜19:00</td><td class="num">11 h 02 m</td></tr>
+          <tr><td>− 昼休み</td><td class="num">10 h 02 m</td></tr>
+          <tr><td>− 面接で離席</td><td class="num">9 h 02 m</td></tr>
+          <tr><td>− 7.5 時間を超えたので 30 分</td><td class="num">8 h 32 m</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">開始の投稿に時刻を書かないと、投稿した時刻が開始になる（10/6 は 7:58）。「8:00〜在宅で業務開始します」のように書くとよい。</p>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head"><span class="sec-no">07</span><h2>理解度チェック</h2></div>
+    <ol class="quiz">
+      <li><p>テストを書いておくと、どんなときに助かる？</p>
+        <details><summary>答えを見る</summary><p>あとで仕組みを直したとき。<code>yarn test</code> を 1 回打てば、前に決めたルール（判定の流れ・座標を保存しない など）が壊れていないかがすぐ分かる。手で全部確かめる必要がない。</p></details></li>
+      <li><p>画面のテストのサーバーに、本物ではなくダミーの Supabase の接続先を渡しているのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>テストで本物のデータを読んだり消したりしないため。また、テストの結果が DB の中身によって変わらないようにするため。</p></details></li>
+      <li><p>計算のテスト（unit）が画面のテスト（e2e）より速いのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>サーバーもブラウザも起動せず、関数を呼んで結果を比べるだけだから。</p></details></li>
+      <li><p>「ログインしていないと入れない」テストを 6 ページぶん、1 つの <code>for</code> 文で作れたのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>どのページも「開く → トップページに戻される → ログインボタンが見える」という同じ確かめ方だから。違うのはページの URL だけなので、URL の一覧を回して同じテストを作った。</p></details></li>
+      <li><p>テストの中で、時刻を <code>startsWith("2025-08-10")</code> で比べたら合わなかった。なぜ？</p>
+        <details><summary>答えを見る</summary><p>時刻が UTC で保存されていたから。日本時間 8/10 の朝 8 時は UTC では 8/9 の 23 時なので、文字列の先頭が 8/9 になる。日本時間の日付に直してから比べる。</p></details></li>
+    </ol>
+  </section>
+
+  <section id="report">
+    <div class="sec-head"><span class="sec-no">08</span><h2>日報と作業時間</h2></div>
+    <div class="memo">
+<pre>10月7日(水)　8:02〜17:30（7時間58分）在宅
+やったこと：Playwrightでテストを28本作成。判定の流れ・タイムラインの取り込み・友達との比較・正解率の計算などの計算部分（19本）と、ブラウザで画面を開いて「ログインしていないと入れないページ」などを確かめるテスト（9本）。テスト用のサーバーにはダミーの接続先を渡し、本物のDBには触らないようにした。
+詰まったこと：Supabaseのコマンドの先頭（yarn supabase）を抜かしてエラー。テスト用のブラウザが入っておらず失敗した（yarn playwright install chromium で解決）。
+学んだこと：テストで計算のルールを固定しておくと、あとで判定の仕組みを直しても壊れていないことをすぐ確かめられること。</pre>
+    </div>
+    <p class="note">作業時間：8:02〜17:30 から昼休み 1 時間を引くと 8 時間 28 分。7.5 時間を超えたので 30 分の休憩が入り <b>7 時間 58 分</b>。累計 <b>65 時間 33 分</b> / 225 時間。</p>
+  </section>
+
+  <section id="next">
+    <div class="sec-head"><span class="sec-no">09</span><h2>次回</h2></div>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">Jev の続き<span class="chip pending">手元で</span></div>
+        <p><code>yarn supabase db push</code> → <code>yarn gen:types</code> → タイムラインを取り込み直す → 「Jev で 20 件判定」→「残りをすべて判定」</p>
+      </div>
+      <div class="box">
+        <div class="box-title">金曜（10/9）<span class="chip pending">忘れずに</span></div>
+        <p>2 週目の週報を提出（10/5〜10/9）</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>nextjs-supabase-auth-practice ／ docs/notes/2026-10-07.html</footer>
+</div>
