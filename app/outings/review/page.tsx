@@ -18,7 +18,7 @@ import {
   type OutingLabel,
 } from "@/lib/outings/labels";
 import { createClient } from "@/lib/supabase/server";
-import { outingFeaturesSchema } from "@/lib/timeline/features";
+import { isClearlyDaily, outingFeaturesSchema } from "@/lib/timeline/features";
 
 export const metadata = { title: "Jev の判定を確かめる" };
 
@@ -86,18 +86,26 @@ export default async function ReviewPage() {
 
   const all = outings ?? [];
   // 本人が確かめたもの（合ってる・直した）
-  const reviewed: ReviewedOuting[] = all.flatMap((o) =>
-    o.label_source === "user" && isLabel(o.jev_label) && isLabel(o.label)
-      ? [
-          {
-            jevLabel: o.jev_label,
-            userLabel: o.label,
-            jevConfidence: o.jev_confidence,
-            jevPDaily: o.jev_p_daily,
-          },
-        ]
-      : [],
+  const reviewedRows = all.filter(
+    (o) =>
+      o.label_source === "user" && isLabel(o.jev_label) && isLabel(o.label),
   );
+  const reviewed: ReviewedOuting[] = reviewedRows.map((o) => ({
+    jevLabel: o.jev_label as OutingLabel,
+    userLabel: o.label as OutingLabel,
+    jevConfidence: o.jev_confidence,
+    jevPDaily: o.jev_p_daily,
+  }));
+  // アプリの実際の流れ（Jev に聞く前に、いつもの場所だけ・家の近くだけの日はルールで日常にする）
+  // で判定していたら、何件当たっていたか
+  const byRule = reviewedRows.map((o) => {
+    const features = outingFeaturesSchema.safeParse(o.features);
+    return features.success && isClearlyDaily(o.nights, features.data);
+  });
+  const withRule = evaluateJev(
+    reviewed.map((r, i) => (byRule[i] ? { ...r, jevLabel: "daily" } : r)),
+  );
+  const ruleCount = byRule.filter(Boolean).length;
   // まだ確かめていないものから、偏りが出ないようにでたらめに選ぶ
   //（要確認だけを見ると、正解率が実際より低く出てしまうため）
   const sample = all
@@ -147,6 +155,15 @@ export default async function ReviewPage() {
                 </dd>
               </div>
             </dl>
+            {ruleCount > 0 && (
+              <p className="rounded-md bg-muted px-3 py-2 text-sm">
+                アプリの実際の流れ（Jev
+                に聞く前に、家の近くだけ・いつもの場所だけの日はルールで日常にする）だと、正解率は{" "}
+                <b className="tabular-nums">{percent(withRule.accuracy)}</b>
+                （確かめた {result.total} 件のうち {ruleCount}{" "}
+                件がルールで決まる）。
+              </p>
+            )}
             <RejudgeButton />
             {result.total < ENOUGH_REVIEWS && (
               <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
