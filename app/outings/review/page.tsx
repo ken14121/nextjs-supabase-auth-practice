@@ -11,7 +11,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { regionName } from "@/lib/geo/names";
-import { evaluateJev, type ReviewedOuting } from "@/lib/jev/evaluate";
+import { YES_THRESHOLD } from "@/lib/jev/decide";
+import {
+  accuracyByDailyThreshold,
+  evaluateJev,
+  type ReviewedOuting,
+} from "@/lib/jev/evaluate";
 import {
   labelName,
   OUTING_LABEL_VALUES,
@@ -80,7 +85,7 @@ export default async function ReviewPage() {
   const { data: outings } = await supabase
     .from("outings")
     .select(
-      "id, started_at, ended_at, nights, distance_km, features, label, label_source, label_confidence, jev_label, jev_confidence, jev_p_daily, visited_regions(region_code)",
+      "id, started_at, ended_at, nights, distance_km, features, label, label_source, label_confidence, jev_label, jev_confidence, jev_p_daily, jev_p_homecoming, jev_p_day_trip, visited_regions(region_code)",
     )
     .not("jev_label", "is", null);
 
@@ -106,6 +111,27 @@ export default async function ReviewPage() {
     reviewed.map((r, i) => (byRule[i] ? { ...r, jevLabel: "daily" } : r)),
   );
   const ruleCount = byRule.filter(Boolean).length;
+  // 「日常」の境目を変えたら（3 つの確率がそろっている外出だけで計算する）
+  const thresholdRows = reviewedRows.flatMap((o, i) =>
+    o.jev_p_daily !== null &&
+    o.jev_p_homecoming !== null &&
+    o.jev_p_day_trip !== null
+      ? [
+          {
+            userLabel: o.label as OutingLabel,
+            nights: o.nights,
+            pDaily: o.jev_p_daily,
+            pHomecoming: o.jev_p_homecoming,
+            pDayTrip: o.jev_p_day_trip,
+            byRule: byRule[i],
+          },
+        ]
+      : [],
+  );
+  const thresholds = accuracyByDailyThreshold(
+    thresholdRows,
+    [0.3, 0.35, 0.4, 0.45, 0.5, 0.6],
+  );
   // まだ確かめていないものから、偏りが出ないようにでたらめに選ぶ
   //（要確認だけを見ると、正解率が実際より低く出てしまうため）
   const sample = all
@@ -271,6 +297,42 @@ export default async function ReviewPage() {
               <p className="text-xs text-muted-foreground">
                 確率が正しければ「平均」と「実際の割合」が近くなります。大きくずれていれば、Jev
                 の確率は数字どおりには信じられない、ということです。
+              </p>
+            </section>
+
+            <section className="flex flex-col gap-2">
+              <h3 className="font-medium">「日常」の境目を変えたら</h3>
+              <table className="w-full text-sm tabular-nums">
+                <thead>
+                  <tr className="border-b text-left text-xs text-muted-foreground">
+                    <th className="py-1.5 font-medium">
+                      日常の確率がこれ以上なら日常
+                    </th>
+                    <th className="py-1.5 font-medium">当たった件数</th>
+                    <th className="py-1.5 font-medium">正解率</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {thresholds.map((row) => (
+                    <tr
+                      key={row.threshold}
+                      className={`border-b last:border-0 ${row.threshold === YES_THRESHOLD ? "font-semibold" : ""}`}
+                    >
+                      <td className="py-1.5">
+                        {Math.round(row.threshold * 100)}%
+                        {row.threshold === YES_THRESHOLD && "（いま）"}
+                      </td>
+                      <td className="py-1.5">
+                        {row.correct} / {thresholdRows.length}
+                      </td>
+                      <td className="py-1.5">{percent(row.accuracy)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-xs text-muted-foreground">
+                保存してある Jev の確率から計算しているので、Jev
+                には聞き直していません（ルールで日常になる外出も含めた、アプリの実際の流れの正解率）。確かめた件数が少ないうちは、たまたまの差に合わせすぎないよう注意。
               </p>
             </section>
           </CardContent>

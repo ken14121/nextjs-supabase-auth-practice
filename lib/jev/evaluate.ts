@@ -1,5 +1,5 @@
 import { OUTING_LABEL_VALUES, type OutingLabel } from "@/lib/outings/labels";
-import { UNSURE_BELOW } from "./decide";
+import { decideLabel, UNSURE_BELOW } from "./decide";
 
 // 本人が確かめた外出（Jev の答えと本人の答えの両方がある）から、
 // Jev の正解率と、確率がどれくらい当てになるかを数える
@@ -93,4 +93,31 @@ export function evaluateJev(rows: ReviewedOuting[]) {
     bySureness,
     dailyCalibration,
   };
+}
+
+// 「日常」の境目を変えたら、確かめた外出のうち何件当たっていたか。
+// Jev の答え（3 つの確率）は保存してあるので、Jev に聞き直さずに計算できる。
+// byRule の外出は、Jev に聞く前にルールで日常に決まるので、境目に関係なく日常
+export type ThresholdRow = {
+  userLabel: OutingLabel;
+  nights: number;
+  pDaily: number;
+  pHomecoming: number;
+  pDayTrip: number;
+  byRule: boolean;
+};
+
+export function accuracyByDailyThreshold(
+  rows: ThresholdRow[],
+  thresholds: number[],
+) {
+  return thresholds.map((threshold) => {
+    const correct = rows.filter((r) => {
+      const label = r.byRule
+        ? "daily"
+        : decideLabel({ ...r, dailyThreshold: threshold }).label;
+      return label === r.userLabel;
+    }).length;
+    return { threshold, correct, accuracy: rate(correct, rows.length) };
+  });
 }

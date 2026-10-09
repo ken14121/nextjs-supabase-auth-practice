@@ -21,9 +21,12 @@ export function decideLabel(input: {
   pDaily: number;
   pHomecoming: number;
   pDayTrip: number;
+  // 「日常」と決める境目（ふだんは YES_THRESHOLD。確かめるページで、境目を変えたらどうなるかを計算するときに変える）
+  dailyThreshold?: number;
 }): { label: OutingLabel; confidence: number } {
   const { nights, pDaily, pHomecoming, pDayTrip } = input;
-  if (pDaily >= YES_THRESHOLD) return { label: "daily", confidence: pDaily };
+  const dailyThreshold = input.dailyThreshold ?? YES_THRESHOLD;
+  if (pDaily >= dailyThreshold) return { label: "daily", confidence: pDaily };
   if (nights === 0) {
     return pDayTrip >= YES_THRESHOLD
       ? { label: "day_trip", confidence: Math.min(1 - pDaily, pDayTrip) }
