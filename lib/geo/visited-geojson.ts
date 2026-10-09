@@ -8,11 +8,8 @@ import type {
 } from "geojson";
 import countries from "i18n-iso-countries";
 import { feature } from "topojson-client";
-import { presimplify, quantile, simplify } from "topojson-simplify";
-import type { GeometryCollection, Topology } from "topojson-specification";
-import worldTopology50 from "world-atlas/countries-50m.json";
-import japanTopologyJson from "./data/japan-prefectures.topo.json";
 import { isPrefectureCode, regionName } from "./names";
+import { japanTopology, roundRing, worldTopology } from "./topology";
 import type { VisitedRegion } from "./visited-colors";
 
 // 3D 地球儀に重ねる「行った県・国」の形を GeoJSON で作る（サーバー専用）。
@@ -30,39 +27,6 @@ export type VisitedFeatures = FeatureCollection<
   Polygon | MultiPolygon,
   VisitedProperties
 >;
-
-// 点の数をどれだけ残すか（topojson-simplify の quantile。小さいほど粗く軽い）。
-// 3D では 2D の地図（0.08）より拡大して見るので、少し細かく残す
-const JAPAN_SIMPLIFY_QUANTILE = 0.15;
-const WORLD_SIMPLIFY_QUANTILE = 0.2;
-
-type AnyTopology = Topology<Record<string, GeometryCollection>>;
-const simplifiedCache = new Map<string, AnyTopology>();
-
-function simplified(key: string, json: unknown, q: number): AnyTopology {
-  const cached = simplifiedCache.get(key);
-  if (cached) return cached;
-  // presimplify は渡したデータを書き換えるので、コピーしてから使う
-  const base = presimplify(structuredClone(json) as AnyTopology);
-  const topology = simplify(base, quantile(base, q));
-  simplifiedCache.set(key, topology);
-  return topology;
-}
-
-// 座標を小数 3 桁（約 100m）に丸め、丸めて同じ点になったものは省いて、送るデータを軽くする
-function roundRing(ring: Position[]): Position[] {
-  const result: Position[] = [];
-  for (const p of ring) {
-    const q: Position = [
-      Math.round(p[0] * 1e3) / 1e3,
-      Math.round(p[1] * 1e3) / 1e3,
-    ];
-    const prev = result.at(-1);
-    if (prev && prev[0] === q[0] && prev[1] === q[1]) continue;
-    result.push(q);
-  }
-  return result;
-}
 
 function roundCoordinates(geometry: Polygon | MultiPolygon) {
   // 丸めて 4 点（閉じた三角形）より少なくなった輪は形にならないので捨てる
@@ -104,11 +68,7 @@ function prefectureFeatures(
   visited: Map<string, VisitedRegion>,
 ): VisitedFeatures["features"] {
   if (visited.size === 0) return [];
-  const topology = simplified(
-    "japan",
-    japanTopologyJson,
-    JAPAN_SIMPLIFY_QUANTILE,
-  );
+  const topology = japanTopology();
   const result: VisitedFeatures["features"] = [];
   for (const geometry of topology.objects.japan.geometries) {
     const id = Number((geometry.properties as { id?: unknown })?.id);
@@ -127,11 +87,7 @@ function countryFeatures(
   visited: Map<string, VisitedRegion>,
 ): VisitedFeatures["features"] {
   if (visited.size === 0) return [];
-  const topology = simplified(
-    "world",
-    worldTopology50,
-    WORLD_SIMPLIFY_QUANTILE,
-  );
+  const topology = worldTopology();
   const result: VisitedFeatures["features"] = [];
   for (const geometry of topology.objects.countries.geometries) {
     if (geometry.id === undefined) continue;
