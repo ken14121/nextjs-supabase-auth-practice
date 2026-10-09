@@ -13,6 +13,11 @@ import type { OutingLabel } from "@/lib/outings/labels";
 // （サイコロの目を Choice で聞くと、いつも 1 つめを選んだという検証がある）。
 
 export const YES_THRESHOLD = 0.5;
+// 「日常か？」だけは、境目を少し下げる。本人が 81 件を確かめたところ、Jev が日常の確率を
+// 40〜60% と言った外出の 9 割が実際は日常だった（57 件のときも同じ傾向）。
+// 境目を 40% と 45% にしたときの正解率は同じ（81 件中 68 件、50% だと 66 件）なので、動かす幅が小さい 45% にした。
+// 45〜50% で日常になった外出は確かさも 50% 未満なので、「要確認」が付く（docs/JEV.md）
+export const DAILY_THRESHOLD = 0.45;
 // これより低いときは「要確認」として本人に見てもらう
 export const UNSURE_BELOW = 0.7;
 
@@ -21,11 +26,11 @@ export function decideLabel(input: {
   pDaily: number;
   pHomecoming: number;
   pDayTrip: number;
-  // 「日常」と決める境目（ふだんは YES_THRESHOLD。確かめるページで、境目を変えたらどうなるかを計算するときに変える）
+  // 「日常」と決める境目（ふだんは DAILY_THRESHOLD。確かめるページで、境目を変えたらどうなるかを計算するときに変える）
   dailyThreshold?: number;
 }): { label: OutingLabel; confidence: number } {
   const { nights, pDaily, pHomecoming, pDayTrip } = input;
-  const dailyThreshold = input.dailyThreshold ?? YES_THRESHOLD;
+  const dailyThreshold = input.dailyThreshold ?? DAILY_THRESHOLD;
   if (pDaily >= dailyThreshold) return { label: "daily", confidence: pDaily };
   if (nights === 0) {
     return pDayTrip >= YES_THRESHOLD

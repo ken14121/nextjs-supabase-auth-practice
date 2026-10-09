@@ -52,4 +52,18 @@ test.describe("decideLabel", () => {
     });
     expect(r.confidence).toBeCloseTo(0.8);
   });
+
+  test("日常の境目は 45%。境目ぎりぎりの日常には「要確認」が付く確かさになる", () => {
+    const r = decideLabel({
+      nights: 0,
+      pDaily: 0.46,
+      pHomecoming: 0,
+      pDayTrip: 0.1,
+    });
+    expect(r).toEqual({ label: "daily", confidence: 0.46 });
+    expect(
+      decideLabel({ nights: 0, pDaily: 0.44, pHomecoming: 0, pDayTrip: 0.1 })
+        .label,
+    ).toBe("outing");
+  });
 });

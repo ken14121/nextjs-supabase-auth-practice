@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { regionName } from "@/lib/geo/names";
-import { YES_THRESHOLD } from "@/lib/jev/decide";
+import { DAILY_THRESHOLD } from "@/lib/jev/decide";
 import {
   accuracyByDailyThreshold,
   evaluateJev,
@@ -316,11 +316,11 @@ export default async function ReviewPage() {
                   {thresholds.map((row) => (
                     <tr
                       key={row.threshold}
-                      className={`border-b last:border-0 ${row.threshold === YES_THRESHOLD ? "font-semibold" : ""}`}
+                      className={`border-b last:border-0 ${row.threshold === DAILY_THRESHOLD ? "font-semibold" : ""}`}
                     >
                       <td className="py-1.5">
                         {Math.round(row.threshold * 100)}%
-                        {row.threshold === YES_THRESHOLD && "（いま）"}
+                        {row.threshold === DAILY_THRESHOLD && "（いま）"}
                       </td>
                       <td className="py-1.5">
                         {row.correct} / {thresholdRows.length}
