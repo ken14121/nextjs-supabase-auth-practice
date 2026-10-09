@@ -1,0 +1,442 @@
+<title>旅アプリ開発 9日目ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --surface-2: #e9eff3;
+    --ink: #15212c;
+    --muted: #566676;
+    --line: #d4dde5;
+    --accent: #1a6a9c;
+    --accent-soft: #dcebf5;
+    --pending: #a36b00;
+    --pending-soft: #fbefd4;
+    --ok: #2d7a4c;
+    --ok-soft: #dcefe3;
+    --ng: #b03a2e;
+    --ng-soft: #f6dedb;
+    --code-bg: #edf2f6;
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e151c;
+      --surface: #15202a;
+      --surface-2: #1b2934;
+      --ink: #e4ecf2;
+      --muted: #9aabba;
+      --line: #2a3a47;
+      --accent: #62b0e3;
+      --accent-soft: #173247;
+      --pending: #e3b453;
+      --pending-soft: #3a2e14;
+      --ok: #6cc48f;
+      --ok-soft: #173325;
+      --ng: #ee8a7e;
+      --ng-soft: #3d1e1a;
+      --code-bg: #1c2833;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e151c;
+    --surface: #15202a;
+    --surface-2: #1b2934;
+    --ink: #e4ecf2;
+    --muted: #9aabba;
+    --line: #2a3a47;
+    --accent: #62b0e3;
+    --accent-soft: #173247;
+    --pending: #e3b453;
+    --pending-soft: #3a2e14;
+    --ok: #6cc48f;
+    --ok-soft: #173325;
+    --ng: #ee8a7e;
+    --ng-soft: #3d1e1a;
+    --code-bg: #1c2833;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.35; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 900; }
+  h2 { font-size: 1.45rem; font-weight: 900; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ヘッダー：きっぷ風 */
+  header.ticket {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+  }
+  .ticket-main { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .ticket-main .lead { color: var(--muted); max-width: 60ch; }
+  .ticket-stub {
+    border-left: 2px dashed var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: var(--surface-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 140px;
+  }
+  .stub-label { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+  .stub-value { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  @media (max-width: 560px) {
+    header.ticket { grid-template-columns: 1fr; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; flex-wrap: wrap; gap: 4px 20px; }
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -32px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.88rem;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .sec-no { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+  .note { color: var(--muted); font-size: 0.95rem; }
+
+  /* 全体像 */
+  .map { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .map-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+  @media (max-width: 640px) { .map-row { grid-template-columns: 1fr; } .map-arrow { transform: rotate(90deg); justify-self: center; } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .box-title { font-family: var(--font-display); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.93rem; }
+  .tool-list li { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px; }
+  .tool-list b { font-weight: 700; }
+  .map-arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .map-arrow span { font-size: 1.6rem; line-height: 1; color: var(--accent); }
+  .localhost { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+  .pending-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .pending-row { grid-template-columns: 1fr; } }
+  .pending-row .box { border-style: dashed; }
+  .chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip.pending { color: var(--pending); background: var(--pending-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.ng { color: var(--ng); background: var(--ng-soft); }
+  .chip.step { color: var(--accent); background: var(--accent-soft); }
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  /* リスト */
+  dl.facts { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 16px; }
+  dl.facts dt { font-weight: 700; color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 10px; } }
+
+  /* 表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 路線図（ログインの流れ） */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.route li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  ol.route li:last-child { padding-bottom: 0; }
+  ol.route li::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent);
+  }
+  ol.route li:last-child::before { display: none; }
+  .station {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--accent);
+    position: relative; z-index: 1;
+  }
+  .stop { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .who { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+  /* Git の流れ */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.93rem; }
+  .flow .stepbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; }
+  .flow .stepbox small { color: var(--muted); font-size: 0.78rem; }
+  .flow .arr { color: var(--accent); font-weight: 700; }
+
+  /* クイズ */
+  ol.quiz { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: q; }
+  ol.quiz li { counter-increment: q; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  ol.quiz li > p::before { content: "Q" counter(q) "　"; font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; font-weight: 700; width: fit-content; }
+  details[open] summary { margin-bottom: 6px; }
+  details p { color: var(--ink); font-size: 0.95rem; }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+<style>
+  .memo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+  .memo pre { margin: 0; font-family: var(--font-body); white-space: pre-wrap; font-size: 0.95rem; line-height: 1.8; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .stat b { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 0.8rem; color: var(--muted); }
+</style>
+<div class="wrap">
+
+  <header class="ticket">
+    <div class="ticket-main">
+      <span class="eyebrow">ZENDASH 臨地実習 ／ 学習ノート</span>
+      <h1>旅アプリ開発 9日目ノート</h1>
+      <p class="lead">昨日直した質問で聞き直すと、正解率は 75% から 58% に下がった。原因を突き止めて質問を戻し、新しい外出も確かめて 81 件で 80%、「日常」の境目を動かして 84% まで上げた。午後は、細い線だけで描く「線の地球儀」を作った。</p>
+    </div>
+    <div class="ticket-stub">
+      <span class="stub-label">日付</span>
+      <span class="stub-value">2026.10.09 金</span>
+      <span class="stub-label">場所</span>
+      <span class="stub-value">在宅</span>
+      <span class="stub-label">進んだところ</span>
+      <span class="stub-value">Step 7 完了</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#result">今日の成果</a>
+    <a href="#drop">下がった理由</a>
+    <a href="#v3">質問を戻す</a>
+    <a href="#new">新しい外出でも</a>
+    <a href="#threshold">境目を動かす</a>
+    <a href="#globe">線の地球儀</a>
+    <a href="#troubles">つまずき</a>
+    <a href="#quiz">理解度チェック</a>
+    <a href="#report">日報</a>
+  </nav>
+
+  <section id="result">
+    <div class="sec-head"><span class="sec-no">00</span><h2>今日の成果</h2></div>
+    <div class="stats">
+      <div class="stat"><span>確かめた外出</span><b>81 件</b></div>
+      <div class="stat"><span>正解率（境目 45%）</span><b>84%</b></div>
+      <div class="stat"><span>新しく確かめた 24 件</span><b>88%</b></div>
+      <div class="stat"><span>地球儀の見た目</span><b>3 種類</b></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>質問・設定</th><th>正解率</th><th>メモ</th></tr></thead>
+        <tbody>
+          <tr><td>v1（10/8 朝）</td><td class="num">75%</td><td>57 件</td></tr>
+          <tr><td>v2（10/8 夕方）</td><td class="num">58%</td><td>同じ 57 件で聞き直した</td></tr>
+          <tr><td>v3（今日）</td><td class="num">77%</td><td>質問を v1 の書き方に戻した</td></tr>
+          <tr><td>v3 ＋ ルール</td><td class="num">79%</td><td>アプリの実際の流れ</td></tr>
+          <tr><td>v3 ＋ ルール</td><td class="num">81%</td><td>新しい 24 件を足して 81 件</td></tr>
+          <tr><td>v3 ＋ ルール ＋ 境目 45%</td><td class="num"><b>84%</b></td><td>同じ 81 件で計算</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="drop">
+    <div class="sec-head"><span class="sec-no">01</span><h2>聞き直したら下がった理由</h2></div>
+    <p>昨日、「日常か？」の質問に「いつもの場所以外での滞在が合わせて <b>1 時間以上</b>なら日常ではない」と書いた。同じ 57 件で聞き直すと、正解率は 75% から 58% に下がった。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>v1</th><th>v2</th></tr></thead>
+        <tbody>
+          <tr><td>Jev が「日常」と言った数</td><td class="num">32 件</td><td class="num">8 件</td></tr>
+          <tr><td>本人「日常」なのに Jev「旅行」</td><td class="num">1 件</td><td class="num">11 件</td></tr>
+          <tr><td>本人「日常」なのに Jev「おでかけ」</td><td class="num">4 件</td><td class="num">11 件</td></tr>
+          <tr><td>「日常の確率 0〜20%」と言った数（実際に日常）</td><td class="num">13 件（15%）</td><td class="num">42 件（36%）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="plain">
+      <li><b>Jev は書かれた線をそのまま守った。</b>ときどき行く場所（友人の家・乗り換えの駅など）を足すと、ふつうの日でも 1 時間はすぐ超える</li>
+      <li>学校や友人宅に泊まった日も「1 時間以上」に引っかかり、「日常ではない → 泊まったので旅行」になった</li>
+      <li>確率も崩れた。基準に当てはまるかどうかは自信を持って答えるので、<b>基準そのものがずれていると、自信を持って外す</b></li>
+    </ul>
+    <p class="callout"><b>「1 時間」は本人の言葉ではなかった。</b>「学校の後に新宿で遊ぶこともある」という話を、Claude が数字に置き換えていた。あいまいな境目に、本人が言っていない数字の線を引かない。</p>
+  </section>
+
+  <section id="v3">
+    <div class="sec-head"><span class="sec-no">02</span><h2>質問を戻す（v3）</h2></div>
+    <p>質問を v1 の書き方に戻し、本人の基準のうち「自宅の近くでの用事は日常」だけを足した。家の近く（5 km 以内）だけの日は、昨日作ったルールで Jev に聞く前に日常に決まる。</p>
+    <ul class="plain">
+      <li>同じ 57 件で <b>77%</b>。v1 の 75% との差は 1 件ぶんなので「ほぼ同じ」と見る</li>
+      <li>確かめるページに<b>「ルールも含めた正解率」</b>を足した。聞き直しでは全部を Jev に聞くが、実際のアプリでは 57 件のうち 8 件がルールで決まる。その流れだと <b>79%</b></li>
+    </ul>
+    <p class="note">「新しい質問で Jev に聞き直す」ボタンは、質問の文を変えたときだけ押す。変えていないのに押しても、同じ外出を Jev にもう一度送るだけになる。</p>
+  </section>
+
+  <section id="new">
+    <div class="sec-head"><span class="sec-no">03</span><h2>新しい外出でも当たるか</h2></div>
+    <p>未判定に戻っていた 28 件を「残りをすべて判定」で判定した（Jev に 24 回送信・約 29,500 トークン、残り 4 件はルール）。そのうち 24 件を確かめた。</p>
+    <ul class="plain">
+      <li>合計 81 件で正解率 <b>80%</b>、ルールも含めて <b>81%</b>。要確認なし 89%・要確認あり 63%</li>
+      <li>新しく確かめた 24 件だけで見ると 21 件当たり（<b>88%</b>）。質問を作るときに見ていない外出でも当たっている</li>
+    </ul>
+    <p class="callout"><b>質問を作るときに使ったデータだけで測ると、良く見えすぎることがある。</b>作ったあとに来た新しいデータでも当たるかを確かめると安心できる。</p>
+  </section>
+
+  <section id="threshold">
+    <div class="sec-head"><span class="sec-no">04</span><h2>「日常」の境目を動かす</h2></div>
+    <p>Jev が「日常の確率 40〜60%」と言った外出の 9 割が、実際は日常だった（57 件のときも 81 件のときも同じ）。50% を境目にしていたので、40% 台の日常が「おでかけ」に倒れていた。</p>
+    <p>Jev の 3 つの確率は DB に保存してあるので、<b>Jev に聞き直さずに</b>「境目を変えたら何件当たるか」を計算できる。確かめるページに表を足した。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>日常の境目</th><th>30%</th><th>35%</th><th>40%</th><th>45%</th><th>50%（前）</th><th>60%</th></tr></thead>
+        <tbody>
+          <tr><td>当たった件数（81 件中）</td><td class="num">64</td><td class="num">65</td><td class="num">68</td><td class="num"><b>68</b></td><td class="num">66</td><td class="num">60</td></tr>
+          <tr><td>正解率</td><td class="num">79%</td><td class="num">80%</td><td class="num">84%</td><td class="num"><b>84%</b></td><td class="num">81%</td><td class="num">74%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="plain">
+      <li>差は 2 件と小さいが、<b>同じ傾向が 2 回出た</b>ことと、<b>40% と 45% が同じ件数</b>（たまたま 1 か所だけ高いのではない）ことから、動かす幅が小さい <b>45%</b> にした</li>
+      <li>45〜50% で日常になった外出は確かさが 50% 未満なので「要確認」が付き、本人が見直せる</li>
+      <li>同じ 81 件で決めたので、次に新しい外出を確かめたときに本当に良くなったかを確かめる</li>
+    </ul>
+  </section>
+
+  <section id="globe">
+    <div class="sec-head"><span class="sec-no">05</span><h2>線の地球儀</h2></div>
+    <p><code>/map3d</code> の左上に「写真 / 線・白 / 線・黒」の切り替えを付けた。</p>
+    <dl class="facts">
+      <dt>遠くから</dt>
+      <dd>海岸線・国境（点線）・県境・緯線経線を細い線だけで描く。行った国・県だけ差し色（白は朱色、黒は金色）。濃さは行った日数</dd>
+      <dt>近づくと</dt>
+      <dd>PLATEAU の建物が、ズームに合わせて地面から伸びる。データはズーム 16 の 1 段だけなので、16〜16.6 のあいだで伸びきる</dd>
+      <dt>切り替え方</dt>
+      <dd>見た目ごとにスタイルを丸ごと作り、<code>map.setStyle(..., { diff: true })</code> で差分だけ地図に当てる。地図を作り直さないので、見ている場所やカメラの角度はそのまま</dd>
+      <dt>線のデータ</dt>
+      <dd>TopoJSON の <code>mesh</code> で、となりの国がない線（海岸線）と、2 つの国の境目（国境）を 1 本ずつ取り出す。<code>/geo/outlines</code> がビルドのときに 1 回だけ作る静的な JSON（約 0.4MB）</dd>
+    </dl>
+    <p class="note">MapLibre は遠いと丸い地球、近いと平らな地図に自動で切り替わるので、d3 の地球儀と地図をつなぐ処理を書かずに済んだ。</p>
+  </section>
+
+  <section id="troubles">
+    <div class="sec-head"><span class="sec-no">06</span><h2>つまずいたことと学び</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>起きたこと</th><th>原因</th><th>対処</th></tr></thead>
+        <tbody>
+          <tr><td>質問を直したら正解率が 58% に下がった</td><td>本人が言っていない「1 時間」という数字の線を質問に書き、Jev がそれを守った</td><td>質問を v1 の書き方に戻した。変えたら同じ外出で前後を比べる</td></tr>
+          <tr><td>地球儀の北の方に輪、南に横一周の線が出た</td><td>ロシアやフィジーは経度 180 度で 2 つに切られている。179.9 度 → −179.9 度の線が、地球を反対側にぐるっと回って描かれた</td><td>経度 180 度のところで線を分ける（テストも追加）</td></tr>
+          <tr><td>東京駅に飛んでも建物が低いまま</td><td>PLATEAU のデータはズーム 16 からしか無い</td><td>16〜16.6 で伸びきるようにし、東京駅のボタンは伸びきるズームまで近づく</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head"><span class="sec-no">07</span><h2>理解度チェック</h2></div>
+    <ol class="quiz">
+      <li><p>質問に「1 時間以上なら日常ではない」と書いたら、なぜ正解率が下がった？</p>
+        <details><summary>答えを見る</summary><p>Jev は書かれた基準を文字どおり守るから。ふつうの日でも、いつもの場所以外にいた時間を足すと 1 時間はすぐ超え、泊まりの日常も「日常ではない → 旅行」になった。しかも「1 時間」は本人の言葉ではなかった。</p></details></li>
+      <li><p>基準がずれていると、確率の当てはまりも崩れたのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>Jev は「書かれた基準に当てはまるか」には自信を持って答える。基準そのものがずれていると、自信を持って外す（0〜20% と言ったのに 36% が日常だった）。</p></details></li>
+      <li><p>新しく確かめた 24 件の正解率（88%）を、わざわざ別に見たのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>57 件は質問を直すときに見たデータなので、それだけで測ると良く見えすぎることがある。質問を作ったあとに来た外出でも当たるかを確かめるため。</p></details></li>
+      <li><p>境目を変えたら何件当たるかを、Jev に聞き直さずに計算できたのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>Jev の 3 つの確率（日常・帰省・日帰り）を DB に保存してあったから。種類を決めるのはコード（<code>decideLabel</code>）なので、境目だけ変えて計算し直せる。</p></details></li>
+      <li><p>差が 2 件しかないのに境目を 45% に変えた理由は？</p>
+        <details><summary>答えを見る</summary><p>57 件のときも 81 件のときも同じ傾向（40〜60% の 9 割が日常）が出たこと、40% と 45% が同じ件数でたまたま 1 か所だけ高いのではないこと。動かす幅が小さい 45% を選び、次の新しい外出で確かめる。</p></details></li>
+      <li><p>国境線が地球を一周してしまったのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>経度 180 度をまたぐ線（179.9 度 → −179.9 度）を、地図は「358 度ぶん反対向きに進む線」として描くから。180 度のところで線を分けて直した。</p></details></li>
+    </ol>
+  </section>
+
+  <section id="report">
+    <div class="sec-head"><span class="sec-no">08</span><h2>日報と作業時間</h2></div>
+    <div class="memo">
+<pre>10月9日(金)　9:00〜18:00（7時間30分）在宅
+やったこと：前日に直した質問で確かめ済みの57件を聞き直したところ、正解率が75%から58%に下がった。原因を調べて質問を戻し（77%、ルール込み79%）、残りの外出を判定して新しく24件を確かめた（81件で80%、新しい24件だけでは88%）。保存してある確率から「日常」の境目を変えた場合の正解率を計算する表を作り、境目を50%から45%に下げた（84%）。3D地球儀に、細い線だけで描く「線の地球儀」（白・黒）を追加し、近づくと3Dの建物が地面から伸びるようにした。
+詰まったこと：質問に「1時間以上」という数字の線を書いたら、Jevがそれを厳密に守り、ふつうの日まで日常ではないと判定した。地球儀で日付変更線をまたぐ国境線が、地球を一周する線として描かれた（経度180度で線を分けて解決）。
+学んだこと：Jevは書かれた基準を文字どおり守るので、本人が言っていない数字の線を引かないこと。質問を変えたら、同じデータで前後の正解率を比べること。</pre>
+    </div>
+    <p class="note">作業時間：9:00〜18:00 から昼休み 1 時間を引くと 8 時間。7.5 時間を超えたので 30 分の休憩が入り <b>7 時間 30 分</b>。今週の合計 41 時間 33 分、累計 <b>82 時間 03 分</b> / 225 時間。2 週目の週報は <code>docs/reports/week2-2026-10-09.md</code>。</p>
+  </section>
+
+  <section id="next">
+    <div class="sec-head"><span class="sec-no">09</span><h2>次回</h2></div>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">紹介ページ（Step 9）<span class="chip step">来週</span></div>
+        <p><code>site/</code> フォルダから GitHub Pages で公開。表紙は線の地球儀、中心は Jev の正解率を 75% → 58% → 84% と動かした経緯</p>
+      </div>
+      <div class="box">
+        <div class="box-title">線の地球儀の続き<span class="chip pending">予定</span></div>
+        <p>引きで見ているあいだの自転、行った国・県の名前をセリフ体で添える。差し色は今のまま</p>
+      </div>
+    </div>
+    <p class="note">新しい外出を取り込んで確かめたら、境目 45% が本当に良かったかを確かめる。GitHub Actions でのテスト自動実行も余裕があれば。</p>
+  </section>
+
+  <footer>nextjs-supabase-auth-practice ／ docs/notes/2026-10-09.html</footer>
+</div>
