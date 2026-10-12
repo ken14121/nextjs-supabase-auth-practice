@@ -1,0 +1,436 @@
+<title>旅アプリ開発 10日目ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --surface-2: #e9eff3;
+    --ink: #15212c;
+    --muted: #566676;
+    --line: #d4dde5;
+    --accent: #1a6a9c;
+    --accent-soft: #dcebf5;
+    --pending: #a36b00;
+    --pending-soft: #fbefd4;
+    --ok: #2d7a4c;
+    --ok-soft: #dcefe3;
+    --ng: #b03a2e;
+    --ng-soft: #f6dedb;
+    --code-bg: #edf2f6;
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e151c;
+      --surface: #15202a;
+      --surface-2: #1b2934;
+      --ink: #e4ecf2;
+      --muted: #9aabba;
+      --line: #2a3a47;
+      --accent: #62b0e3;
+      --accent-soft: #173247;
+      --pending: #e3b453;
+      --pending-soft: #3a2e14;
+      --ok: #6cc48f;
+      --ok-soft: #173325;
+      --ng: #ee8a7e;
+      --ng-soft: #3d1e1a;
+      --code-bg: #1c2833;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e151c;
+    --surface: #15202a;
+    --surface-2: #1b2934;
+    --ink: #e4ecf2;
+    --muted: #9aabba;
+    --line: #2a3a47;
+    --accent: #62b0e3;
+    --accent-soft: #173247;
+    --pending: #e3b453;
+    --pending-soft: #3a2e14;
+    --ok: #6cc48f;
+    --ok-soft: #173325;
+    --ng: #ee8a7e;
+    --ng-soft: #3d1e1a;
+    --code-bg: #1c2833;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.35; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 900; }
+  h2 { font-size: 1.45rem; font-weight: 900; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ヘッダー：きっぷ風 */
+  header.ticket {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+  }
+  .ticket-main { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .ticket-main .lead { color: var(--muted); max-width: 60ch; }
+  .ticket-stub {
+    border-left: 2px dashed var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: var(--surface-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 140px;
+  }
+  .stub-label { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+  .stub-value { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  @media (max-width: 560px) {
+    header.ticket { grid-template-columns: 1fr; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; flex-wrap: wrap; gap: 4px 20px; }
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -32px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.88rem;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .sec-no { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+  .note { color: var(--muted); font-size: 0.95rem; }
+
+  /* 全体像 */
+  .map { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .map-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+  @media (max-width: 640px) { .map-row { grid-template-columns: 1fr; } .map-arrow { transform: rotate(90deg); justify-self: center; } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .box-title { font-family: var(--font-display); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.93rem; }
+  .tool-list li { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px; }
+  .tool-list b { font-weight: 700; }
+  .map-arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .map-arrow span { font-size: 1.6rem; line-height: 1; color: var(--accent); }
+  .localhost { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+  .pending-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .pending-row { grid-template-columns: 1fr; } }
+  .pending-row .box { border-style: dashed; }
+  .chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip.pending { color: var(--pending); background: var(--pending-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.ng { color: var(--ng); background: var(--ng-soft); }
+  .chip.step { color: var(--accent); background: var(--accent-soft); }
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  /* リスト */
+  dl.facts { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 16px; }
+  dl.facts dt { font-weight: 700; color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 10px; } }
+
+  /* 表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 路線図（ログインの流れ） */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.route li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  ol.route li:last-child { padding-bottom: 0; }
+  ol.route li::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent);
+  }
+  ol.route li:last-child::before { display: none; }
+  .station {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--accent);
+    position: relative; z-index: 1;
+  }
+  .stop { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .who { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+  /* Git の流れ */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.93rem; }
+  .flow .stepbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; }
+  .flow .stepbox small { color: var(--muted); font-size: 0.78rem; }
+  .flow .arr { color: var(--accent); font-weight: 700; }
+
+  /* クイズ */
+  ol.quiz { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: q; }
+  ol.quiz li { counter-increment: q; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  ol.quiz li > p::before { content: "Q" counter(q) "　"; font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; font-weight: 700; width: fit-content; }
+  details[open] summary { margin-bottom: 6px; }
+  details p { color: var(--ink); font-size: 0.95rem; }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+<style>
+  .memo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+  .memo pre { margin: 0; font-family: var(--font-body); white-space: pre-wrap; font-size: 0.95rem; line-height: 1.8; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .stat b { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 0.8rem; color: var(--muted); }
+</style>
+<div class="wrap">
+
+  <header class="ticket">
+    <div class="ticket-main">
+      <span class="eyebrow">ZENDASH 臨地実習 ／ 学習ノート</span>
+      <h1>旅アプリ開発 10日目ノート</h1>
+      <p class="lead">メンターの「AI に任せるとよくある UI になりがち」という助言から、UI を見直した。雰囲気を 3 案の見本で比べて「地図帳」に決め、色・文字・形のルールにしてアプリ全体に入れた。マイページは「わたしの地図帳」に作り直し、世界地図は回せる地球儀にした。</p>
+    </div>
+    <div class="ticket-stub">
+      <span class="stub-label">日付</span>
+      <span class="stub-value">2026.10.12 月</span>
+      <span class="stub-label">場所</span>
+      <span class="stub-value">在宅</span>
+      <span class="stub-label">進んだところ</span>
+      <span class="stub-value">UI の見直し</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#result">今日の成果</a>
+    <a href="#why">きっかけ</a>
+    <a href="#direction">方向を決める</a>
+    <a href="#rules">見た目のルール</a>
+    <a href="#atlas">わたしの地図帳</a>
+    <a href="#globe">回せる地球儀</a>
+    <a href="#troubles">つまずき</a>
+    <a href="#quiz">理解度チェック</a>
+    <a href="#report">日報</a>
+  </nav>
+
+  <section id="result">
+    <div class="sec-head"><span class="sec-no">00</span><h2>今日の成果</h2></div>
+    <div class="stats">
+      <div class="stat"><span>見比べた雰囲気</span><b>3 案</b></div>
+      <div class="stat"><span>決めることのリスト</span><b>33 項目</b></div>
+      <div class="stat"><span>基本の色</span><b>3 色</b></div>
+      <div class="stat"><span>回せる地球儀</span><b>2 か所</b></div>
+    </div>
+    <ul class="plain">
+      <li>マイページの雰囲気を 3 案（地図帳・切符・夜の地球儀）の見本にして比べ、<b>地図帳</b>に決めた（<code>docs/design/directions.html</code>）</li>
+      <li>決めることを 33 項目のリストにして、仮の案で作り進める形にした（<code>docs/design/DECISIONS.md</code>）</li>
+      <li>紙・墨・朱の色、明朝体の見出し、罫線で区切るデザインを全ページに入れた</li>
+      <li>マイページを「わたしの地図帳」に作り直し、日常も含めた全部の外出は新しいページ「記録の整理」に移した</li>
+      <li>地図帳と友達との比較の「世界」を、ドラッグで回せる地球儀にした</li>
+    </ul>
+  </section>
+
+  <section id="why">
+    <div class="sec-head"><span class="sec-no">01</span><h2>きっかけ：AI が作りがちな UI</h2></div>
+    <p>ゆうへいさんから「UI は AI に特に指示なく任せると、AI が作ったよくある UI になりがち。自分なり（プロダクトなり）の UI を考えてみると良い」と助言をもらった。コードで確かめると、本当に初期設定のままだった。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ところ</th><th>前の状態</th></tr></thead>
+        <tbody>
+          <tr><td>色</td><td>shadcn の初期設定のまま、白・黒・グレーだけ。色があるのは地図だけ</td></tr>
+          <tr><td>文字</td><td>英字用のフォント（Geist）の設定のまま。しかも設定が自分自身を指していて、実際は効いていなかった</td></tr>
+          <tr><td>形</td><td>どのページも、グレーの背景に角の丸い白いカードを縦に並べる。マイページだけでカードが 15 枚</td></tr>
+          <tr><td>タブの名前</td><td>「Create Next App」（雛形のまま）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="callout"><b>初期設定のまま残っている所が「AI っぽさ」の正体だった。</b>一つひとつは小さいが、全部そろうと「どこかで見た画面」になる。</p>
+  </section>
+
+  <section id="direction">
+    <div class="sec-head"><span class="sec-no">02</span><h2>方向を決める</h2></div>
+    <p>いきなり作り直すと、結局「AI が決めた UI」になる。そこで、同じ中身のマイページを 3 つの雰囲気で並べた見本を作り、好き・嫌いを言葉にする材料にした。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>案</th><th>雰囲気</th><th>結果</th></tr></thead>
+        <tbody>
+          <tr><td>A 地図帳</td><td>紙と黒い罫線、明朝体、朱色 1 色</td><td><b>これに決定</b></td></tr>
+          <tr><td>B 切符</td><td>乗車券の形、スタンプ、深緑と赤</td><td></td></tr>
+          <tr><td>C 夜の地球儀</td><td>黒地に細い線、金色 1 色</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>参考に、市町村ごとの「経験値」（宿泊・訪問・接地・通過）で塗った踏破地図と、記録がぎっしり並んだ個人のページも見つけた。明朝体と罫線の表で、自分のための記録帳という雰囲気が地図帳の方向と合う。市町村の踏破地図や経県値は、次の機能の候補にした。</p>
+    <p class="note">決めることは「名前と言葉」「色」「文字」「形」「マイページの中身」「経験値」の 6 分類・33 項目。全部に仮の案を書き、決まるまで仮の案で作り進める。友達との比較の 3 色は、色覚の違いがあっても見分けやすい今の色（青・橙・緑）のままにすると決めた。</p>
+  </section>
+
+  <section id="rules">
+    <div class="sec-head"><span class="sec-no">03</span><h2>地図帳の見た目のルール</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ルール</th><th>中身</th><th>どこで決めているか</th></tr></thead>
+        <tbody>
+          <tr><td>色</td><td>紙 <code>#f6f3ec</code>（生成り）、墨 <code>#1d1c1a</code>（文字と罫線）、朱 <code>#c8432c</code>（差し色）。行った日数の塗りも朱の濃淡</td><td><code>app/globals.css</code>、<code>lib/geo/visited-colors.ts</code></td></tr>
+          <tr><td>文字</td><td>見出しと数字は明朝（しっぽり明朝）、本文はゴシック（Zen 角ゴシック New）</td><td><code>app/layout.tsx</code>（next/font）</td></tr>
+          <tr><td>形</td><td>白い角丸のカードをやめ、太い墨の罫線と余白で区切る。角はほぼ四角（2px）</td><td><code>components/ui/card.tsx</code></td></tr>
+          <tr><td>タブ・帯</td><td>丸い箱ではなく、文字と下線。選んでいるものに朱の下線</td><td><code>components/ui/tabs.tsx</code>、<code>components/site-nav.tsx</code></td></tr>
+          <tr><td>名前</td><td>仮に「旅の地図帳」。ここを直すと全部変わる</td><td><code>lib/app-name.ts</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">ルールを 1 か所（色の変数・カードの部品）にまとめておいたので、各ページを書き直さなくても、全ページの見た目が一度に変わった。</p>
+  </section>
+
+  <section id="atlas">
+    <div class="sec-head"><span class="sec-no">04</span><h2>わたしの地図帳</h2></div>
+    <ul class="plain">
+      <li><b>「30 / 47 都道府県」を大きく</b>。その下に、国・外出・旅の数</li>
+      <li>地図（日本・世界）と、地図帳の索引のような「最近の旅」（日常は出さない）</li>
+      <li>メールアドレスは出さない。名前・フレンドコード・ログアウトは一番下の小さな欄に</li>
+      <li>まだ判定していない外出があるときだけ、「記録の整理へ」の一文を出す</li>
+      <li>全ページの上に細い帯（地図帳・旅の索引・友達・地球儀・記録の整理・取り込む）。今いるページに朱の下線</li>
+      <li>「要確認」は赤い文字ではなく、「？」と点線の下線にした（朱は行った場所の色なので、意味がぶつからないように）</li>
+    </ul>
+  </section>
+
+  <section id="globe">
+    <div class="sec-head"><span class="sec-no">05</span><h2>世界は回せる地球儀</h2></div>
+    <dl class="facts">
+      <dt>描き方</dt>
+      <dd>d3 の正射図法（<code>geoOrthographic</code>）で、ブラウザの中で描く。回す角度（<code>rotate</code>）を変えるだけで地球が回る</dd>
+      <dt>操作</dt>
+      <dd>ドラッグや矢印キーで回す。拡大はしない。触っていないあいだはゆっくり自転し、動きを減らす設定の人には自転させない</dd>
+      <dt>データ</dt>
+      <dd>国の形（約 160KB）は <code>/geo/countries</code>（ビルド時に作る静的な JSON）を、世界のタブを開いたときに読み込む</dd>
+      <dt>小さな国</dt>
+      <dd>粗い地図に形がない国（シンガポールなど）は、地球の表側に来たときだけ中心に点を打つ</dd>
+      <dt>使い回し</dt>
+      <dd>地図帳と友達との比較で同じ部品（<code>WorldGlobeMap</code>）を使う。使わなくなった平らな世界地図のコードは消した</dd>
+    </dl>
+  </section>
+
+  <section id="troubles">
+    <div class="sec-head"><span class="sec-no">06</span><h2>つまずいたことと学び</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>起きたこと</th><th>原因</th><th>対処</th></tr></thead>
+        <tbody>
+          <tr><td>作り直したマイページの見た目を、こちらで確かめられない</td><td>ログインしないと見られないページで、データも Supabase から取っていた</td><td>表示の部分（<code>AtlasView</code>）とデータの取得（<code>page.tsx</code>）を分け、架空のデータを渡して確かめた</td></tr>
+          <tr><td>見本の地図が真っ黒になった</td><td>SVG の <code>&lt;use&gt;</code> で使い回した形には、<code>.jp .p</code> のような「外側から」の CSS が当たらない</td><td>使い回す元の形（<code>#jp .p</code>）に色を指定し、色の値は外側から変数で渡す</td></tr>
+          <tr><td>ビルドが 1 回だけ失敗した</td><td>日本語のフォントをビルドのときに Google から取ってくるが、通信が一時的に失敗した</td><td>もう一度ビルドして通った（フォントの設定の問題ではない）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head"><span class="sec-no">07</span><h2>理解度チェック</h2></div>
+    <ol class="quiz">
+      <li><p>「AI が作りがちな UI」になっていた原因は何だった？</p>
+        <details><summary>答えを見る</summary><p>初期設定のまま残っている所。白・黒・グレーだけの色、効いていないフォント、どのページも角丸の白いカード、雛形のままのタブの名前。一つひとつは小さいが、全部そろうと「どこかで見た画面」になる。</p></details></li>
+      <li><p>すぐに作り直さず、先に 3 案の見本を作ったのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>いきなり作ると、結局 AI が決めた UI になるから。同じ中身を違う雰囲気で並べると、「ここは好き」「これは違う」を言葉にでき、自分で方向を決められる。</p></details></li>
+      <li><p>各ページを書き直さなくても、全ページの見た目が変わったのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>色は CSS の変数（<code>globals.css</code>）、カードやタブは共通の部品（<code>components/ui</code>）にまとめてあったから。ルールを 1 か所で直せば、使っている全ページに効く。</p></details></li>
+      <li><p>「要確認」の目印を赤い文字から「？」と点線の下線に変えたのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>差し色の朱は「行った場所」の色に使っているので、赤い文字だと意味がぶつかって見分けにくい。色ではなく記号と線で示した。</p></details></li>
+      <li><p>地球儀の国の形を、ページと一緒ではなく、世界のタブを開いたときに読み込むのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>約 160KB あり、日本地図だけ見る人には要らないから。ビルド時に作った静的なファイルなので、一度読めばブラウザにも残る。</p></details></li>
+      <li><p>ログインが必要なページの見た目を、架空のデータで確かめられるようにした工夫は？</p>
+        <details><summary>答えを見る</summary><p>データを取る部分（<code>page.tsx</code>）と、表示だけをする部品（<code>AtlasView</code>）に分けた。表示の部品にはデータを引数で渡すので、架空のデータを渡せば同じ見た目が出る。</p></details></li>
+    </ol>
+  </section>
+
+  <section id="report">
+    <div class="sec-head"><span class="sec-no">08</span><h2>日報と作業時間</h2></div>
+    <div class="memo">
+<pre>10月12日(月)　8:00〜18:30（9時間）在宅
+やったこと：メンターから「AIに任せるとよくあるUIになりがち」と助言をもらい、UIの見直しを開始。マイページの雰囲気を3案（地図帳・切符・夜の地球儀）作って比べ、「地図帳」の方向に決定。決めるべきことを33項目のリストにまとめた。紙・墨・朱の3色、明朝体の見出し、カードをやめて罫線で区切るデザインをアプリ全体に入れ、マイページを「わたしの地図帳」として作り直した。世界地図は、地図帳と友達との比較の両方を、ドラッグで回せる地球儀にした。
+詰まったこと：ログインしないと見られないページの見た目を確かめられなかった（表示の部分をデータの取得と分け、架空のデータで確認できるようにした）。
+学んだこと：UIを自分らしくするには、まず雰囲気を言葉と見本で決め、色・文字・形のルールにしてから作ること。初期設定のまま残っている所（タブの名前やフォント）が「AIっぽさ」の原因になっていた。</pre>
+    </div>
+    <p class="note">作業時間：8:00〜18:30 から昼休み 1 時間を引くと 9 時間 30 分。7.5 時間を超えたので 30 分の休憩が入り <b>9 時間</b>。累計 <b>91 時間 33 分</b> / 225 時間。</p>
+  </section>
+
+  <section id="next">
+    <div class="sec-head"><span class="sec-no">09</span><h2>次回</h2></div>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">決めること<span class="chip pending">本人</span></div>
+        <p>1-1 アプリの名前、1-5 トップページの一文、1-6 画面の中の呼び方（わたしの地図帳・旅の索引）</p>
+      </div>
+      <div class="box">
+        <div class="box-title">残りのページ<span class="chip step">次</span></div>
+        <p>ログイン前のトップページ、旅の索引・取り込み・友達のページも地図帳の見た目に。そのあと経県値（宿泊・訪問・接地・通過）</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>nextjs-supabase-auth-practice ／ docs/notes/2026-10-12.html</footer>
+</div>
