@@ -213,6 +213,7 @@ export async function importTimeline(path: string): Promise<ImportResult> {
     ).size;
 
     revalidatePath("/dashboard");
+    revalidatePath("/outings", "layout");
     return { ok: true, outings: drafts.length, prefectures, countries };
   } catch (error) {
     console.error("Timeline import failed", error);

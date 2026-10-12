@@ -35,7 +35,7 @@ function refresh() {
   revalidatePath("/dashboard");
   revalidatePath("/trips");
   revalidatePath("/friends", "layout");
-  revalidatePath("/outings/review");
+  revalidatePath("/outings", "layout");
 }
 
 // Jev のエラーを、画面に出せる日本語にする（キーそのものは絶対に出さない）。

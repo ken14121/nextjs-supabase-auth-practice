@@ -20,7 +20,7 @@ export default async function ImportPage() {
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center bg-muted p-6">
+    <main className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-2xl">

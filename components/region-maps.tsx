@@ -13,10 +13,10 @@ import {
 
 export type RegionPaint = (code: string) => { fill: string; title: string };
 
-const SEA_FILL = "#f4f7fb";
+const SEA_FILL = "#fbf9f4";
 
 const shapeClass =
-  "stroke-white transition-[stroke,stroke-width] hover:stroke-foreground focus-visible:stroke-foreground focus-visible:outline-none";
+  "stroke-paper transition-[stroke,stroke-width] hover:stroke-foreground focus-visible:stroke-foreground focus-visible:outline-none";
 
 export function JapanRegionMap({
   paint,
@@ -51,9 +51,8 @@ export function JapanRegionMap({
         y={OKINAWA_INSET.y}
         width={OKINAWA_INSET.width}
         height={OKINAWA_INSET.height}
-        rx={10}
-        className="fill-none stroke-border"
-        strokeWidth={1.5}
+        className="fill-none stroke-foreground"
+        strokeWidth={0.8}
       />
       <text
         x={OKINAWA_INSET.x + 12}
@@ -137,7 +136,7 @@ export function WorldRegionMap({
             cy={point[1]}
             r={5}
             fill={fill}
-            className="stroke-white"
+            className="stroke-paper"
             strokeWidth={2}
             tabIndex={0}
           >

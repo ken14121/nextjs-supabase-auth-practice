@@ -7,9 +7,16 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  /* 本文はゴシック、見出しと数字は明朝（docs/design/DECISIONS.md の 3-1〜3-3） */
+  --font-sans: var(--font-zen-kaku), system-ui, sans-serif;
+  --font-serif: var(--font-shippori), "Hiragino Mincho ProN", serif;
+  --font-heading: var(--font-shippori), "Hiragino Mincho ProN", serif;
+  --font-mono: ui-monospace, "SFMono-Regular", monospace;
+  /* 地図帳の色：紙・墨・朱 */
+  --color-paper: var(--background);
+  --color-ink: var(--foreground);
+  --color-vermilion: var(--vermilion);
+  --color-rule: var(--rule);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,38 +56,44 @@
 }
 
 :root {
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* 地図帳の色（docs/design/DECISIONS.md の 2-1〜2-3）
+     紙 = 生成り、墨 = 文字と罫線、朱 = 差し色。色はこの 3 つを中心に使う */
+  --background: #f6f3ec;
+  --foreground: #1d1c1a;
+  --vermilion: #c8432c;
+  /* 細い罫線（太い罫線は墨そのもの） */
+  --rule: #d8d1c2;
+  --card: #f6f3ec;
+  --card-foreground: #1d1c1a;
+  --popover: #fbf9f4;
+  --popover-foreground: #1d1c1a;
+  --primary: #1d1c1a;
+  --primary-foreground: #f6f3ec;
+  --secondary: #ebe6da;
+  --secondary-foreground: #1d1c1a;
+  --muted: #ede8dd;
+  --muted-foreground: #6b675f;
+  --accent: #ebe6da;
+  --accent-foreground: #1d1c1a;
+  --destructive: #a3291a;
+  --border: #d8d1c2;
+  --input: #c9c1b0;
+  --ring: #1d1c1a;
+  --chart-1: #c8432c;
+  --chart-2: #1d1c1a;
+  --chart-3: #6b675f;
+  --chart-4: #d8d1c2;
+  --chart-5: #ebe6da;
+  /* ほぼ四角（4-2） */
+  --radius: 0.125rem;
+  --sidebar: #f6f3ec;
+  --sidebar-foreground: #1d1c1a;
+  --sidebar-primary: #1d1c1a;
+  --sidebar-primary-foreground: #f6f3ec;
+  --sidebar-accent: #ebe6da;
+  --sidebar-accent-foreground: #1d1c1a;
+  --sidebar-border: #d8d1c2;
+  --sidebar-ring: #1d1c1a;
 }
 
 .dark {
@@ -126,5 +139,7 @@
   }
   html {
     @apply font-sans;
+    /* 日本語の行の折り返しを、文節で区切る */
+    word-break: auto-phrase;
   }
 }

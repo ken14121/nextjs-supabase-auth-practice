@@ -30,7 +30,7 @@ export function LabelSelect({
       ? "未判定"
       : source === "jev"
         ? unsure
-          ? "Jev の判定・要確認"
+          ? "？ Jev の判定・要確認"
           : "Jev の判定"
         : source === "rule"
           ? "自動（いつもの場所だけ）"
@@ -53,7 +53,7 @@ export function LabelSelect({
         value={label ?? ""}
         disabled={isPending}
         onChange={(e) => save(e.target.value as OutingLabel)}
-        className="h-7 rounded-md border bg-background px-1.5 text-xs"
+        className="h-7 rounded-sm border border-input bg-background px-1.5 text-xs"
       >
         {label === null && (
           <option value="" disabled>
@@ -68,8 +68,13 @@ export function LabelSelect({
       </select>
       <span
         title={detail}
+        // 要確認は色（朱）ではなく、記号と点線の下線で目立たせる（朱は「行った場所」の色なので）
         className={
-          error || unsure ? "text-destructive" : "text-muted-foreground"
+          error
+            ? "text-destructive"
+            : unsure
+              ? "font-medium text-foreground underline decoration-dotted underline-offset-4"
+              : "text-muted-foreground"
         }
       >
         {error ? "直せませんでした" : note}
@@ -80,7 +85,7 @@ export function LabelSelect({
           type="button"
           disabled={isPending}
           onClick={() => save(label as OutingLabel)}
-          className="flex items-center gap-1 rounded-md border px-1.5 py-0.5 hover:bg-muted"
+          className="flex items-center gap-1 rounded-sm border border-input px-1.5 py-0.5 hover:bg-muted"
         >
           <Check className="size-3" />
           合ってる

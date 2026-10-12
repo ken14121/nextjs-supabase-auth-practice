@@ -1,6 +1,8 @@
 import { cn } from "cn";
 import type * as React from "react";
 
+// 地図帳の「節」。白い箱ではなく、上の太い墨の罫線と余白で区切る（docs/design/DECISIONS.md の 4-1）
+
 function Card({
   className,
   size = "default",
@@ -11,7 +13,7 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        "group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl bg-card py-(--card-spacing) text-sm text-card-foreground ring-1 ring-foreground/10 [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+        "group/card flex flex-col gap-(--card-spacing) border-t-2 border-ink pt-(--card-spacing) pb-2 text-sm text-card-foreground [--card-spacing:--spacing(4)] data-[size=sm]:[--card-spacing:--spacing(3)]",
         className,
       )}
       {...props}
@@ -24,7 +26,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-header"
       className={cn(
-        "group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-(--card-spacing) has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-(--card-spacing)",
+        "group/card-header @container/card-header grid auto-rows-min items-start gap-1 has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-(--card-spacing)",
         className,
       )}
       {...props}
@@ -37,7 +39,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-title"
       className={cn(
-        "font-heading text-base leading-snug font-medium group-data-[size=sm]/card:text-sm",
+        "font-heading text-lg leading-snug font-semibold group-data-[size=sm]/card:text-base [&_svg]:hidden",
         className,
       )}
       {...props}
@@ -69,13 +71,7 @@ function CardAction({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function CardContent({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-content"
-      className={cn("px-(--card-spacing)", className)}
-      {...props}
-    />
-  );
+  return <div data-slot="card-content" className={className} {...props} />;
 }
 
 function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
@@ -83,7 +79,7 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-footer"
       className={cn(
-        "flex items-center rounded-b-xl border-t bg-muted/50 p-(--card-spacing)",
+        "flex items-center border-t border-rule pt-(--card-spacing)",
         className,
       )}
       {...props}

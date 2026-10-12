@@ -29,6 +29,7 @@ for (const path of [
   "/trips",
   "/map3d",
   "/friends",
+  "/outings",
   "/outings/review",
 ]) {
   test(`ログインしていないと ${path} に入れない`, async ({ page }) => {

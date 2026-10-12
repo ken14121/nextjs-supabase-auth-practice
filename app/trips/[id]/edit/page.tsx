@@ -35,7 +35,7 @@ export default async function EditTripPage({
   if (!trip) notFound();
 
   return (
-    <main className="flex flex-1 justify-center bg-muted p-6">
+    <main className="flex flex-1 justify-center px-4 py-8 sm:px-6">
       <div className="flex w-full max-w-2xl flex-col gap-4">
         <Card>
           <CardHeader>

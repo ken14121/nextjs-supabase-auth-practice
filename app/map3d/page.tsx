@@ -18,7 +18,7 @@ export default async function Map3dPage() {
   const visited = getVisitedFeatures(regions ?? []);
 
   return (
-    <main className="relative flex h-dvh flex-col">
+    <main className="relative flex h-[calc(100dvh-2.75rem)] flex-col">
       <EarthMap
         prefectures={visited.prefectures}
         countries={visited.countries}

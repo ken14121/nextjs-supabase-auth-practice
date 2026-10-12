@@ -4,7 +4,8 @@ import { cn } from "cn";
 import { Tabs as TabsPrimitive } from "radix-ui";
 import type * as React from "react";
 
-// shadcn/ui の Tabs と同じ作り（Radix UI の Tabs に見た目を付けたもの）
+// shadcn/ui の Tabs と同じ作り（Radix UI の Tabs に見た目を付けたもの）。
+// 見た目は地図帳に合わせ、丸い箱ではなく文字と下線で切り替える（選んでいるものに朱の下線）
 
 function Tabs({
   className,
@@ -27,7 +28,7 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        "inline-flex h-9 w-fit items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
+        "inline-flex w-fit items-center gap-4 border-b border-rule text-muted-foreground",
         className,
       )}
       {...props}
@@ -43,7 +44,7 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "inline-flex h-full items-center justify-center gap-1.5 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm [&_svg]:size-4 [&_svg]:shrink-0",
+        "-mb-px inline-flex items-center justify-center border-b-2 border-transparent py-1.5 text-sm whitespace-nowrap transition-colors outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:border-vermilion data-[state=active]:text-foreground [&_svg]:hidden",
         className,
       )}
       {...props}

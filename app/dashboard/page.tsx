@@ -1,53 +1,16 @@
-import {
-  BookOpen,
-  Earth,
-  FileUp,
-  LogOut,
-  Luggage,
-  MapPinned,
-  Route,
-  UserRound,
-  Users,
-} from "lucide-react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { signOut } from "@/app/auth/actions";
-import { ClassifyButton } from "@/app/outings/classify-button";
-import { LabelSelect } from "@/app/outings/label-select";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { VisitedMap } from "@/components/visited-map";
-import { isPrefectureCode, PREFECTURES, regionName } from "@/lib/geo/names";
-import { labelName } from "@/lib/outings/labels";
+import { type OutingLabel, TRAVEL_LABELS } from "@/lib/outings/labels";
 import { createClient } from "@/lib/supabase/server";
+import { AtlasView } from "./atlas-view";
 
-const TRANSPORT_LABELS: Record<string, string> = {
-  walk: "徒歩",
-  bicycle: "自転車",
-  car: "車",
-  bus: "バス",
-  train: "電車",
-  flight: "飛行機",
-  boat: "船",
-  other: "その他",
-};
+export const metadata = { title: "わたしの地図帳" };
 
-const dateFormat = new Intl.DateTimeFormat("ja-JP", {
-  timeZone: "Asia/Tokyo",
-  year: "numeric",
-  month: "numeric",
-  day: "numeric",
-  weekday: "short",
-});
+// 地図帳の「最近の旅」に出す種類（日常は出さない。docs/design/DECISIONS.md の 5-3）
+const INDEX_LABELS: OutingLabel[] = [...TRAVEL_LABELS, "outing"];
+const INDEX_SIZE = 8;
 
-// ログインしている人だけが見られるページ
+// わたしの地図帳（マイページ）。行った県の数と地図を主役にし、
+// カードではなく罫線と余白で区切る（docs/design/DECISIONS.md の 4-1・5-1〜5-6）
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
@@ -59,216 +22,52 @@ export default async function DashboardPage() {
   }
 
   // どれも RLS があるので、自分の行しか返ってこない
-  const [{ data: profile }, { data: regions }, { data: outings, count }] =
-    await Promise.all([
-      supabase
-        .from("profiles")
-        .select("display_name, friend_code")
-        .eq("id", claims.sub)
-        .single(),
-      supabase.rpc("get_my_regions"),
-      supabase
-        .from("outings")
-        .select(
-          "id, started_at, ended_at, nights, distance_km, main_transport, source, label, label_source, label_confidence, visited_regions(region_code)",
-          { count: "exact" },
-        )
-        .order("started_at", { ascending: false })
-        .limit(20),
-    ]);
-
-  // まだ Jev で判定していない、取り込んだ外出の数
-  const { count: pendingCount } = await supabase
-    .from("outings")
-    .select("id", { count: "exact", head: true })
-    .is("label", null)
-    .eq("source", "timeline");
+  const [
+    { data: profile },
+    { data: regions },
+    { count: outingCount },
+    { count: tripCount },
+    { count: pendingCount },
+    { data: recent },
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("display_name, friend_code")
+      .eq("id", claims.sub)
+      .single(),
+    supabase.rpc("get_my_regions"),
+    supabase.from("outings").select("id", { count: "exact", head: true }),
+    supabase
+      .from("outings")
+      .select("id", { count: "exact", head: true })
+      .in("label", [...TRAVEL_LABELS]),
+    supabase
+      .from("outings")
+      .select("id", { count: "exact", head: true })
+      .is("label", null)
+      .eq("source", "timeline"),
+    supabase
+      .from("outings")
+      .select(
+        "id, started_at, ended_at, nights, label, visited_regions(region_code)",
+      )
+      .in("label", INDEX_LABELS)
+      .order("started_at", { ascending: false })
+      .limit(INDEX_SIZE),
+  ]);
 
   const name =
     profile?.display_name || claims.user_metadata?.full_name || "名前未設定";
-  const codes = (regions ?? []).map((r) => r.region_code);
-  const prefectureCount = codes.filter(isPrefectureCode).length;
-  const countryCount = new Set(
-    codes.map((c) => (isPrefectureCode(c) ? "JP" : c)),
-  ).size;
 
   return (
-    <main className="flex flex-1 justify-center bg-muted p-6">
-      <div className="flex w-full max-w-2xl flex-col gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <UserRound className="size-6" />
-              マイページ
-            </CardTitle>
-            <CardDescription>
-              Google アカウントでログインしています。
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-              <dt className="text-muted-foreground">名前</dt>
-              <dd>{name}</dd>
-              <dt className="text-muted-foreground">メール</dt>
-              <dd>{claims.email}</dd>
-              <dt className="text-muted-foreground">フレンドコード</dt>
-              <dd className="font-mono tracking-wider">
-                {profile?.friend_code ?? "読み込めませんでした"}
-              </dd>
-            </dl>
-          </CardContent>
-          <CardFooter className="flex-wrap gap-2">
-            <Button asChild className="flex-1">
-              <Link href="/import">
-                <FileUp />
-                タイムラインを取り込む
-              </Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/trips">
-                <Luggage />
-                旅の一覧
-              </Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/friends">
-                <Users />
-                友達
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/guide">
-                <BookOpen />
-                書き出し方
-              </Link>
-            </Button>
-            <form action={signOut}>
-              <Button type="submit" variant="outline">
-                <LogOut />
-                ログアウト
-              </Button>
-            </form>
-          </CardFooter>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPinned className="size-5" />
-              行った場所
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <dl className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <dt className="text-xs text-muted-foreground">都道府県</dt>
-                <dd className="text-2xl font-semibold tabular-nums">
-                  {prefectureCount}
-                  <span className="text-sm text-muted-foreground">
-                    {" "}
-                    / {PREFECTURES.length}
-                  </span>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">国・地域</dt>
-                <dd className="text-2xl font-semibold tabular-nums">
-                  {countryCount}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">外出</dt>
-                <dd className="text-2xl font-semibold tabular-nums">
-                  {count ?? 0}
-                </dd>
-              </div>
-            </dl>
-            <VisitedMap regions={regions ?? []} />
-            <Button asChild variant="outline" className="w-fit">
-              <Link href="/map3d">
-                <Earth />
-                3D の地球儀で見る
-              </Link>
-            </Button>
-            {codes.length > 0 && (
-              <p className="text-sm [word-break:auto-phrase]">
-                {codes.map(regionName).join("・")}
-              </p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              境界データ: 地球地図日本（国土地理院）、Natural Earth
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Route className="size-5" />
-              最近の外出
-            </CardTitle>
-            <CardDescription>
-              新しい順に 20 件。Jev
-              が「旅行・帰省・日帰り・おでかけ・日常」を判定します（学校など、いつもの場所だけの日は
-              Jev
-              を使わず自動で日常にします）。間違っていたら選び直せます（選び直したものは
-              Jev が上書きしません）。友達に見えるのは、日常以外の外出だけです。
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <ClassifyButton pending={pendingCount ?? 0} />
-            <Link
-              href="/outings/review"
-              className="w-fit text-sm text-muted-foreground underline hover:text-foreground"
-            >
-              Jev の判定を確かめる（正解率を見る）
-            </Link>
-            {outings && outings.length > 0 ? (
-              <ul className="divide-y text-sm">
-                {outings.map((o) => {
-                  const regionCodes = [
-                    ...new Set(o.visited_regions.map((r) => r.region_code)),
-                  ];
-                  return (
-                    <li key={o.id} className="flex flex-col gap-1 py-3">
-                      <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <span className="font-medium">
-                          {dateFormat.format(new Date(o.started_at))}
-                          {o.nights > 0 && ` から ${o.nights} 泊`}
-                        </span>
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {o.distance_km} km
-                          {o.main_transport &&
-                            `・${TRANSPORT_LABELS[o.main_transport] ?? o.main_transport}`}
-                        </span>
-                      </div>
-                      <span className="text-muted-foreground">
-                        {regionCodes.map(regionName).join(" → ") || "―"}
-                      </span>
-                      {o.source === "timeline" ? (
-                        <LabelSelect
-                          outingId={o.id}
-                          label={o.label}
-                          source={o.label_source}
-                          confidence={o.label_confidence}
-                        />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          手入力の旅（{labelName(o.label)}）
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                まだ外出がありません。タイムラインを取り込んでみましょう。
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </main>
+    <AtlasView
+      name={name}
+      friendCode={profile?.friend_code ?? null}
+      regions={regions ?? []}
+      outingCount={outingCount ?? 0}
+      tripCount={tripCount ?? 0}
+      pendingCount={pendingCount ?? 0}
+      recent={recent ?? []}
+    />
   );
 }
