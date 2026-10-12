@@ -6,7 +6,13 @@ import {
   geoNaturalEarth1,
   geoPath,
 } from "d3-geo";
-import type { Feature, Geometry } from "geojson";
+import type {
+  Feature,
+  Geometry,
+  MultiPolygon,
+  Polygon,
+  Position,
+} from "geojson";
 import countries from "i18n-iso-countries";
 import { feature } from "topojson-client";
 import { presimplify, quantile, simplify } from "topojson-simplify";
@@ -174,4 +180,62 @@ export function getWorldMarker(code: string): [number, number] | null {
     feature(topology, geometry) as GeoPermissibleObjects,
   );
   return projection(center) ?? null;
+}
+
+// 小さな国の中心（経度・緯度）。地球儀の上に点を打つのに使う
+export function getWorldCentroid(code: string): [number, number] | null {
+  const topology = worldTopology50 as unknown as Topology;
+  const geometry = (
+    topology.objects.countries as GeometryCollection
+  ).geometries.find(
+    (g) => g.id !== undefined && countries.numericToAlpha2(g.id) === code,
+  );
+  if (!geometry) return null;
+  const [lng, lat] = geoCentroid(
+    feature(topology, geometry) as GeoPermissibleObjects,
+  );
+  return [Math.round(lng * 100) / 100, Math.round(lat * 100) / 100];
+}
+
+export type GlobeCountry = {
+  code: string;
+  geometry: Polygon | MultiPolygon;
+};
+
+let globeCache: GlobeCountry[] | null = null;
+
+// 地球儀（ブラウザで回す）に使う国の形。投影はブラウザでするので、経度・緯度のまま渡す。
+// 粗い世界地図（110m）を、小数 2 桁（約 1km）に丸めて軽くする
+export function getGlobeCountries(): GlobeCountry[] {
+  if (globeCache) return globeCache;
+  const topology = worldTopology110 as unknown as Topology;
+  const round = (ring: Position[]) =>
+    ring.map(([lng, lat]) => [
+      Math.round(lng * 100) / 100,
+      Math.round(lat * 100) / 100,
+    ]);
+  const result: GlobeCountry[] = [];
+  for (const geometry of (topology.objects.countries as GeometryCollection)
+    .geometries) {
+    if (geometry.id === undefined) continue;
+    const code = countries.numericToAlpha2(geometry.id);
+    if (!code) continue;
+    const g = (feature(topology, geometry) as Feature<Geometry>).geometry;
+    if (g.type === "Polygon") {
+      result.push({
+        code,
+        geometry: { type: "Polygon", coordinates: g.coordinates.map(round) },
+      });
+    } else if (g.type === "MultiPolygon") {
+      result.push({
+        code,
+        geometry: {
+          type: "MultiPolygon",
+          coordinates: g.coordinates.map((p) => p.map(round)),
+        },
+      });
+    }
+  }
+  globeCache = result;
+  return result;
 }

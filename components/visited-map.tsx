@@ -1,11 +1,12 @@
-import { Globe2, Map as MapIcon } from "lucide-react";
 import {
   JapanRegionMap,
   MapLegend,
   type RegionPaint,
-  WorldRegionMap,
+  SEA_FILL,
 } from "@/components/region-maps";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { type GlobePaint, WorldGlobe } from "@/components/world-globe";
+import { getWorldCentroid, getWorldShapes } from "@/lib/geo/map-shapes";
 import { isPrefectureCode, regionName } from "@/lib/geo/names";
 import {
   BINS,
@@ -27,6 +28,25 @@ function paintByDays(visited: Map<string, VisitedRegion>): RegionPaint {
         : `${name}：まだ行っていません`,
     };
   };
+}
+
+// 地球儀はブラウザで描くので、関数ではなく「行った国 → 色と説明」の表にして渡す
+function globePaint(visited: Map<string, VisitedRegion>): GlobePaint {
+  const paint = paintByDays(visited);
+  return Object.fromEntries(
+    [...visited.keys()].map((code) => [code, paint(code)]),
+  );
+}
+
+// 粗い世界地図に形がない小さな国（シンガポールなど）は、中心に点を打つ
+function globeMarkers(codes: string[]) {
+  const drawn = new Set(getWorldShapes().countries.map((c) => c.code));
+  return codes
+    .filter((code) => !drawn.has(code))
+    .map((code) => ({ code, lngLat: getWorldCentroid(code) }))
+    .filter(
+      (m): m is { code: string; lngLat: [number, number] } => m.lngLat !== null,
+    );
 }
 
 const LEGEND = [
@@ -62,14 +82,8 @@ export function VisitedMap({ regions }: { regions: VisitedRegion[] }) {
   return (
     <Tabs defaultValue="japan">
       <TabsList>
-        <TabsTrigger value="japan">
-          <MapIcon />
-          日本
-        </TabsTrigger>
-        <TabsTrigger value="world">
-          <Globe2 />
-          世界
-        </TabsTrigger>
+        <TabsTrigger value="japan">日本</TabsTrigger>
+        <TabsTrigger value="world">世界</TabsTrigger>
       </TabsList>
       <TabsContent value="japan">
         <JapanRegionMap
@@ -78,15 +92,17 @@ export function VisitedMap({ regions }: { regions: VisitedRegion[] }) {
         />
       </TabsContent>
       <TabsContent value="world">
-        <WorldRegionMap
-          paint={paintByDays(worldCountries)}
-          highlighted={[...worldCountries.keys()]}
-          label="行った国の地図"
+        <WorldGlobe
+          paint={globePaint(worldCountries)}
+          notVisitedFill={NOT_VISITED_FILL}
+          seaFill={SEA_FILL}
+          markers={globeMarkers([...worldCountries.keys()])}
+          label="行った国の地球儀"
         />
       </TabsContent>
       <MapLegend items={LEGEND} />
       <p className="text-xs text-muted-foreground">
-        県や国にカーソルを合わせると、行った日数と日付が出ます。世界地図の日本は、一番多く行った県の日数で塗っています。
+        県や国にカーソルを合わせると、行った日数と日付が出ます。世界の地球儀はドラッグで回せます。地球儀の日本は、一番多く行った県の日数で塗っています。
       </p>
     </Tabs>
   );

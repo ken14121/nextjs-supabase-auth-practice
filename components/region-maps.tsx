@@ -13,7 +13,7 @@ import {
 
 export type RegionPaint = (code: string) => { fill: string; title: string };
 
-const SEA_FILL = "#fbf9f4";
+export const SEA_FILL = "#fbf9f4";
 
 const shapeClass =
   "stroke-paper transition-[stroke,stroke-width] hover:stroke-foreground focus-visible:stroke-foreground focus-visible:outline-none";
