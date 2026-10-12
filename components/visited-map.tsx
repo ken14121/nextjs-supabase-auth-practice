@@ -2,11 +2,9 @@ import {
   JapanRegionMap,
   MapLegend,
   type RegionPaint,
-  SEA_FILL,
+  WorldGlobeMap,
 } from "@/components/region-maps";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { type GlobePaint, WorldGlobe } from "@/components/world-globe";
-import { getWorldCentroid, getWorldShapes } from "@/lib/geo/map-shapes";
 import { isPrefectureCode, regionName } from "@/lib/geo/names";
 import {
   BINS,
@@ -28,25 +26,6 @@ function paintByDays(visited: Map<string, VisitedRegion>): RegionPaint {
         : `${name}：まだ行っていません`,
     };
   };
-}
-
-// 地球儀はブラウザで描くので、関数ではなく「行った国 → 色と説明」の表にして渡す
-function globePaint(visited: Map<string, VisitedRegion>): GlobePaint {
-  const paint = paintByDays(visited);
-  return Object.fromEntries(
-    [...visited.keys()].map((code) => [code, paint(code)]),
-  );
-}
-
-// 粗い世界地図に形がない小さな国（シンガポールなど）は、中心に点を打つ
-function globeMarkers(codes: string[]) {
-  const drawn = new Set(getWorldShapes().countries.map((c) => c.code));
-  return codes
-    .filter((code) => !drawn.has(code))
-    .map((code) => ({ code, lngLat: getWorldCentroid(code) }))
-    .filter(
-      (m): m is { code: string; lngLat: [number, number] } => m.lngLat !== null,
-    );
 }
 
 const LEGEND = [
@@ -92,11 +71,9 @@ export function VisitedMap({ regions }: { regions: VisitedRegion[] }) {
         />
       </TabsContent>
       <TabsContent value="world">
-        <WorldGlobe
-          paint={globePaint(worldCountries)}
-          notVisitedFill={NOT_VISITED_FILL}
-          seaFill={SEA_FILL}
-          markers={globeMarkers([...worldCountries.keys()])}
+        <WorldGlobeMap
+          paint={paintByDays(worldCountries)}
+          highlighted={[...worldCountries.keys()]}
           label="行った国の地球儀"
         />
       </TabsContent>

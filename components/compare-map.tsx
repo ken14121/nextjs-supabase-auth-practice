@@ -1,9 +1,8 @@
-import { Globe2, Map as MapIcon } from "lucide-react";
 import {
   JapanRegionMap,
   MapLegend,
   type RegionPaint,
-  WorldRegionMap,
+  WorldGlobeMap,
 } from "@/components/region-maps";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -52,14 +51,8 @@ export function CompareMap({
   return (
     <Tabs defaultValue="japan">
       <TabsList>
-        <TabsTrigger value="japan">
-          <MapIcon />
-          日本
-        </TabsTrigger>
-        <TabsTrigger value="world">
-          <Globe2 />
-          世界
-        </TabsTrigger>
+        <TabsTrigger value="japan">日本</TabsTrigger>
+        <TabsTrigger value="world">世界</TabsTrigger>
       </TabsList>
       <TabsContent value="japan">
         <JapanRegionMap
@@ -68,14 +61,14 @@ export function CompareMap({
         />
       </TabsContent>
       <TabsContent value="world">
-        <WorldRegionMap
+        <WorldGlobeMap
           paint={paintByGroup(countries, friendName)}
           highlighted={[
             ...countries.mine,
             ...countries.theirs,
             ...countries.both,
           ]}
-          label="自分と友達の行った国を比べた地図"
+          label="自分と友達の行った国を比べた地球儀"
         />
       </TabsContent>
       <MapLegend items={legend} />

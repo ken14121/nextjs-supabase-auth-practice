@@ -1,9 +1,7 @@
 import {
   type GeoPermissibleObjects,
   geoCentroid,
-  geoGraticule10,
   geoMercator,
-  geoNaturalEarth1,
   geoPath,
 } from "d3-geo";
 import type {
@@ -28,7 +26,6 @@ export type Shape = { code: string; d: string };
 export const JAPAN_SIZE = { width: 800, height: 800 } as const;
 // 沖縄県は本土から離れているので、左上の枠の中に別の縮尺で描く
 export const OKINAWA_INSET = { x: 16, y: 16, width: 300, height: 190 } as const;
-export const WORLD_SIZE = { width: 960, height: 500 } as const;
 
 // 境界データを点の数で 92% ほど間引いて軽くする（全国の地図で約 70KB）
 const JAPAN_SIMPLIFY_QUANTILE = 0.08;
@@ -39,11 +36,6 @@ type GeometryWithMeta = {
 };
 
 let japanCache: Shape[] | null = null;
-let worldCache: {
-  countries: Shape[];
-  sphere: string;
-  graticule: string;
-} | null = null;
 
 function prefectureCode(g: GeometryWithMeta): string | null {
   const id = Number(g.properties?.id);
@@ -126,60 +118,6 @@ export function getJapanShapes(): Shape[] {
   }
   japanCache = shapes;
   return shapes;
-}
-
-export function getWorldShapes() {
-  if (worldCache) return worldCache;
-
-  const topology = worldTopology110 as unknown as Topology;
-  const projection = geoNaturalEarth1().fitExtent(
-    [
-      [8, 8],
-      [WORLD_SIZE.width - 8, WORLD_SIZE.height - 8],
-    ],
-    { type: "Sphere" },
-  );
-  const path = geoPath(projection).digits(1);
-
-  const shapes: Shape[] = [];
-  for (const geometry of (topology.objects.countries as GeometryCollection)
-    .geometries) {
-    if (geometry.id === undefined) continue;
-    const code = countries.numericToAlpha2(geometry.id);
-    if (!code) continue;
-    const d = path(feature(topology, geometry) as Feature<Geometry>);
-    if (d) shapes.push({ code, d });
-  }
-
-  worldCache = {
-    countries: shapes,
-    sphere: path({ type: "Sphere" }) ?? "",
-    graticule: path(geoGraticule10()) ?? "",
-  };
-  return worldCache;
-}
-
-// 粗い世界地図（110m）には小さな国（シンガポールなど）が入っていないので、
-// その国の中心に点を打つための座標を、細かい地図（50m）から求める
-export function getWorldMarker(code: string): [number, number] | null {
-  const topology = worldTopology50 as unknown as Topology;
-  const geometry = (
-    topology.objects.countries as GeometryCollection
-  ).geometries.find(
-    (g) => g.id !== undefined && countries.numericToAlpha2(g.id) === code,
-  );
-  if (!geometry) return null;
-  const projection = geoNaturalEarth1().fitExtent(
-    [
-      [8, 8],
-      [WORLD_SIZE.width - 8, WORLD_SIZE.height - 8],
-    ],
-    { type: "Sphere" },
-  );
-  const center = geoCentroid(
-    feature(topology, geometry) as GeoPermissibleObjects,
-  );
-  return projection(center) ?? null;
 }
 
 // 小さな国の中心（経度・緯度）。地球儀の上に点を打つのに使う

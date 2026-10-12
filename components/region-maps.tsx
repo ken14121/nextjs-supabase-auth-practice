@@ -1,14 +1,15 @@
 import { useId } from "react";
+import { WorldGlobe } from "@/components/world-globe";
 import {
+  getGlobeCountries,
   getJapanShapes,
-  getWorldMarker,
-  getWorldShapes,
+  getWorldCentroid,
   JAPAN_SIZE,
   OKINAWA_INSET,
-  WORLD_SIZE,
 } from "@/lib/geo/map-shapes";
+import { NOT_VISITED_FILL } from "@/lib/geo/visited-colors";
 
-// 都道府県・国を色分けする SVG の地図（日本 / 世界）。
+// 都道府県・国を色分けする地図（日本は SVG の地図、世界は回せる地球儀）。
 // 何色で塗るかは使う側が paint で決める（自分の地図・友達との比較の両方で使う）
 
 export type RegionPaint = (code: string) => { fill: string; title: string };
@@ -81,7 +82,9 @@ export function JapanRegionMap({
   );
 }
 
-export function WorldRegionMap({
+// 世界：行った国を塗った、回せる地球儀（components/world-globe.tsx）。
+// 地球儀はブラウザで描くので、色の関数ではなく「色を付ける国 → 色と説明」の表にして渡す
+export function WorldGlobeMap({
   paint,
   highlighted,
   label,
@@ -91,60 +94,21 @@ export function WorldRegionMap({
   highlighted: string[];
   label: string;
 }) {
-  const { countries, sphere, graticule } = getWorldShapes();
-  const drawn = new Set(countries.map((c) => c.code));
+  const drawn = new Set(getGlobeCountries().map((c) => c.code));
   const markers = highlighted
     .filter((code) => !drawn.has(code))
-    .map((code) => ({ code, point: getWorldMarker(code) }))
-    .filter((m): m is { code: string; point: [number, number] } => !!m.point);
-
+    .map((code) => ({ code, lngLat: getWorldCentroid(code) }))
+    .filter(
+      (m): m is { code: string; lngLat: [number, number] } => m.lngLat !== null,
+    );
   return (
-    <svg
-      viewBox={`0 0 ${WORLD_SIZE.width} ${WORLD_SIZE.height}`}
-      className="h-auto w-full"
-      role="img"
-      aria-label={label}
-    >
-      <path d={sphere} fill={SEA_FILL} className="stroke-border" />
-      <path
-        d={graticule}
-        fill="none"
-        className="stroke-border"
-        strokeWidth={0.5}
-      />
-      {countries.map((shape) => {
-        const { fill, title } = paint(shape.code);
-        return (
-          <path
-            key={shape.code}
-            d={shape.d}
-            fill={fill}
-            strokeWidth={0.5}
-            className={shapeClass}
-            tabIndex={0}
-          >
-            <title>{title}</title>
-          </path>
-        );
-      })}
-      {markers.map(({ code, point }) => {
-        const { fill, title } = paint(code);
-        return (
-          <circle
-            key={code}
-            cx={point[0]}
-            cy={point[1]}
-            r={5}
-            fill={fill}
-            className="stroke-paper"
-            strokeWidth={2}
-            tabIndex={0}
-          >
-            <title>{title}</title>
-          </circle>
-        );
-      })}
-    </svg>
+    <WorldGlobe
+      paint={Object.fromEntries(highlighted.map((code) => [code, paint(code)]))}
+      notVisitedFill={NOT_VISITED_FILL}
+      seaFill={SEA_FILL}
+      markers={markers}
+      label={label}
+    />
   );
 }
 
