@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { lookupMunicipality } from "@/lib/geo/municipalities";
 import { lookupRegion } from "@/lib/geo/regions";
 import { createClient } from "@/lib/supabase/server";
 import { computeOutingFeatures } from "@/lib/timeline/features";
 import { matchOutings } from "@/lib/timeline/match";
+import { computeMunicipalityLevels } from "@/lib/timeline/municipality-levels";
 import { buildOutings, toJstDate } from "@/lib/timeline/outings";
 import { compactTimelineSchema } from "@/lib/timeline/parse";
 
@@ -14,6 +16,7 @@ export type ImportResult =
       outings: number;
       prefectures: number;
       countries: number;
+      municipalities: number;
     }
   | { ok: false; message: string };
 
@@ -26,6 +29,47 @@ function chunk<T>(items: T[], size: number): T[][] {
     chunks.push(items.slice(i, i + size));
   }
   return chunks;
+}
+
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+// 市区町村の経験値を、前に取り込んだ分と合わせて保存する。保存した市区町村の数を返す
+async function saveMunicipalityLevels(
+  supabase: Supabase,
+  userId: string,
+  levels: ReturnType<typeof computeMunicipalityLevels>,
+): Promise<number> {
+  if (levels.length === 0) return 0;
+  const { data: existing, error: readError } = await supabase
+    .from("municipality_levels")
+    .select("code, level, first_visited_on, last_visited_on")
+    .range(0, 9999);
+  if (readError) throw readError;
+  const before = new Map((existing ?? []).map((r) => [r.code, r]));
+  const rows = levels.map((l) => {
+    const prev = before.get(l.code);
+    return {
+      user_id: userId,
+      code: l.code,
+      level: Math.max(l.level, prev?.level ?? 0),
+      first_visited_on:
+        prev && prev.first_visited_on < l.firstOn
+          ? prev.first_visited_on
+          : l.firstOn,
+      last_visited_on:
+        prev && prev.last_visited_on > l.lastOn
+          ? prev.last_visited_on
+          : l.lastOn,
+      updated_at: new Date().toISOString(),
+    };
+  });
+  for (const part of chunk(rows, CHUNK_SIZE)) {
+    const { error } = await supabase
+      .from("municipality_levels")
+      .upsert(part, { onConflict: "user_id,code" });
+    if (error) throw error;
+  }
+  return new Set([...before.keys(), ...rows.map((r) => r.code)]).size;
 }
 
 // ブラウザが Storage に置いたファイルを読み、外出と行った県・国を DB に保存する。
@@ -206,6 +250,18 @@ export async function importTimeline(path: string): Promise<ImportResult> {
       if (error) throw error;
     }
 
+    // 市区町村の経験値（住居・宿泊・訪問・接地・通過）。座標は保存せず、コードと経験値と日付だけ。
+    // 前に取り込んだ分と合わせ、経験値は高い方、日付は広がる方に合わせる
+    const municipalityCount = await saveMunicipalityLevels(
+      supabase,
+      userId,
+      computeMunicipalityLevels(
+        parsed.data.segments,
+        parsed.data.paths ?? [],
+        lookupMunicipality,
+      ),
+    );
+
     const codes = new Set(regionRows.map((r) => r.region_code));
     const prefectures = [...codes].filter((c) => c.startsWith("JP-")).length;
     const countries = new Set(
@@ -214,7 +270,14 @@ export async function importTimeline(path: string): Promise<ImportResult> {
 
     revalidatePath("/dashboard");
     revalidatePath("/outings", "layout");
-    return { ok: true, outings: drafts.length, prefectures, countries };
+    revalidatePath("/municipalities");
+    return {
+      ok: true,
+      outings: drafts.length,
+      prefectures,
+      countries,
+      municipalities: municipalityCount,
+    };
   } catch (error) {
     console.error("Timeline import failed", error);
     return {

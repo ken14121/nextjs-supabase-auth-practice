@@ -31,6 +31,7 @@ for (const path of [
   "/friends",
   "/outings",
   "/outings/review",
+  "/municipalities",
 ]) {
   test(`ログインしていないと ${path} に入れない`, async ({ page }) => {
     await page.goto(path);

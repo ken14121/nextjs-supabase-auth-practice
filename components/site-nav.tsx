@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/dashboard", label: "地図帳" },
   { href: "/trips", label: "旅の索引" },
+  { href: "/municipalities", label: "市区町村" },
   { href: "/friends", label: "友達" },
   { href: "/map3d", label: "地球儀" },
   { href: "/outings", label: "記録の整理" },

@@ -49,6 +49,8 @@ export type AtlasViewProps = {
   outingCount: number;
   tripCount: number;
   pendingCount: number;
+  // 経験値のある市区町村の数（市区町村踏破）
+  municipalityCount: number;
   recent: AtlasTrip[];
 };
 
@@ -61,6 +63,7 @@ export function AtlasView({
   outingCount,
   tripCount,
   pendingCount,
+  municipalityCount,
   recent,
 }: AtlasViewProps) {
   const codes = regions.map((r) => r.region_code);
@@ -101,6 +104,17 @@ export function AtlasView({
               <span className="text-sm text-muted-foreground">{fig.label}</span>
             </li>
           ))}
+          <li className="flex items-baseline gap-1">
+            <Link
+              href="/municipalities"
+              className="flex items-baseline gap-1 decoration-vermilion underline-offset-4 hover:underline"
+            >
+              <span className="text-2xl font-semibold tabular-nums">
+                {municipalityCount}
+              </span>
+              <span className="text-sm text-muted-foreground">市区町村</span>
+            </Link>
+          </li>
         </ul>
         {pendingCount > 0 && (
           <p className="border-l-2 border-vermilion pl-3 text-sm">

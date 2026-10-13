@@ -29,6 +29,7 @@ export default async function DashboardPage() {
     { count: tripCount },
     { count: pendingCount },
     { data: recent },
+    { count: municipalityCount },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -54,6 +55,9 @@ export default async function DashboardPage() {
       .in("label", INDEX_LABELS)
       .order("started_at", { ascending: false })
       .limit(INDEX_SIZE),
+    supabase
+      .from("municipality_levels")
+      .select("code", { count: "exact", head: true }),
   ]);
 
   const name =
@@ -67,6 +71,7 @@ export default async function DashboardPage() {
       outingCount={outingCount ?? 0}
       tripCount={tripCount ?? 0}
       pendingCount={pendingCount ?? 0}
+      municipalityCount={municipalityCount ?? 0}
       recent={recent ?? []}
     />
   );

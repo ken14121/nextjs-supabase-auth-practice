@@ -35,9 +35,9 @@ export function ImportForm({ userId }: { userId: string }) {
         });
         return;
       }
-      // 大きな移動の軌跡などはここで捨て、滞在と移動だけを送る（数分の 1 の大きさになる）
-      const { segments } = extractSegments(json);
-      const body = JSON.stringify({ version: 1, segments });
+      // 使わない部分は捨て、滞在と移動と、間引いた移動の軌跡だけを送る（数分の 1 の大きさになる）
+      const { segments, paths } = extractSegments(json);
+      const body = JSON.stringify({ version: 1, segments, paths });
 
       setStatus({ kind: "working", step: "アップロードしています…" });
       const supabase = createClient();
@@ -113,18 +113,27 @@ export function ImportForm({ userId }: { userId: string }) {
         <p className="text-sm text-destructive">{status.message}</p>
       )}
       {status.kind === "done" && (
-        <div className="flex flex-col gap-2 rounded-lg bg-muted p-4 text-sm">
+        <div className="flex flex-col gap-2 border-l-2 border-vermilion py-1 pl-4 text-sm">
           <p className="flex items-center gap-2 font-medium">
             <CheckCircle2 className="size-4" />
             取り込みが終わりました
           </p>
           <p>
             外出 {status.result.outings} 件 ／ 都道府県{" "}
-            {status.result.prefectures} ／ 国 {status.result.countries}
+            {status.result.prefectures} ／ 国 {status.result.countries} ／
+            市区町村 {status.result.municipalities}
           </p>
-          <Link href="/dashboard" className="underline underline-offset-4">
-            マイページで見る
-          </Link>
+          <div className="flex gap-4">
+            <Link href="/dashboard" className="underline underline-offset-4">
+              地図帳で見る
+            </Link>
+            <Link
+              href="/municipalities"
+              className="underline underline-offset-4"
+            >
+              市区町村踏破を見る
+            </Link>
+          </div>
         </div>
       )}
     </div>

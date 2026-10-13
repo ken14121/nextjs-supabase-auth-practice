@@ -131,6 +131,99 @@ const androidFileSchema = z.object({
   semanticSegments: z.array(z.unknown()),
 });
 
+// 移動の軌跡（市区町村の「通過」を調べるのに使う）
+// iPhone: { startTime, timelinePath: [{ point: "geo:…", durationMinutesOffsetFromStartTime: "12" }] }
+// Android: { timelinePath: [{ point: "35.1°, 139.1°", time: "…" }] }
+const iosPathSchema = z.object({
+  startTime: z.string(),
+  timelinePath: z.array(
+    z.object({
+      point: z.string(),
+      durationMinutesOffsetFromStartTime: z.coerce.number().optional(),
+    }),
+  ),
+});
+
+const androidPathSchema = z.object({
+  timelinePath: z.array(z.object({ point: z.string(), time: z.string() })),
+});
+
+type TimedPoint = { at: number; location: LatLng };
+
+function readIosPath(item: unknown): TimedPoint[] | null {
+  const path = iosPathSchema.safeParse(item);
+  if (!path.success) return null;
+  const start = Date.parse(path.data.startTime);
+  if (Number.isNaN(start)) return [];
+  return path.data.timelinePath.flatMap((p) => {
+    const location = parseLatLng(p.point);
+    return location
+      ? [
+          {
+            at: start + (p.durationMinutesOffsetFromStartTime ?? 0) * 60_000,
+            location,
+          },
+        ]
+      : [];
+  });
+}
+
+function readAndroidPath(item: unknown): TimedPoint[] | null {
+  const path = androidPathSchema.safeParse(item);
+  if (!path.success) return null;
+  return path.data.timelinePath.flatMap((p) => {
+    const location = parseLatLng(p.point);
+    const at = Date.parse(p.time);
+    return location && !Number.isNaN(at) ? [{ at, location }] : [];
+  });
+}
+
+// 軌跡の点を間引く。前に残した点からこの距離より近い点は捨てる（送る大きさを抑える）
+const PATH_STEP_KM = 0.5;
+
+function roughKm(a: LatLng, b: LatLng) {
+  const x = (b.lng - a.lng) * Math.cos(((a.lat + b.lat) / 2) * (Math.PI / 180));
+  return Math.sqrt(x * x + (b.lat - a.lat) ** 2) * 111.2;
+}
+
+// 1 日ぶんの移動の軌跡（日本時間の日付と、[緯度, 経度] の列）
+export type DayPath = { on: string; points: [number, number][] };
+
+const jstDate = (at: number) =>
+  new Date(at).toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+
+// 軌跡を、飛行機に乗っている間を除いて、日ごとに間引いた点の列にする。
+// 細かい時刻は捨てる（市区町村を「いつ通過したか」を日付で残すのに使うだけなので）
+function toPaths(points: TimedPoint[], segments: TimelineSegment[]): DayPath[] {
+  const flights = segments
+    .filter((s) => s.kind === "activity" && s.mode === "flight")
+    .map((s) => [Date.parse(s.start), Date.parse(s.end)] as const);
+  const inFlight = (at: number) => flights.some(([a, b]) => at >= a && at <= b);
+
+  const sorted = [...points].sort((a, b) => a.at - b.at);
+  const paths: DayPath[] = [];
+  let current = null as DayPath | null;
+  let last: LatLng | null = null;
+  for (const p of sorted) {
+    const on = jstDate(p.at);
+    // 飛行機の区間と日付の変わり目で線を切る（前後を直線でつながないように）
+    if (inFlight(p.at) || current?.on !== on) {
+      if (current && current.points.length > 0) paths.push(current);
+      current = inFlight(p.at) ? null : { on, points: [] };
+      last = null;
+      if (!current) continue;
+    }
+    if (last && roughKm(last, p.location) < PATH_STEP_KM) continue;
+    current.points.push([
+      Math.round(p.location.lat * 1e4) / 1e4,
+      Math.round(p.location.lng * 1e4) / 1e4,
+    ]);
+    last = p.location;
+  }
+  if (current && current.points.length > 0) paths.push(current);
+  return paths;
+}
+
 function isValidTime(text: string): boolean {
   return !Number.isNaN(Date.parse(text));
 }
@@ -231,18 +324,22 @@ function readAndroidItem(item: unknown): TimelineSegment | null {
   return null;
 }
 
-// Timeline.json の中身（JSON.parse した結果）から、滞在と移動だけを取り出す。
-// 移動の軌跡（timelinePath）など、使わない部分はここで捨てる。
+// Timeline.json の中身（JSON.parse した結果）から、滞在と移動と、間引いた移動の軌跡を取り出す。
+// 使わない部分（候補の場所・確率など）はここで捨てる。
 export function extractSegments(json: unknown): {
   segments: TimelineSegment[];
+  // 日ごとの移動の軌跡（飛行機の区間は除く）。市区町村の「通過」に使う
+  paths: DayPath[];
   skipped: number;
 } {
   let items: unknown[];
   let readItem: (item: unknown) => TimelineSegment | null;
+  let readPath: (item: unknown) => TimedPoint[] | null;
 
   if (Array.isArray(json)) {
     items = json;
     readItem = readIosItem;
+    readPath = readIosPath;
   } else {
     const android = androidFileSchema.safeParse(json);
     if (!android.success) {
@@ -252,14 +349,21 @@ export function extractSegments(json: unknown): {
     }
     items = android.data.semanticSegments;
     readItem = readAndroidItem;
+    readPath = readAndroidPath;
   }
 
   const segments: TimelineSegment[] = [];
+  const points: TimedPoint[] = [];
   let skipped = 0;
   for (const item of items) {
     const segment = readItem(item);
     if (segment) {
       segments.push(segment);
+      continue;
+    }
+    const path = readPath(item);
+    if (path) {
+      points.push(...path);
     } else {
       skipped++;
     }
@@ -272,7 +376,7 @@ export function extractSegments(json: unknown): {
   }
 
   segments.sort((a, b) => a.start.localeCompare(b.start));
-  return { segments, skipped };
+  return { segments, paths: toPaths(points, segments), skipped };
 }
 
 // ---------------------------------------------------------------------
@@ -310,6 +414,17 @@ export const compactTimelineSchema = z.object({
       ]),
     )
     .min(1),
+  // 移動の軌跡（[緯度, 経度] の列）。前の版のアプリで作ったファイルには無い
+  paths: z
+    .array(
+      z.object({
+        on: z.iso.date(),
+        points: z.array(
+          z.tuple([z.number().min(-90).max(90), z.number().min(-180).max(180)]),
+        ),
+      }),
+    )
+    .optional(),
 });
 
 export type CompactTimeline = z.infer<typeof compactTimelineSchema>;

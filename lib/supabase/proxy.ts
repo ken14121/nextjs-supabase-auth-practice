@@ -11,6 +11,7 @@ const PROTECTED_PATHS = [
   "/map3d",
   "/friends",
   "/outings",
+  "/municipalities",
 ];
 
 // ページを開くたびに proxy.ts から呼ばれ、ログイン状態（Cookie）を最新に保つ。

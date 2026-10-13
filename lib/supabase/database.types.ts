@@ -35,6 +35,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      municipality_levels: {
+        Row: {
+          code: string;
+          first_visited_on: string;
+          last_visited_on: string;
+          level: number;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          code: string;
+          first_visited_on: string;
+          last_visited_on: string;
+          level: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          code?: string;
+          first_visited_on?: string;
+          last_visited_on?: string;
+          level?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       outings: {
         Row: {
           created_at: string;
