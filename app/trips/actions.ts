@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
+import { PASS_DESIGNS, type PassDesign } from "@/lib/outings/boarding-pass";
 import { createClient } from "@/lib/supabase/server";
 import { nightsBetween, type TripValues, tripSchema } from "@/lib/trips/schema";
 
@@ -140,4 +142,28 @@ export async function deleteTrip(id: string): Promise<void> {
   await supabase.from("outings").delete().eq("id", id).eq("source", "manual");
   refresh();
   redirect("/trips");
+}
+
+const flightDesignSchema = z.object({
+  id: z.uuid(),
+  design: z.enum(
+    PASS_DESIGNS.map((d) => d.value) as [PassDesign, ...PassDesign[]],
+  ),
+});
+
+// 搭乗券のデザインを選ぶ（本人の便だけ。RLS と列の権限でもデザイン以外は変えられない）
+export async function setFlightDesign(
+  input: unknown,
+): Promise<{ ok: boolean }> {
+  const parsed = flightDesignSchema.safeParse(input);
+  if (!parsed.success) return { ok: false };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("flights")
+    .update({ design: parsed.data.design })
+    .eq("id", parsed.data.id)
+    .select("id");
+  if (error || !data?.length) return { ok: false };
+  revalidatePath("/trips");
+  return { ok: true };
 }

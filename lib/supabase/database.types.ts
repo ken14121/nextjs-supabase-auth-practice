@@ -14,6 +14,53 @@ export type Database = {
   };
   public: {
     Tables: {
+      flights: {
+        Row: {
+          arrived_at: string;
+          created_at: string;
+          departed_at: string;
+          design: string | null;
+          distance_km: number;
+          from_airport: string | null;
+          id: string;
+          outing_id: string;
+          to_airport: string | null;
+          user_id: string;
+        };
+        Insert: {
+          arrived_at: string;
+          created_at?: string;
+          departed_at: string;
+          design?: string | null;
+          distance_km?: number;
+          from_airport?: string | null;
+          id?: string;
+          outing_id: string;
+          to_airport?: string | null;
+          user_id?: string;
+        };
+        Update: {
+          arrived_at?: string;
+          created_at?: string;
+          departed_at?: string;
+          design?: string | null;
+          distance_km?: number;
+          from_airport?: string | null;
+          id?: string;
+          outing_id?: string;
+          to_airport?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "flights_outing_id_fkey";
+            columns: ["outing_id"];
+            isOneToOne: false;
+            referencedRelation: "outings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       friendships: {
         Row: {
           addressee_id: string;

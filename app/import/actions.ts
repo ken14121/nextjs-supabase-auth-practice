@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { nearestAirport } from "@/lib/geo/airports";
 import { lookupMunicipality } from "@/lib/geo/municipalities";
 import { lookupRegion } from "@/lib/geo/regions";
 import { createClient } from "@/lib/supabase/server";
 import { computeOutingFeatures } from "@/lib/timeline/features";
+import { extractFlights } from "@/lib/timeline/flights";
 import { matchOutings } from "@/lib/timeline/match";
 import { computeMunicipalityLevels } from "@/lib/timeline/municipality-levels";
 import { buildOutings, toJstDate } from "@/lib/timeline/outings";
@@ -70,6 +72,58 @@ async function saveMunicipalityLevels(
     if (error) throw error;
   }
   return new Set([...before.keys(), ...rows.map((r) => r.code)]).size;
+}
+
+// 飛行機の便を、その便の時刻を含む外出にぶら下げて保存する
+async function saveFlights(
+  supabase: Supabase,
+  userId: string,
+  outings: { id: string | undefined; startedAt: number; endedAt: number }[],
+  flights: ReturnType<typeof extractFlights>,
+) {
+  const ids = outings.flatMap((o) => (o.id ? [o.id] : []));
+  const designs = new Map<number, string>();
+  for (const part of chunk(ids, CHUNK_SIZE)) {
+    const { data, error } = await supabase
+      .from("flights")
+      .select("departed_at, design")
+      .in("outing_id", part)
+      .not("design", "is", null);
+    if (error) throw error;
+    for (const f of data ?? []) {
+      if (f.design) designs.set(Date.parse(f.departed_at), f.design);
+    }
+  }
+  for (const part of chunk(ids, CHUNK_SIZE)) {
+    const { error } = await supabase
+      .from("flights")
+      .delete()
+      .in("outing_id", part);
+    if (error) throw error;
+  }
+  const rows = flights.flatMap((f) => {
+    const at = Date.parse(f.departedAt);
+    const outing = outings.find(
+      (o) => o.id && at >= o.startedAt && at <= o.endedAt,
+    );
+    if (!outing?.id) return [];
+    return [
+      {
+        user_id: userId,
+        outing_id: outing.id,
+        departed_at: f.departedAt,
+        arrived_at: f.arrivedAt,
+        from_airport: f.from,
+        to_airport: f.to,
+        distance_km: f.distanceKm,
+        design: designs.get(at) ?? null,
+      },
+    ];
+  });
+  for (const part of chunk(rows, CHUNK_SIZE)) {
+    const { error } = await supabase.from("flights").insert(part);
+    if (error) throw error;
+  }
 }
 
 // ブラウザが Storage に置いたファイルを読み、外出と行った県・国を DB に保存する。
@@ -249,6 +303,18 @@ export async function importTimeline(path: string): Promise<ImportResult> {
       const { error } = await supabase.from("visited_regions").insert(rows);
       if (error) throw error;
     }
+
+    // 飛行機の便（搭乗券）。外出ごとに消して入れ直すが、本人が選んだデザインは出発時刻で引き継ぐ
+    await saveFlights(
+      supabase,
+      userId,
+      drafts.map((d) => ({
+        id: outingIds.get(Date.parse(d.startedAt)),
+        startedAt: Date.parse(d.startedAt),
+        endedAt: Date.parse(d.endedAt),
+      })),
+      extractFlights(parsed.data.segments, nearestAirport),
+    );
 
     // 市区町村の経験値（住居・宿泊・訪問・接地・通過）。座標は保存せず、コードと経験値と日付だけ。
     // 前に取り込んだ分と合わせ、経験値は高い方、日付は広がる方に合わせる
