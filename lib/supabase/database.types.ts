@@ -16,38 +16,47 @@ export type Database = {
     Tables: {
       flights: {
         Row: {
+          airline: string | null;
           arrived_at: string;
           created_at: string;
           departed_at: string;
           design: string | null;
           distance_km: number;
+          flight_number: string | null;
           from_airport: string | null;
           id: string;
           outing_id: string;
+          seat: string | null;
           to_airport: string | null;
           user_id: string;
         };
         Insert: {
+          airline?: string | null;
           arrived_at: string;
           created_at?: string;
           departed_at: string;
           design?: string | null;
           distance_km?: number;
+          flight_number?: string | null;
           from_airport?: string | null;
           id?: string;
           outing_id: string;
+          seat?: string | null;
           to_airport?: string | null;
           user_id?: string;
         };
         Update: {
+          airline?: string | null;
           arrived_at?: string;
           created_at?: string;
           departed_at?: string;
           design?: string | null;
           distance_km?: number;
+          flight_number?: string | null;
           from_airport?: string | null;
           id?: string;
           outing_id?: string;
+          seat?: string | null;
           to_airport?: string | null;
           user_id?: string;
         };

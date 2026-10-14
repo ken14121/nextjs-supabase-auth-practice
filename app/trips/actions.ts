@@ -190,3 +190,35 @@ export async function setRideDesign(input: unknown): Promise<{ ok: boolean }> {
   revalidatePath("/trips");
   return { ok: true };
 }
+
+const boardingPassSchema = z.object({
+  id: z.uuid(),
+  airline: z.string().regex(/^[A-Z0-9]{2,3}$/),
+  flightNumber: z.string().regex(/^\d{1,4}[A-Z]?$/),
+  seat: z
+    .string()
+    .regex(/^\d{1,3}[A-Z]$/)
+    .nullable(),
+});
+
+// 搭乗券のバーコードから読んだ航空会社・便名・座席を、便に足す。
+// 名前と予約番号はブラウザで読み飛ばしているので、ここには届かない
+export async function attachBoardingPass(
+  input: unknown,
+): Promise<{ ok: boolean }> {
+  const parsed = boardingPassSchema.safeParse(input);
+  if (!parsed.success) return { ok: false };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("flights")
+    .update({
+      airline: parsed.data.airline,
+      flight_number: parsed.data.flightNumber,
+      seat: parsed.data.seat,
+    })
+    .eq("id", parsed.data.id)
+    .select("id");
+  if (error || !data?.length) return { ok: false };
+  revalidatePath("/trips");
+  return { ok: true };
+}

@@ -1,6 +1,7 @@
 import { cn } from "cn";
 import { Plane } from "lucide-react";
 import { airportLabel } from "@/lib/geo/airports";
+import { airlineName } from "@/lib/outings/bcbp";
 import {
   decorativeBars,
   defaultDesign,
@@ -11,9 +12,10 @@ import {
   passTime,
 } from "@/lib/outings/boarding-pass";
 import { DesignSelect } from "./design-select";
+import { ScanBoardingPass } from "./scan-boarding-pass";
 
 // 飛行機の便 1 回ぶんの搭乗券。タイムラインから分かること（空港・日付・時刻・距離）だけを載せる。
-// 便名・座席は記録に無いので「----」（搭乗券のバーコードを読み込めるようにしたら入れる）
+// 便名・座席は記録に無いので、搭乗券のバーコードを読み込むまでは「----」
 
 export type FlightRow = {
   id: string;
@@ -23,6 +25,10 @@ export type FlightRow = {
   to_airport: string | null;
   distance_km: number;
   design: string | null;
+  // 搭乗券のバーコードから読んだもの（読んでいなければ null）
+  airline: string | null;
+  flight_number: string | null;
+  seat: string | null;
 };
 
 type Theme = {
@@ -160,7 +166,9 @@ export function BoardingPass({
               t.band,
             )}
           >
-            <span>BOARDING PASS ・ 搭乗券</span>
+            <span>
+              {airlineName(flight.airline) ?? "BOARDING PASS"} ・ 搭乗券
+            </span>
             <Plane className="size-3.5" aria-hidden="true" />
           </div>
           <div className="flex min-w-0 gap-3 p-3 pl-2">
@@ -174,8 +182,16 @@ export function BoardingPass({
                   value={passDate(flight.departed_at)}
                   theme={t}
                 />
-                <Field label="FLIGHT" value="----" theme={t} />
-                <Field label="SEAT" value="--" theme={t} />
+                <Field
+                  label="FLIGHT"
+                  value={
+                    flight.airline && flight.flight_number
+                      ? `${flight.airline} ${flight.flight_number}`
+                      : "----"
+                  }
+                  theme={t}
+                />
+                <Field label="SEAT" value={flight.seat ?? "--"} theme={t} />
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex min-w-0 flex-col">
@@ -261,11 +277,23 @@ export function BoardingPass({
           </div>
         </div>
       </article>
-      <div className="flex items-center justify-between gap-2 px-1">
+      <div className="flex flex-wrap items-start justify-between gap-2 px-1">
         <span className="text-[0.7rem] text-muted-foreground">
           {international ? "時刻は日本時間" : ""}
         </span>
-        <DesignSelect kind="flight" id={flight.id} design={design} />
+        <div className="flex flex-wrap items-start justify-end gap-3">
+          {!flight.flight_number && (
+            <ScanBoardingPass
+              flight={{
+                id: flight.id,
+                from: flight.from_airport,
+                to: flight.to_airport,
+                departedAt: flight.departed_at,
+              }}
+            />
+          )}
+          <DesignSelect kind="flight" id={flight.id} design={design} />
+        </div>
       </div>
     </div>
   );

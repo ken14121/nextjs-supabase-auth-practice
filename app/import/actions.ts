@@ -5,6 +5,7 @@ import { nearestAirport } from "@/lib/geo/airports";
 import { lookupMunicipality } from "@/lib/geo/municipalities";
 import { lookupRegion } from "@/lib/geo/regions";
 import { nearestShinkansenStation } from "@/lib/geo/shinkansen";
+import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { computeOutingFeatures } from "@/lib/timeline/features";
 import { extractFlights } from "@/lib/timeline/flights";
@@ -84,16 +85,20 @@ async function saveFlights(
   flights: ReturnType<typeof extractFlights>,
 ) {
   const ids = outings.flatMap((o) => (o.id ? [o.id] : []));
-  const designs = new Map<number, string>();
+  // 本人が選んだデザインと、搭乗券から読んだ便名・座席は、出発時刻で引き継ぐ
+  type Kept = Pick<
+    Database["public"]["Tables"]["flights"]["Row"],
+    "design" | "airline" | "flight_number" | "seat"
+  >;
+  const kept = new Map<number, Kept>();
   for (const part of chunk(ids, CHUNK_SIZE)) {
     const { data, error } = await supabase
       .from("flights")
-      .select("departed_at, design")
-      .in("outing_id", part)
-      .not("design", "is", null);
+      .select("departed_at, design, airline, flight_number, seat")
+      .in("outing_id", part);
     if (error) throw error;
-    for (const f of data ?? []) {
-      if (f.design) designs.set(Date.parse(f.departed_at), f.design);
+    for (const { departed_at, ...rest } of data ?? []) {
+      kept.set(Date.parse(departed_at), rest);
     }
   }
   for (const part of chunk(ids, CHUNK_SIZE)) {
@@ -118,7 +123,10 @@ async function saveFlights(
         from_airport: f.from,
         to_airport: f.to,
         distance_km: f.distanceKm,
-        design: designs.get(at) ?? null,
+        design: kept.get(at)?.design ?? null,
+        airline: kept.get(at)?.airline ?? null,
+        flight_number: kept.get(at)?.flight_number ?? null,
+        seat: kept.get(at)?.seat ?? null,
       },
     ];
   });
