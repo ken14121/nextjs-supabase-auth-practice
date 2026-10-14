@@ -1,0 +1,445 @@
+<title>旅アプリ開発 11日目ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --surface-2: #e9eff3;
+    --ink: #15212c;
+    --muted: #566676;
+    --line: #d4dde5;
+    --accent: #1a6a9c;
+    --accent-soft: #dcebf5;
+    --pending: #a36b00;
+    --pending-soft: #fbefd4;
+    --ok: #2d7a4c;
+    --ok-soft: #dcefe3;
+    --ng: #b03a2e;
+    --ng-soft: #f6dedb;
+    --code-bg: #edf2f6;
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e151c;
+      --surface: #15202a;
+      --surface-2: #1b2934;
+      --ink: #e4ecf2;
+      --muted: #9aabba;
+      --line: #2a3a47;
+      --accent: #62b0e3;
+      --accent-soft: #173247;
+      --pending: #e3b453;
+      --pending-soft: #3a2e14;
+      --ok: #6cc48f;
+      --ok-soft: #173325;
+      --ng: #ee8a7e;
+      --ng-soft: #3d1e1a;
+      --code-bg: #1c2833;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e151c;
+    --surface: #15202a;
+    --surface-2: #1b2934;
+    --ink: #e4ecf2;
+    --muted: #9aabba;
+    --line: #2a3a47;
+    --accent: #62b0e3;
+    --accent-soft: #173247;
+    --pending: #e3b453;
+    --pending-soft: #3a2e14;
+    --ok: #6cc48f;
+    --ok-soft: #173325;
+    --ng: #ee8a7e;
+    --ng-soft: #3d1e1a;
+    --code-bg: #1c2833;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.35; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 900; }
+  h2 { font-size: 1.45rem; font-weight: 900; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ヘッダー：きっぷ風 */
+  header.ticket {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+  }
+  .ticket-main { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .ticket-main .lead { color: var(--muted); max-width: 60ch; }
+  .ticket-stub {
+    border-left: 2px dashed var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: var(--surface-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 140px;
+  }
+  .stub-label { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+  .stub-value { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  @media (max-width: 560px) {
+    header.ticket { grid-template-columns: 1fr; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; flex-wrap: wrap; gap: 4px 20px; }
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -32px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.88rem;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .sec-no { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+  .note { color: var(--muted); font-size: 0.95rem; }
+
+  /* 全体像 */
+  .map { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .map-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+  @media (max-width: 640px) { .map-row { grid-template-columns: 1fr; } .map-arrow { transform: rotate(90deg); justify-self: center; } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .box-title { font-family: var(--font-display); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.93rem; }
+  .tool-list li { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px; }
+  .tool-list b { font-weight: 700; }
+  .map-arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .map-arrow span { font-size: 1.6rem; line-height: 1; color: var(--accent); }
+  .localhost { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+  .pending-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .pending-row { grid-template-columns: 1fr; } }
+  .pending-row .box { border-style: dashed; }
+  .chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip.pending { color: var(--pending); background: var(--pending-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.ng { color: var(--ng); background: var(--ng-soft); }
+  .chip.step { color: var(--accent); background: var(--accent-soft); }
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  /* リスト */
+  dl.facts { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 16px; }
+  dl.facts dt { font-weight: 700; color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 10px; } }
+
+  /* 表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 路線図（ログインの流れ） */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.route li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  ol.route li:last-child { padding-bottom: 0; }
+  ol.route li::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent);
+  }
+  ol.route li:last-child::before { display: none; }
+  .station {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--accent);
+    position: relative; z-index: 1;
+  }
+  .stop { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .who { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+  /* Git の流れ */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.93rem; }
+  .flow .stepbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; }
+  .flow .stepbox small { color: var(--muted); font-size: 0.78rem; }
+  .flow .arr { color: var(--accent); font-weight: 700; }
+
+  /* クイズ */
+  ol.quiz { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: q; }
+  ol.quiz li { counter-increment: q; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  ol.quiz li > p::before { content: "Q" counter(q) "　"; font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; font-weight: 700; width: fit-content; }
+  details[open] summary { margin-bottom: 6px; }
+  details p { color: var(--ink); font-size: 0.95rem; }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+<style>
+  .memo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+  .memo pre { margin: 0; font-family: var(--font-body); white-space: pre-wrap; font-size: 0.95rem; line-height: 1.8; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .stat b { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 0.8rem; color: var(--muted); }
+</style>
+<div class="wrap">
+
+  <header class="ticket">
+    <div class="ticket-main">
+      <span class="eyebrow">ZENDASH 臨地実習 ／ 学習ノート</span>
+      <h1>旅アプリ開発 11日目ノート</h1>
+      <p class="lead">旅の索引の切符を、乗り物ごとの本物らしい券にした。タイムラインの飛行機の記録から便ごとの搭乗券を、新幹線に乗った記録から特急券・乗車券ふうの切符を作り、搭乗券の写真のバーコードから便名と座席を足せるようにした。最後に、色・マーク・絵文字・はんこで自分の切符を飾れるようにした。</p>
+    </div>
+    <div class="ticket-stub">
+      <span class="stub-label">日付</span>
+      <span class="stub-value">2026.10.14 水</span>
+      <span class="stub-label">場所</span>
+      <span class="stub-value">在宅</span>
+      <span class="stub-label">進んだところ</span>
+      <span class="stub-value">搭乗券と切符</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#result">今日の成果</a>
+    <a href="#flight">飛行機の搭乗券</a>
+    <a href="#rail">新幹線の切符</a>
+    <a href="#bcbp">バーコードを読む</a>
+    <a href="#custom">カスタマイズ</a>
+    <a href="#privacy">守ったこと</a>
+    <a href="#troubles">つまずき</a>
+    <a href="#quiz">理解度チェック</a>
+    <a href="#report">日報</a>
+  </nav>
+
+  <section id="result">
+    <div class="sec-head"><span class="sec-no">00</span><h2>今日の成果</h2></div>
+    <div class="stats">
+      <div class="stat"><span>搭乗券のデザイン</span><b>4 種</b></div>
+      <div class="stat"><span>新幹線の切符のデザイン</span><b>3 種</b></div>
+      <div class="stat"><span>手で書いた新幹線の駅</span><b>118 駅</b></div>
+      <div class="stat"><span>テスト</span><b>61 件</b></div>
+    </div>
+    <ul class="plain">
+      <li>飛行機の移動を便ごとに取り出し、空港・日付・時刻・距離の入った<b>搭乗券</b>にした（クラシック・モノクロ・ベージュ・黒と金）</li>
+      <li>新幹線の駅どうしを速く移動した電車を見つけ、<b>特急券・乗車券ふうの切符</b>にした（ミント・水色・硬券風）</li>
+      <li>搭乗券の写真から<b>バーコードを読み</b>、航空会社・便名・座席を足せるようにした</li>
+      <li>切符の下の「カスタマイズ」で、<b>デザイン・色・マーク・絵文字・はんこの文字</b>を選べるようにした</li>
+      <li>取り込み直しても、選んだデザイン・飾り・読み込んだ便名は消えない</li>
+    </ul>
+  </section>
+
+  <section id="flight">
+    <div class="sec-head"><span class="sec-no">01</span><h2>飛行機の記録から搭乗券を作る</h2></div>
+    <p>Google のタイムラインには、移動の手段（飛行機・電車・車など）と始点・終点が入っている。飛行機の移動 1 回を 1 便とみなし、始点と終点の近くの空港を探して搭乗券にした。</p>
+    <dl class="facts">
+      <dt>空港の一覧</dt>
+      <dd>OurAirports（パブリックドメイン）から、定期便のある大・中規模で IATA の 3 文字コードがある空港 3,244 か所を、<code>scripts/build-airport-data.mjs</code> で小さな JSON（約 135KB）にした</dd>
+      <dt>空港の決め方</dt>
+      <dd>移動の始点・終点から一番近い空港。60 km より遠ければ「不明」</dd>
+      <dt>除くもの</dt>
+      <dd>80 km より短い「飛行機」は、Google の判定違い（車や電車）とみなして除く</dd>
+      <dt>デザイン</dt>
+      <dd>選んでいなければ、国内線はクラシック、国際線は黒と金、空港が分からなければモノクロ</dd>
+      <dt>保存するもの</dt>
+      <dd>空港コード・出発と到着の時刻・距離だけ（新しい表 <code>flights</code>）。座標は保存しない</dd>
+    </dl>
+  </section>
+
+  <section id="rail">
+    <div class="sec-head"><span class="sec-no">02</span><h2>新幹線の切符</h2></div>
+    <p>タイムラインには「電車」としか入っておらず、新幹線か在来線かは分からない。そこで、駅の位置と速さで見分けた。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>条件</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>始点と終点が、どちらも新幹線の駅から 3 km 以内</td><td>新幹線は決まった駅でしか乗り降りしない</td></tr>
+          <tr><td>30 km 以上</td><td>東京 → 品川のような短い区間は、在来線のことが多い</td></tr>
+          <tr><td>平均の速さが時速 80 km 以上</td><td>同じ東京 → 新大阪でも、8 時間かかっていれば在来線</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>駅の一覧は、よく使われる駅データの多くが再配布に注意が必要なものだったので、使わずに<b>118 駅を手で書いた</b>（駅の位置は事実の情報）。路線名（東海道新幹線・東海道・山陽新幹線など）は、2 つの駅に共通する路線から出す。選んでいなければ、東日本の路線はミント、ほかは水色。</p>
+  </section>
+
+  <section id="bcbp">
+    <div class="sec-head"><span class="sec-no">03</span><h2>搭乗券のバーコードを読む</h2></div>
+    <p>タイムラインからは便名と座席が分からない。紙の搭乗券の PDF417 も、スマホの搭乗券の QR・Aztec も、中身は IATA の決まった形式（BCBP）の文字列なので、それを読んで足すことにした。</p>
+    <dl class="facts">
+      <dt>形式</dt>
+      <dd>先頭が「M」と区間の数、次に名前 20 文字。そのあと 1 区間ごとに 37 文字（予約番号 7・出発 3・到着 3・航空会社 3・便名 5・日付 3・クラス 1・座席 4・搭乗順 5・状態 1・続く長さ 2）</dd>
+      <dt>読む場所</dt>
+      <dd>写真もバーコードの中身も、<b>ブラウザの中だけ</b>で読む（<code>@zxing/browser</code>、使うときだけ読み込む）</dd>
+      <dt>この便のものか</dt>
+      <dd>出発・到着の空港が同じで、日付（年の何日目か）が 1 日以内なら同じ便とみなす。違えば「この便の搭乗券ではないようです（読み取った区間: NRT → OKA）」と出す</dd>
+      <dt>送るもの</dt>
+      <dd>航空会社・便名・座席だけ。<b>名前と予約番号は読み飛ばし、送らず、保存もしない</b></dd>
+    </dl>
+    <p class="note">作った QR の画像で、本物のブラウザから確かめた。違う便の搭乗券は断られ、合う搭乗券では <code>{"id","airline":"JL","flightNumber":"631","seat":"12A"}</code> だけが送られた。</p>
+  </section>
+
+  <section id="custom">
+    <div class="sec-head"><span class="sec-no">04</span><h2>自分の切符を飾る（カスタマイズ）</h2></div>
+    <p>元のデザインはそのまま残し、その上に飾りを足せるようにした。「カスタマイズ」を開くと、変えている途中の見た目がその場で切符に出て、「保存」で確定する。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>項目</th><th>選べるもの</th></tr></thead>
+        <tbody>
+          <tr><td>デザイン</td><td>搭乗券 4 種・新幹線 3 種から</td></tr>
+          <tr><td>色</td><td>おすすめ 8 色・好きな色（カラーピッカー）・元の色</td></tr>
+          <tr><td>マーク</td><td>飛行機・電車・ハート・星・山・海・花・カメラなど 14 種</td></tr>
+          <tr><td>絵文字</td><td>3 つまで。よく使う 10 個はボタンで入れられる</td></tr>
+          <tr><td>はんこ</td><td>8 文字まで（例：初めての沖縄）。2 行に分けて丸いはんこに収める</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <dl class="facts">
+      <dt>同じ見た目を 2 か所で</dt>
+      <dd>切符の見た目だけの部品（<code>BoardingPassView</code>・<code>RailTicketView</code>）を作り、サーバーでの表示と、ブラウザでのプレビューの両方で使う</dd>
+      <dt>保存の形</dt>
+      <dd>便と乗車の表に <code>style</code>（JSON）を 1 列足した。中身の形は Zod で確かめ、DB では「オブジェクトであること」と大きさだけ制限</dd>
+      <dt>文字の色</dt>
+      <dd>帯の色の明るさを計算し、明るい色の上は黒い文字、暗い色の上は白い文字にする（黄色を選んでも読める）</dd>
+      <dt>入力のチェック</dt>
+      <dd>絵文字は「見た目の 1 文字」（国旗や肌の色つきも 1 つ）で数える。絵文字以外や多すぎるときは理由を出して保存できなくする。サーバーでも同じチェックをする</dd>
+    </dl>
+  </section>
+
+  <section id="privacy">
+    <div class="sec-head"><span class="sec-no">05</span><h2>守ったこと</h2></div>
+    <ul class="plain">
+      <li>座標は保存しない。空港コード・駅の id・時刻・距離だけ</li>
+      <li>搭乗券の名前と予約番号は、ブラウザの外に出さない（予約番号と名前があると、予約の変更ができてしまうことがある）</li>
+      <li>再配布に注意が必要なデータは使わない（空港はパブリックドメイン、駅は手で書いた）</li>
+      <li>本人が変えられるのは、見た目の列（デザイン・飾り）と便名・座席だけ（列ごとの権限 <code>grant update (...)</code>）</li>
+    </ul>
+  </section>
+
+  <section id="troubles">
+    <div class="sec-head"><span class="sec-no">06</span><h2>つまずいたことと学び</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>起きたこと</th><th>原因</th><th>対処</th></tr></thead>
+        <tbody>
+          <tr><td>スマホの幅で搭乗券の日付が切れた</td><td>3 列の幅が同じで、日付の列が狭かった</td><td>日付の列を広く（1.7 : 1 : 0.6）、半券を細くした</td></tr>
+          <tr><td>新幹線の切符のはんこが文字に重なった</td><td>はんこを右上に重ねて置いていた</td><td>右下に移し、下の 2 行ははんこのぶん右を空けた</td></tr>
+          <tr><td>搭乗券の半券で、はんこと絵文字が重なった</td><td>はんこを半券の隅に重ねて置いていた</td><td>絵文字の下に並べる形にした</td></tr>
+          <tr><td>黄色の帯で白い文字が読みにくかった</td><td>文字色を切り替える明るさの境目が高すぎた</td><td>境目を下げ、黄色は黒い文字、元のベージュや橙は白い文字のままにした</td></tr>
+          <tr><td>空港のデータが取れなかった</td><td>通信の制限で、元のサイトに入れなかった</td><td>同じデータを GitHub から取った</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head"><span class="sec-no">07</span><h2>理解度チェック</h2></div>
+    <ol class="quiz">
+      <li><p>タイムラインの「電車」から新幹線だけを見分けるのに、何を使った？</p>
+        <details><summary>答えを見る</summary><p>始点・終点が新幹線の駅から 3 km 以内、30 km 以上、平均時速 80 km 以上の 3 つ。新幹線は決まった駅でしか乗り降りせず、在来線より速いことを使っている。</p></details></li>
+      <li><p>80 km より短い「飛行機」を除いたのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>Google が車や電車を飛行機と判定違いすることがあるから。そんなに短い定期便はほとんどない。</p></details></li>
+      <li><p>搭乗券のバーコードを、サーバーではなくブラウザで読むのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>バーコードには名前と予約番号が入っていて、予約番号と名前があると予約の変更ができてしまうことがあるから。ブラウザで読んで、航空会社・便名・座席だけを送れば、危ない情報はサーバーにも DB にも届かない。</p></details></li>
+      <li><p>切符の見た目だけの部品（<code>BoardingPassView</code>）を分けたのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>サーバーでの表示と、カスタマイズ中のブラウザでのプレビューで、同じ見た目を描くため。見た目が 1 か所にあるので、プレビューと保存後の表示がずれない。</p></details></li>
+      <li><p>絵文字の数を、文字列の長さ（<code>length</code>）ではなく「見た目の 1 文字」で数えるのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>国旗（🇯🇵）や家族（👨‍👩‍👧）のような絵文字は、中では複数の文字でできているから。<code>Intl.Segmenter</code> で見た目のまとまりに分けて数える。</p></details></li>
+      <li><p>取り込み直しても、選んだデザインや飾りが消えないのはどうして？</p>
+        <details><summary>答えを見る</summary><p>取り込み直すと便と乗車を作り直すが、消す前にデザイン・飾り・便名・座席を読んでおき、出発時刻が同じものに引き継いでいるから。</p></details></li>
+    </ol>
+  </section>
+
+  <section id="report">
+    <div class="sec-head"><span class="sec-no">08</span><h2>日報と作業時間</h2></div>
+    <div class="memo">
+<pre>10月14日(水)　11:18〜18:52（6時間34分）在宅
+やったこと：旅の索引の切符を、乗り物ごとの券にした。タイムラインの飛行機の記録から便ごとの搭乗券（4デザイン）を、新幹線に乗った記録から特急券・乗車券ふうの切符（3デザイン）を作った。搭乗券の写真のバーコードを読んで、航空会社・便名・座席を足せるようにした。最後に、デザイン・色・マーク・絵文字・はんこの文字で自分の切符を飾れるカスタマイズ機能を付けた。テスト61件・lint・型チェック・ビルドが通ることを確認。
+詰まったこと：新幹線か在来線かがタイムラインに入っていなかった（駅の位置と平均の速さで見分けた）。スマホ幅で日付が切れる、はんこが文字に重なるなどの表示崩れを直した。
+学んだこと：搭乗券のバーコードには名前と予約番号も入っているので、ブラウザの中で読んで必要な項目だけを送るようにした。データの出どころ（再配布してよいか）を確かめてから使うこと。</pre>
+    </div>
+    <p class="note">作業時間：11:18〜18:52 から昼休み 1 時間を引いて <b>6 時間 34 分</b>（7.5 時間以下なので 30 分休憩は引かない）。累計 <b>106 時間 07 分</b> / 225 時間。</p>
+  </section>
+
+  <section id="next">
+    <div class="sec-head"><span class="sec-no">09</span><h2>次回</h2></div>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">家で動かす<span class="chip pending">本人</span></div>
+        <p><code>git pull</code> → <code>yarn install</code> → <code>yarn supabase db push</code> → <code>yarn gen:types</code> → Timeline.json の取り込み直し。本物の記録で搭乗券・切符・カスタマイズを試す</p>
+      </div>
+      <div class="box">
+        <div class="box-title">週報と面談<span class="chip step">次</span></div>
+        <p>10/16（金）に 3 週目の週報。臨地実習が折り返し（112.5 時間）に近いので、ゆうへいさんと面談</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>nextjs-supabase-auth-practice ／ docs/notes/2026-10-14.html</footer>
+</div>
