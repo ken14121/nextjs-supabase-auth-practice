@@ -85,16 +85,16 @@ async function saveFlights(
   flights: ReturnType<typeof extractFlights>,
 ) {
   const ids = outings.flatMap((o) => (o.id ? [o.id] : []));
-  // 本人が選んだデザインと、搭乗券から読んだ便名・座席は、出発時刻で引き継ぐ
+  // 本人が選んだデザイン・飾りと、搭乗券から読んだ便名・座席は、出発時刻で引き継ぐ
   type Kept = Pick<
     Database["public"]["Tables"]["flights"]["Row"],
-    "design" | "airline" | "flight_number" | "seat"
+    "design" | "style" | "airline" | "flight_number" | "seat"
   >;
   const kept = new Map<number, Kept>();
   for (const part of chunk(ids, CHUNK_SIZE)) {
     const { data, error } = await supabase
       .from("flights")
-      .select("departed_at, design, airline, flight_number, seat")
+      .select("departed_at, design, style, airline, flight_number, seat")
       .in("outing_id", part);
     if (error) throw error;
     for (const { departed_at, ...rest } of data ?? []) {
@@ -124,6 +124,7 @@ async function saveFlights(
         to_airport: f.to,
         distance_km: f.distanceKm,
         design: kept.get(at)?.design ?? null,
+        style: kept.get(at)?.style ?? {},
         airline: kept.get(at)?.airline ?? null,
         flight_number: kept.get(at)?.flight_number ?? null,
         seat: kept.get(at)?.seat ?? null,
@@ -144,16 +145,20 @@ async function saveRides(
   rides: ReturnType<typeof extractShinkansenRides>,
 ) {
   const ids = outings.flatMap((o) => (o.id ? [o.id] : []));
-  const designs = new Map<number, string>();
+  // 本人が選んだデザイン・飾りは、出発時刻で引き継ぐ
+  type Kept = Pick<
+    Database["public"]["Tables"]["train_rides"]["Row"],
+    "design" | "style"
+  >;
+  const kept = new Map<number, Kept>();
   for (const part of chunk(ids, CHUNK_SIZE)) {
     const { data, error } = await supabase
       .from("train_rides")
-      .select("departed_at, design")
-      .in("outing_id", part)
-      .not("design", "is", null);
+      .select("departed_at, design, style")
+      .in("outing_id", part);
     if (error) throw error;
-    for (const r of data ?? []) {
-      if (r.design) designs.set(Date.parse(r.departed_at), r.design);
+    for (const { departed_at, ...rest } of data ?? []) {
+      kept.set(Date.parse(departed_at), rest);
     }
   }
   for (const part of chunk(ids, CHUNK_SIZE)) {
@@ -178,7 +183,8 @@ async function saveRides(
         from_station: r.from,
         to_station: r.to,
         distance_km: r.distanceKm,
-        design: designs.get(at) ?? null,
+        design: kept.get(at)?.design ?? null,
+        style: kept.get(at)?.style ?? {},
       },
     ];
   });

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { PASS_DESIGNS, type PassDesign } from "@/lib/outings/boarding-pass";
 import { RAIL_DESIGNS, type RailDesign } from "@/lib/outings/rail-ticket";
+import { compactStyle, ticketStyleSchema } from "@/lib/outings/ticket-style";
 import { createClient } from "@/lib/supabase/server";
 import { nightsBetween, type TripValues, tripSchema } from "@/lib/trips/schema";
 
@@ -145,46 +146,37 @@ export async function deleteTrip(id: string): Promise<void> {
   redirect("/trips");
 }
 
-const flightDesignSchema = z.object({
-  id: z.uuid(),
-  design: z.enum(
-    PASS_DESIGNS.map((d) => d.value) as [PassDesign, ...PassDesign[]],
-  ),
-});
+const ticketLookSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("flight"),
+    id: z.uuid(),
+    design: z.enum(
+      PASS_DESIGNS.map((d) => d.value) as [PassDesign, ...PassDesign[]],
+    ),
+    style: ticketStyleSchema,
+  }),
+  z.object({
+    kind: z.literal("ride"),
+    id: z.uuid(),
+    design: z.enum(
+      RAIL_DESIGNS.map((d) => d.value) as [RailDesign, ...RailDesign[]],
+    ),
+    style: ticketStyleSchema,
+  }),
+]);
 
-// 搭乗券のデザインを選ぶ（本人の便だけ。RLS と列の権限でもデザイン以外は変えられない）
-export async function setFlightDesign(
-  input: unknown,
-): Promise<{ ok: boolean }> {
-  const parsed = flightDesignSchema.safeParse(input);
+// 搭乗券・新幹線の切符の見た目（デザイン・差し色・マーク・絵文字・はんこ）を保存する。
+// 本人の便・乗車だけ（RLS）。見た目以外の列は変えられない（列ごとの権限）
+export async function saveTicketLook(input: unknown): Promise<{ ok: boolean }> {
+  const parsed = ticketLookSchema.safeParse(input);
   if (!parsed.success) return { ok: false };
+  const { kind, id, design } = parsed.data;
+  const style = compactStyle(parsed.data.style);
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("flights")
-    .update({ design: parsed.data.design })
-    .eq("id", parsed.data.id)
-    .select("id");
-  if (error || !data?.length) return { ok: false };
-  revalidatePath("/trips");
-  return { ok: true };
-}
-
-const rideDesignSchema = z.object({
-  id: z.uuid(),
-  design: z.enum(
-    RAIL_DESIGNS.map((d) => d.value) as [RailDesign, ...RailDesign[]],
-  ),
-});
-
-// 新幹線の切符のデザインを選ぶ（本人の乗車だけ。デザイン以外は変えられない）
-export async function setRideDesign(input: unknown): Promise<{ ok: boolean }> {
-  const parsed = rideDesignSchema.safeParse(input);
-  if (!parsed.success) return { ok: false };
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("train_rides")
-    .update({ design: parsed.data.design })
-    .eq("id", parsed.data.id)
+    .from(kind === "flight" ? "flights" : "train_rides")
+    .update({ design, style })
+    .eq("id", id)
     .select("id");
   if (error || !data?.length) return { ok: false };
   revalidatePath("/trips");

@@ -27,6 +27,7 @@ export type Database = {
           id: string;
           outing_id: string;
           seat: string | null;
+          style: Json;
           to_airport: string | null;
           user_id: string;
         };
@@ -42,6 +43,7 @@ export type Database = {
           id?: string;
           outing_id: string;
           seat?: string | null;
+          style?: Json;
           to_airport?: string | null;
           user_id?: string;
         };
@@ -57,6 +59,7 @@ export type Database = {
           id?: string;
           outing_id?: string;
           seat?: string | null;
+          style?: Json;
           to_airport?: string | null;
           user_id?: string;
         };
@@ -218,6 +221,7 @@ export type Database = {
           from_station: string;
           id: string;
           outing_id: string;
+          style: Json;
           to_station: string;
           user_id: string;
         };
@@ -230,6 +234,7 @@ export type Database = {
           from_station: string;
           id?: string;
           outing_id: string;
+          style?: Json;
           to_station: string;
           user_id?: string;
         };
@@ -242,6 +247,7 @@ export type Database = {
           from_station?: string;
           id?: string;
           outing_id?: string;
+          style?: Json;
           to_station?: string;
           user_id?: string;
         };
