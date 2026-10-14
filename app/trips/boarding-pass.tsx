@@ -265,7 +265,7 @@ export function BoardingPass({
         <span className="text-[0.7rem] text-muted-foreground">
           {international ? "時刻は日本時間" : ""}
         </span>
-        <DesignSelect flightId={flight.id} design={design} />
+        <DesignSelect kind="flight" id={flight.id} design={design} />
       </div>
     </div>
   );

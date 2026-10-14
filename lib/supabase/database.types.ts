@@ -199,6 +199,53 @@ export type Database = {
         };
         Relationships: [];
       };
+      train_rides: {
+        Row: {
+          arrived_at: string;
+          created_at: string;
+          departed_at: string;
+          design: string | null;
+          distance_km: number;
+          from_station: string;
+          id: string;
+          outing_id: string;
+          to_station: string;
+          user_id: string;
+        };
+        Insert: {
+          arrived_at: string;
+          created_at?: string;
+          departed_at: string;
+          design?: string | null;
+          distance_km?: number;
+          from_station: string;
+          id?: string;
+          outing_id: string;
+          to_station: string;
+          user_id?: string;
+        };
+        Update: {
+          arrived_at?: string;
+          created_at?: string;
+          departed_at?: string;
+          design?: string | null;
+          distance_km?: number;
+          from_station?: string;
+          id?: string;
+          outing_id?: string;
+          to_station?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "train_rides_outing_id_fkey";
+            columns: ["outing_id"];
+            isOneToOne: false;
+            referencedRelation: "outings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       visited_regions: {
         Row: {
           id: number;

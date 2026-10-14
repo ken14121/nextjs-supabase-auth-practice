@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { nearestAirport } from "@/lib/geo/airports";
 import { lookupMunicipality } from "@/lib/geo/municipalities";
 import { lookupRegion } from "@/lib/geo/regions";
+import { nearestShinkansenStation } from "@/lib/geo/shinkansen";
 import { createClient } from "@/lib/supabase/server";
 import { computeOutingFeatures } from "@/lib/timeline/features";
 import { extractFlights } from "@/lib/timeline/flights";
@@ -11,6 +12,7 @@ import { matchOutings } from "@/lib/timeline/match";
 import { computeMunicipalityLevels } from "@/lib/timeline/municipality-levels";
 import { buildOutings, toJstDate } from "@/lib/timeline/outings";
 import { compactTimelineSchema } from "@/lib/timeline/parse";
+import { extractShinkansenRides } from "@/lib/timeline/rail";
 
 export type ImportResult =
   | {
@@ -122,6 +124,58 @@ async function saveFlights(
   });
   for (const part of chunk(rows, CHUNK_SIZE)) {
     const { error } = await supabase.from("flights").insert(part);
+    if (error) throw error;
+  }
+}
+
+// 新幹線の乗車を、その時刻を含む外出にぶら下げて保存する
+async function saveRides(
+  supabase: Supabase,
+  userId: string,
+  outings: { id: string | undefined; startedAt: number; endedAt: number }[],
+  rides: ReturnType<typeof extractShinkansenRides>,
+) {
+  const ids = outings.flatMap((o) => (o.id ? [o.id] : []));
+  const designs = new Map<number, string>();
+  for (const part of chunk(ids, CHUNK_SIZE)) {
+    const { data, error } = await supabase
+      .from("train_rides")
+      .select("departed_at, design")
+      .in("outing_id", part)
+      .not("design", "is", null);
+    if (error) throw error;
+    for (const r of data ?? []) {
+      if (r.design) designs.set(Date.parse(r.departed_at), r.design);
+    }
+  }
+  for (const part of chunk(ids, CHUNK_SIZE)) {
+    const { error } = await supabase
+      .from("train_rides")
+      .delete()
+      .in("outing_id", part);
+    if (error) throw error;
+  }
+  const rows = rides.flatMap((r) => {
+    const at = Date.parse(r.departedAt);
+    const outing = outings.find(
+      (o) => o.id && at >= o.startedAt && at <= o.endedAt,
+    );
+    if (!outing?.id) return [];
+    return [
+      {
+        user_id: userId,
+        outing_id: outing.id,
+        departed_at: r.departedAt,
+        arrived_at: r.arrivedAt,
+        from_station: r.from,
+        to_station: r.to,
+        distance_km: r.distanceKm,
+        design: designs.get(at) ?? null,
+      },
+    ];
+  });
+  for (const part of chunk(rows, CHUNK_SIZE)) {
+    const { error } = await supabase.from("train_rides").insert(part);
     if (error) throw error;
   }
 }
@@ -314,6 +368,18 @@ export async function importTimeline(path: string): Promise<ImportResult> {
         endedAt: Date.parse(d.endedAt),
       })),
       extractFlights(parsed.data.segments, nearestAirport),
+    );
+
+    // 新幹線の乗車（切符）。便と同じく、選んだデザインは出発時刻で引き継ぐ
+    await saveRides(
+      supabase,
+      userId,
+      drafts.map((d) => ({
+        id: outingIds.get(Date.parse(d.startedAt)),
+        startedAt: Date.parse(d.startedAt),
+        endedAt: Date.parse(d.endedAt),
+      })),
+      extractShinkansenRides(parsed.data.segments, nearestShinkansenStation),
     );
 
     // 市区町村の経験値（住居・宿泊・訪問・接地・通過）。座標は保存せず、コードと経験値と日付だけ。

@@ -4,6 +4,7 @@ import { regionName } from "@/lib/geo/names";
 import { labelName } from "@/lib/outings/labels";
 import { destinationOf, ticketKind } from "@/lib/outings/ticket";
 import { BoardingPass, type FlightRow } from "./boarding-pass";
+import { RailTicket, type RideRow } from "./rail-ticket";
 
 // 旅の索引の 1 枚。1 回の旅を、行き先の入った切符（航空券・新幹線の特急券など）の形で見せる。
 // 左が券面（種類・出発 → 行き先・経由地・日付）、右が半券（日付・泊数・種類のはんこ）
@@ -24,6 +25,8 @@ export type TicketTrip = {
   regions: { region_code: string; visited_on: string }[];
   // 飛行機の便（あれば、切符の代わりに便ごとの搭乗券を並べる）
   flights: FlightRow[];
+  // 新幹線の乗車（あれば、便と一緒に時刻の順で切符を並べる）
+  rides: RideRow[];
 };
 
 // 切符の大きな文字用に短くする（千葉県 → 千葉、東京都 → 東京、大韓民国はそのまま）
@@ -63,10 +66,24 @@ export function TripTicket({
   const flights = [...trip.flights].sort((a, b) =>
     a.departed_at.localeCompare(b.departed_at),
   );
+  // 飛行機と新幹線を、乗った順に並べる
+  const legs = [
+    ...flights.map((f, i) => ({
+      kind: "flight" as const,
+      at: f.departed_at,
+      flight: f,
+      index: i,
+    })),
+    ...trip.rides.map((r) => ({
+      kind: "ride" as const,
+      at: r.departed_at,
+      ride: r,
+    })),
+  ].sort((a, b) => a.at.localeCompare(b.at));
 
   return (
     <li className="flex flex-col gap-2">
-      {flights.length > 0 ? (
+      {legs.length > 0 ? (
         <>
           <p className="flex flex-wrap items-baseline gap-x-3 px-1 font-serif">
             <span className="text-lg font-semibold">
@@ -78,14 +95,18 @@ export function TripTicket({
               {trip.nights > 0 && `・${trip.nights} 泊`}
             </span>
           </p>
-          {flights.map((f, i) => (
-            <BoardingPass
-              key={f.id}
-              flight={f}
-              index={i}
-              total={flights.length}
-            />
-          ))}
+          {legs.map((leg) =>
+            leg.kind === "flight" ? (
+              <BoardingPass
+                key={leg.flight.id}
+                flight={leg.flight}
+                index={leg.index}
+                total={flights.length}
+              />
+            ) : (
+              <RailTicket key={leg.ride.id} ride={leg.ride} />
+            ),
+          )}
         </>
       ) : (
         <article className="relative grid grid-cols-[1fr_auto] border border-ink/80 bg-[#fbf9f4] text-ink">

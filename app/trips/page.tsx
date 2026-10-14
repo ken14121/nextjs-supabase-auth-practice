@@ -24,7 +24,7 @@ export default async function TripsPage({
     supabase
       .from("outings")
       .select(
-        "id, started_at, ended_at, nights, distance_km, main_transport, features, source, label, label_source, label_confidence, memo, visited_regions(region_code, visited_on), flights(id, departed_at, arrived_at, from_airport, to_airport, distance_km, design)",
+        "id, started_at, ended_at, nights, distance_km, main_transport, features, source, label, label_source, label_confidence, memo, visited_regions(region_code, visited_on), flights(id, departed_at, arrived_at, from_airport, to_airport, distance_km, design), train_rides(id, departed_at, arrived_at, from_station, to_station, distance_km, design)",
       )
       .in("label", [...TRAVEL_LABELS])
       .order("started_at", { ascending: false }),
@@ -51,6 +51,10 @@ export default async function TripsPage({
           flights: t.flights.map((f) => ({
             ...f,
             distance_km: Number(f.distance_km),
+          })),
+          rides: t.train_rides.map((r) => ({
+            ...r,
+            distance_km: Number(r.distance_km),
           })),
         };
       })}
