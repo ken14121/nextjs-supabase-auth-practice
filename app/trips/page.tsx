@@ -24,7 +24,7 @@ export default async function TripsPage({
     supabase
       .from("outings")
       .select(
-        "id, started_at, ended_at, nights, distance_km, main_transport, features, source, label, label_source, label_confidence, memo, ticket_kind, ticket_design, ticket_style, visited_regions(region_code, visited_on), flights(id, departed_at, arrived_at, from_airport, to_airport, distance_km, design, style, airline, flight_number, seat), train_rides(id, departed_at, arrived_at, from_station, to_station, distance_km, design, style)",
+        "id, started_at, ended_at, nights, distance_km, main_transport, features, source, label, label_source, label_confidence, memo, ticket_kind, ticket_design, ticket_style, visited_regions(region_code, visited_on), flights(id, departed_at, arrived_at, from_airport, to_airport, distance_km, design, style, airline, flight_number, seat, added_by_user, has_times), train_rides(id, departed_at, arrived_at, from_station, to_station, distance_km, design, style, added_by_user, has_times)",
       )
       .in("label", [...TRAVEL_LABELS])
       .order("started_at", { ascending: false }),

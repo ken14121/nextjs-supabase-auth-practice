@@ -33,7 +33,23 @@ type Theme = {
   name: string;
   // 差し色を選んでいないときの色（矢印・はんこ）
   accent: string;
+  // 路線の色の帯（車体の帯をイメージ。無ければ帯なし）
+  stripe?: string;
 };
+
+// 路線の色の切符：白っぽい地に、車体の帯のような 2 色の線
+function livery(stripe: string, accent: string, tint: string): Theme {
+  return {
+    card: `rounded-[3px] border border-[#d5dbe2] ${tint}`,
+    pattern:
+      "bg-[repeating-linear-gradient(135deg,transparent_0_6px,rgba(60,70,80,0.05)_6px_7px)]",
+    ink: "text-[#1d232b]",
+    sub: "text-[#5e6773]",
+    name: "font-sans font-bold",
+    accent,
+    stripe,
+  };
+}
 
 const THEMES: Record<RailDesign, Theme> = {
   mint: {
@@ -63,6 +79,41 @@ const THEMES: Record<RailDesign, Theme> = {
     name: "font-serif font-semibold",
     accent: "#8b3a2a",
   },
+  tokaido: livery(
+    "linear-gradient(#1e50a2 0 70%, #ffffff 70% 80%, #1e50a2 80%)",
+    "#1e50a2",
+    "bg-[#f6f8fb]",
+  ),
+  tohoku: livery(
+    "linear-gradient(#00a95c 0 65%, #f08fbc 65%)",
+    "#00875a",
+    "bg-[#f4f9f6]",
+  ),
+  hokkaido: livery(
+    "linear-gradient(#00a95c 0 65%, #8f3f97 65%)",
+    "#7a3590",
+    "bg-[#f7f5fa]",
+  ),
+  hokuriku: livery(
+    "linear-gradient(#5bb4e5 0 60%, #b26b37 60%)",
+    "#9a5a2c",
+    "bg-[#f4f8fb]",
+  ),
+  kyushu: livery(
+    "linear-gradient(#a31c1c 0 70%, #c9a227 70%)",
+    "#a31c1c",
+    "bg-[#fbf6f2]",
+  ),
+  akita: livery(
+    "linear-gradient(#c8102e 0 75%, #b9bec5 75%)",
+    "#c8102e",
+    "bg-[#fbf5f5]",
+  ),
+  yamagata: livery(
+    "linear-gradient(#f3a600 0 60%, #6b3fa0 60%)",
+    "#6b3fa0",
+    "bg-[#fbf8f0]",
+  ),
 };
 
 export function RailTicketView({
@@ -83,6 +134,13 @@ export function RailTicketView({
       className={cn("relative overflow-hidden shadow-sm", t.card, t.ink)}
       aria-label={`新幹線の切符 ${data.from} から ${data.to}`}
     >
+      {t.stripe && (
+        <div
+          aria-hidden="true"
+          className="h-2.5"
+          style={{ background: t.stripe }}
+        />
+      )}
       <div className={cn("flex flex-col gap-2 p-4", t.pattern)}>
         <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
           <span className="font-bold tracking-[0.3em]">

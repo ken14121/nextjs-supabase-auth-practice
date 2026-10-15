@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { airportDistanceKm, isKnownAirport } from "@/lib/geo/airports";
+import { isStation, stationDistanceKm } from "@/lib/geo/shinkansen";
 import { PASS_DESIGNS, type PassDesign } from "@/lib/outings/boarding-pass";
 import { RAIL_DESIGNS, type RailDesign } from "@/lib/outings/rail-ticket";
 import {
@@ -14,6 +15,7 @@ import {
 } from "@/lib/outings/ticket";
 import { compactStyle, ticketStyleSchema } from "@/lib/outings/ticket-style";
 import { createClient } from "@/lib/supabase/server";
+import { legSchema, legTimes } from "@/lib/trips/legs";
 import { nightsBetween, type TripValues, tripSchema } from "@/lib/trips/schema";
 
 export type TripActionResult = { ok: false; message: string } | undefined;
@@ -294,6 +296,83 @@ export async function attachBoardingPass(
     .eq("id", parsed.data.id)
     .select("id");
   if (error || !data?.length) return { ok: false };
+  revalidatePath("/trips");
+  return { ok: true };
+}
+
+// 旅に、飛行機の便・新幹線の乗車を手で足す（本人の旅にだけ。RLS の insert の条件で確かめる）
+export async function addLeg(input: unknown): Promise<SaveResult> {
+  const parsed = legSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: parsed.error.issues[0]?.message ?? "入力を確かめてください",
+    };
+  }
+  const leg = parsed.data;
+  const { departedAt, arrivedAt, hasTimes } = legTimes(
+    leg.date,
+    leg.depTime,
+    leg.arrTime,
+  );
+  const supabase = await createClient();
+
+  if (leg.kind === "flight") {
+    if (!isKnownAirport(leg.from) || !isKnownAirport(leg.to)) {
+      return {
+        ok: false,
+        message: "知らない空港コードです。コード（例：NRT）を確かめてください",
+      };
+    }
+    const km = airportDistanceKm(leg.from, leg.to) ?? 0;
+    const { error } = await supabase.from("flights").insert({
+      outing_id: leg.outingId,
+      departed_at: departedAt,
+      arrived_at: arrivedAt,
+      from_airport: leg.from,
+      to_airport: leg.to,
+      distance_km: Math.round(km * 10) / 10,
+      added_by_user: true,
+      has_times: hasTimes,
+      airports_fixed: true,
+    });
+    if (error) return NOT_SAVED;
+  } else {
+    if (!isStation(leg.from) || !isStation(leg.to)) return NOT_SAVED;
+    const km = stationDistanceKm(leg.from, leg.to) ?? 0;
+    const { error } = await supabase.from("train_rides").insert({
+      outing_id: leg.outingId,
+      departed_at: departedAt,
+      arrived_at: arrivedAt,
+      from_station: leg.from,
+      to_station: leg.to,
+      distance_km: Math.round(km * 10) / 10,
+      added_by_user: true,
+      has_times: hasTimes,
+    });
+    if (error) return NOT_SAVED;
+  }
+  revalidatePath("/trips");
+  return { ok: true };
+}
+
+const removeLegSchema = z.object({
+  kind: z.enum(["flight", "ride"]),
+  id: z.uuid(),
+});
+
+// 手で足した便・乗車を消す（タイムラインから作ったものは消さない）
+export async function removeLeg(input: unknown): Promise<SaveResult> {
+  const parsed = removeLegSchema.safeParse(input);
+  if (!parsed.success) return NOT_SAVED;
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from(parsed.data.kind === "flight" ? "flights" : "train_rides")
+    .delete()
+    .eq("id", parsed.data.id)
+    .eq("added_by_user", true)
+    .select("id");
+  if (error || !data?.length) return NOT_SAVED;
   revalidatePath("/trips");
   return { ok: true };
 }

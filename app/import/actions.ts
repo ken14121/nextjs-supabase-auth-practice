@@ -105,7 +105,8 @@ async function saveFlights(
       .select(
         "departed_at, design, style, airline, flight_number, seat, from_airport, to_airport, distance_km, airports_fixed",
       )
-      .in("outing_id", part);
+      .in("outing_id", part)
+      .eq("added_by_user", false);
     if (error) throw error;
     for (const { departed_at, ...rest } of data ?? []) {
       kept.set(Date.parse(departed_at), rest);
@@ -115,7 +116,9 @@ async function saveFlights(
     const { error } = await supabase
       .from("flights")
       .delete()
-      .in("outing_id", part);
+      .in("outing_id", part)
+      // 本人が手で足した便・乗車は残す
+      .eq("added_by_user", false);
     if (error) throw error;
   }
   const rows = flights.flatMap((f) => {
@@ -169,7 +172,8 @@ async function saveRides(
     const { data, error } = await supabase
       .from("train_rides")
       .select("departed_at, design, style")
-      .in("outing_id", part);
+      .in("outing_id", part)
+      .eq("added_by_user", false);
     if (error) throw error;
     for (const { departed_at, ...rest } of data ?? []) {
       kept.set(Date.parse(departed_at), rest);
@@ -179,7 +183,9 @@ async function saveRides(
     const { error } = await supabase
       .from("train_rides")
       .delete()
-      .in("outing_id", part);
+      .in("outing_id", part)
+      // 本人が手で足した便・乗車は残す
+      .eq("added_by_user", false);
     if (error) throw error;
   }
   const rows = rides.flatMap((r) => {

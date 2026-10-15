@@ -9,6 +9,7 @@ import {
   ticketKind,
 } from "@/lib/outings/ticket";
 import { readTicketStyle } from "@/lib/outings/ticket-style";
+import { AddLegForm } from "./add-leg-form";
 import { BoardingPass, type FlightRow } from "./boarding-pass";
 import { RailTicket, type RideRow } from "./rail-ticket";
 import { TicketEditor } from "./ticket-editor";
@@ -182,6 +183,11 @@ export function TripTicket({
           {controls}
         </div>
       )}
+
+      <AddLegForm
+        outingId={trip.id}
+        defaultDate={`${start.y}-${String(start.m).padStart(2, "0")}-${String(start.d).padStart(2, "0")}`}
+      />
     </li>
   );
 }

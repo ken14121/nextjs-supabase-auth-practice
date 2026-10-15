@@ -4,6 +4,14 @@ export const RAIL_DESIGNS = [
   { value: "mint", label: "ミントグリーン" },
   { value: "sky", label: "水色" },
   { value: "retro", label: "硬券風" },
+  // 路線ごとの色（車体の帯の色をイメージ。会社のロゴやマークは使わない）
+  { value: "tokaido", label: "東海道・山陽（白と青）" },
+  { value: "tohoku", label: "東北（緑とピンク）" },
+  { value: "hokkaido", label: "北海道（緑と紫）" },
+  { value: "hokuriku", label: "北陸・上越（空色と銅）" },
+  { value: "kyushu", label: "九州（赤と金）" },
+  { value: "akita", label: "秋田（赤）" },
+  { value: "yamagata", label: "山形（黄と紫）" },
 ] as const;
 
 export type RailDesign = (typeof RAIL_DESIGNS)[number]["value"];
@@ -11,9 +19,16 @@ export type RailDesign = (typeof RAIL_DESIGNS)[number]["value"];
 export const isRailDesign = (v: unknown): v is RailDesign =>
   RAIL_DESIGNS.some((d) => d.value === v);
 
-// 本人が選んでいなければ、東日本（東北・北海道・秋田・山形・上越・北陸）はミント、ほかは水色
+// 本人が選んでいなければ、路線の色（路線名から決める。例：東北新幹線 → 東北）
 export function defaultRailDesign(lineName: string): RailDesign {
-  return /東北|北海道|秋田|山形|上越|北陸/.test(lineName) ? "mint" : "sky";
+  if (/北海道/.test(lineName)) return "hokkaido";
+  if (/秋田/.test(lineName)) return "akita";
+  if (/山形/.test(lineName)) return "yamagata";
+  if (/東北/.test(lineName)) return "tohoku";
+  if (/北陸|上越/.test(lineName)) return "hokuriku";
+  if (/九州/.test(lineName)) return "kyushu";
+  if (/東海道|山陽/.test(lineName)) return "tokaido";
+  return "sky";
 }
 
 // 「10月14日」「16:00」「2時間30分」（日本時間）

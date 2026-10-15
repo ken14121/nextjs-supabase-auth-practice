@@ -1,6 +1,7 @@
 import { lineNameBetween, stationName } from "@/lib/geo/shinkansen";
 import { defaultRailDesign, isRailDesign } from "@/lib/outings/rail-ticket";
 import { readTicketStyle } from "@/lib/outings/ticket-style";
+import { RemoveLegButton } from "./add-leg-form";
 import { TicketEditor } from "./ticket-editor";
 
 // 新幹線に乗った 1 回ぶんの切符（特急券・乗車券ふう）。
@@ -17,6 +18,9 @@ export type RideRow = {
   design: string | null;
   // 本人が付けた飾り（lib/outings/ticket-style.ts）
   style: unknown;
+  // 本人が手で足した乗車か、時刻が分かっているか
+  added_by_user: boolean;
+  has_times: boolean;
 };
 
 export function RailTicket({ ride }: { ride: RideRow }) {
@@ -37,10 +41,15 @@ export function RailTicket({ ride }: { ride: RideRow }) {
           departedAt: ride.departed_at,
           arrivedAt: ride.arrived_at,
           distanceKm: ride.distance_km,
+          times: ride.has_times
+            ? undefined
+            : { dep: "--:--", arr: "--:--", length: "時刻なし" },
         },
       }}
       initialDesign={design}
       initialStyle={readTicketStyle(ride.style)}
-    />
+    >
+      {ride.added_by_user && <RemoveLegButton kind="ride" id={ride.id} />}
+    </TicketEditor>
   );
 }

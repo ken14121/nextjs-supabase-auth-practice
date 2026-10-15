@@ -2,6 +2,7 @@ import { airportLabel } from "@/lib/geo/airports";
 import { airlineName } from "@/lib/outings/bcbp";
 import { defaultDesign, isPassDesign } from "@/lib/outings/boarding-pass";
 import { readTicketStyle } from "@/lib/outings/ticket-style";
+import { RemoveLegButton } from "./add-leg-form";
 import { ScanBoardingPass } from "./scan-boarding-pass";
 import { TicketEditor } from "./ticket-editor";
 
@@ -23,6 +24,9 @@ export type FlightRow = {
   airline: string | null;
   flight_number: string | null;
   seat: string | null;
+  // 本人が手で足した便か、時刻が分かっているか
+  added_by_user: boolean;
+  has_times: boolean;
 };
 
 export function BoardingPass({
@@ -65,6 +69,9 @@ export function BoardingPass({
           seat: flight.seat,
           index,
           total,
+          times: flight.has_times
+            ? undefined
+            : { dep: "--:--", arr: "--:--", length: "--" },
         },
       }}
       initialDesign={design}
@@ -77,6 +84,7 @@ export function BoardingPass({
         ) : null
       }
     >
+      {flight.added_by_user && <RemoveLegButton kind="flight" id={flight.id} />}
       {!flight.flight_number && (
         <ScanBoardingPass
           flight={{

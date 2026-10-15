@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       flights: {
         Row: {
+          added_by_user: boolean;
+          has_times: boolean;
           airline: string | null;
           airports_fixed: boolean;
           arrived_at: string;
@@ -33,6 +35,8 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          added_by_user?: boolean;
+          has_times?: boolean;
           airline?: string | null;
           airports_fixed?: boolean;
           arrived_at: string;
@@ -50,6 +54,8 @@ export type Database = {
           user_id?: string;
         };
         Update: {
+          added_by_user?: boolean;
+          has_times?: boolean;
           airline?: string | null;
           airports_fixed?: boolean;
           arrived_at?: string;
@@ -225,6 +231,8 @@ export type Database = {
       };
       train_rides: {
         Row: {
+          added_by_user: boolean;
+          has_times: boolean;
           arrived_at: string;
           created_at: string;
           departed_at: string;
@@ -238,6 +246,8 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          added_by_user?: boolean;
+          has_times?: boolean;
           arrived_at: string;
           created_at?: string;
           departed_at: string;
@@ -251,6 +261,8 @@ export type Database = {
           user_id?: string;
         };
         Update: {
+          added_by_user?: boolean;
+          has_times?: boolean;
           arrived_at?: string;
           created_at?: string;
           departed_at?: string;

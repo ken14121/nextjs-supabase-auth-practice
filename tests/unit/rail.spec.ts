@@ -72,6 +72,10 @@ test("切符の表示：日本時間の日付・時刻・所要時間、デザ�
   expect(rideDuration("2026-08-13T01:00:00Z", "2026-08-13T01:40:00Z")).toBe(
     "40分",
   );
-  expect(defaultRailDesign("東北新幹線")).toBe("mint");
-  expect(defaultRailDesign("東海道新幹線")).toBe("sky");
+  // 選んでいなければ路線の色
+  expect(defaultRailDesign("東北新幹線")).toBe("tohoku");
+  expect(defaultRailDesign("東海道・山陽新幹線")).toBe("tokaido");
+  expect(defaultRailDesign("北海道新幹線")).toBe("hokkaido");
+  expect(defaultRailDesign("西九州新幹線")).toBe("kyushu");
+  expect(defaultRailDesign("上越新幹線")).toBe("hokuriku");
 });

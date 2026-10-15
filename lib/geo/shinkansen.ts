@@ -239,3 +239,30 @@ export function lineNameBetween(fromId: string, toId: string): string {
   const names = [from[0], to[0]].filter(Boolean).map((l) => LINE_NAMES[l]);
   return `${[...new Set(names)].join("・")}新幹線`;
 }
+
+// 2 つの駅の路線（切符の色を決めるのに使う）。共通の路線が無ければ、着いた駅の路線
+export function lineBetween(
+  fromId: string,
+  toId: string,
+): ShinkansenLine | null {
+  const from = byId.get(fromId)?.[4] ?? [];
+  const to = byId.get(toId)?.[4] ?? [];
+  return from.find((l) => to.includes(l)) ?? to[0] ?? from[0] ?? null;
+}
+
+export const isStation = (id: string): boolean => byId.has(id);
+
+// 2 つの駅のあいだの直線距離（km）。どちらかが分からなければ null
+export function stationDistanceKm(fromId: string, toId: string): number | null {
+  const a = byId.get(fromId);
+  const b = byId.get(toId);
+  if (!a || !b) return null;
+  const R = 6371;
+  const rad = (deg: number) => (deg * Math.PI) / 180;
+  const h =
+    Math.sin(rad(b[2] - a[2]) / 2) ** 2 +
+    Math.cos(rad(a[2])) *
+      Math.cos(rad(b[2])) *
+      Math.sin(rad(b[3] - a[3]) / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
