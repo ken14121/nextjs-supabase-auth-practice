@@ -85,16 +85,26 @@ async function saveFlights(
   flights: ReturnType<typeof extractFlights>,
 ) {
   const ids = outings.flatMap((o) => (o.id ? [o.id] : []));
-  // 本人が選んだデザイン・飾りと、搭乗券から読んだ便名・座席は、出発時刻で引き継ぐ
+  // 本人が選んだデザイン・飾り・直した空港と、搭乗券から読んだ便名・座席は、出発時刻で引き継ぐ
   type Kept = Pick<
     Database["public"]["Tables"]["flights"]["Row"],
-    "design" | "style" | "airline" | "flight_number" | "seat"
+    | "design"
+    | "style"
+    | "airline"
+    | "flight_number"
+    | "seat"
+    | "from_airport"
+    | "to_airport"
+    | "distance_km"
+    | "airports_fixed"
   >;
   const kept = new Map<number, Kept>();
   for (const part of chunk(ids, CHUNK_SIZE)) {
     const { data, error } = await supabase
       .from("flights")
-      .select("departed_at, design, style, airline, flight_number, seat")
+      .select(
+        "departed_at, design, style, airline, flight_number, seat, from_airport, to_airport, distance_km, airports_fixed",
+      )
       .in("outing_id", part);
     if (error) throw error;
     for (const { departed_at, ...rest } of data ?? []) {
@@ -114,15 +124,19 @@ async function saveFlights(
       (o) => o.id && at >= o.startedAt && at <= o.endedAt,
     );
     if (!outing?.id) return [];
+    const old = kept.get(at);
+    // 本人が直した空港（と、それに合わせた距離）はそのまま
+    const fixed = old?.airports_fixed === true;
     return [
       {
         user_id: userId,
         outing_id: outing.id,
         departed_at: f.departedAt,
         arrived_at: f.arrivedAt,
-        from_airport: f.from,
-        to_airport: f.to,
-        distance_km: f.distanceKm,
+        from_airport: fixed ? old.from_airport : f.from,
+        to_airport: fixed ? old.to_airport : f.to,
+        distance_km: fixed ? Number(old.distance_km) : f.distanceKm,
+        airports_fixed: fixed,
         design: kept.get(at)?.design ?? null,
         style: kept.get(at)?.style ?? {},
         airline: kept.get(at)?.airline ?? null,

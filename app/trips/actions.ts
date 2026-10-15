@@ -3,8 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { airportDistanceKm, isKnownAirport } from "@/lib/geo/airports";
 import { PASS_DESIGNS, type PassDesign } from "@/lib/outings/boarding-pass";
 import { RAIL_DESIGNS, type RailDesign } from "@/lib/outings/rail-ticket";
+import {
+  TICKET_KINDS,
+  type TicketKind,
+  TRIP_DESIGNS,
+  type TripDesign,
+} from "@/lib/outings/ticket";
 import { compactStyle, ticketStyleSchema } from "@/lib/outings/ticket-style";
 import { createClient } from "@/lib/supabase/server";
 import { nightsBetween, type TripValues, tripSchema } from "@/lib/trips/schema";
@@ -146,6 +153,8 @@ export async function deleteTrip(id: string): Promise<void> {
   redirect("/trips");
 }
 
+const airportCode = z.string().regex(/^[A-Z]{3}$/);
+
 const ticketLookSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("flight"),
@@ -154,6 +163,8 @@ const ticketLookSchema = z.discriminatedUnion("kind", [
       PASS_DESIGNS.map((d) => d.value) as [PassDesign, ...PassDesign[]],
     ),
     style: ticketStyleSchema,
+    // 本人が直した空港（直していなければ無し）
+    airports: z.object({ from: airportCode, to: airportCode }).optional(),
   }),
   z.object({
     kind: z.literal("ride"),
@@ -163,22 +174,94 @@ const ticketLookSchema = z.discriminatedUnion("kind", [
     ),
     style: ticketStyleSchema,
   }),
+  z.object({
+    kind: z.literal("trip"),
+    id: z.uuid(),
+    design: z.enum(
+      TRIP_DESIGNS.map((d) => d.value) as [TripDesign, ...TripDesign[]],
+    ),
+    // 切符の種類（null なら自動）
+    ticketKind: z
+      .enum(
+        TICKET_KINDS.map((k) => k.key) as [
+          TicketKind["key"],
+          ...TicketKind["key"][],
+        ],
+      )
+      .nullable(),
+    style: ticketStyleSchema,
+  }),
 ]);
 
-// 搭乗券・新幹線の切符の見た目（デザイン・差し色・マーク・絵文字・はんこ）を保存する。
-// 本人の便・乗車だけ（RLS）。見た目以外の列は変えられない（列ごとの権限）
-export async function saveTicketLook(input: unknown): Promise<{ ok: boolean }> {
+type SaveResult = { ok: true } | { ok: false; message: string };
+const NOT_SAVED: SaveResult = { ok: false, message: "保存できませんでした" };
+
+// 切符の見た目（デザイン・差し色・マーク・絵文字・はんこ）を保存する。
+// 搭乗券は空港も、旅の切符は種類も直せる。本人の行だけ（RLS）。ほかの列は変えられない（列ごとの権限）
+export async function saveTicketLook(input: unknown): Promise<SaveResult> {
   const parsed = ticketLookSchema.safeParse(input);
-  if (!parsed.success) return { ok: false };
-  const { kind, id, design } = parsed.data;
-  const style = compactStyle(parsed.data.style);
+  if (!parsed.success) return NOT_SAVED;
+  const look = parsed.data;
+  const style = compactStyle(look.style);
   const supabase = await createClient();
+
+  if (look.kind === "trip") {
+    const { data, error } = await supabase
+      .from("outings")
+      .update({
+        ticket_design: look.design,
+        ticket_kind: look.ticketKind,
+        ticket_style: style,
+      })
+      .eq("id", look.id)
+      .select("id");
+    if (error || !data?.length) return NOT_SAVED;
+    revalidatePath("/trips");
+    return { ok: true };
+  }
+
+  if (look.kind === "ride") {
+    const { data, error } = await supabase
+      .from("train_rides")
+      .update({ design: look.design, style })
+      .eq("id", look.id)
+      .select("id");
+    if (error || !data?.length) return NOT_SAVED;
+    revalidatePath("/trips");
+    return { ok: true };
+  }
+
+  let airportFields = {};
+  if (look.airports) {
+    const { from, to } = look.airports;
+    if (!isKnownAirport(from) || !isKnownAirport(to)) {
+      return {
+        ok: false,
+        message: "知らない空港コードです。コード（例：HND）を確かめてください",
+      };
+    }
+    // 距離は、記録の距離と空港どうしの直線距離の長い方（機内で記録が途切れると短く出るため）
+    const { data: current } = await supabase
+      .from("flights")
+      .select("distance_km")
+      .eq("id", look.id)
+      .single();
+    const between = airportDistanceKm(from, to) ?? 0;
+    airportFields = {
+      from_airport: from,
+      to_airport: to,
+      airports_fixed: true,
+      distance_km:
+        Math.round(Math.max(Number(current?.distance_km ?? 0), between) * 10) /
+        10,
+    };
+  }
   const { data, error } = await supabase
-    .from(kind === "flight" ? "flights" : "train_rides")
-    .update({ design, style })
-    .eq("id", id)
+    .from("flights")
+    .update({ design: look.design, style, ...airportFields })
+    .eq("id", look.id)
     .select("id");
-  if (error || !data?.length) return { ok: false };
+  if (error || !data?.length) return NOT_SAVED;
   revalidatePath("/trips");
   return { ok: true };
 }

@@ -17,6 +17,7 @@ export type Database = {
       flights: {
         Row: {
           airline: string | null;
+          airports_fixed: boolean;
           arrived_at: string;
           created_at: string;
           departed_at: string;
@@ -33,6 +34,7 @@ export type Database = {
         };
         Insert: {
           airline?: string | null;
+          airports_fixed?: boolean;
           arrived_at: string;
           created_at?: string;
           departed_at: string;
@@ -49,6 +51,7 @@ export type Database = {
         };
         Update: {
           airline?: string | null;
+          airports_fixed?: boolean;
           arrived_at?: string;
           created_at?: string;
           departed_at?: string;
@@ -141,6 +144,9 @@ export type Database = {
           nights: number;
           source: string;
           started_at: string;
+          ticket_design: string | null;
+          ticket_kind: string | null;
+          ticket_style: Json;
           timeline_started_at: string | null;
           user_id: string;
         };
@@ -163,6 +169,9 @@ export type Database = {
           nights?: number;
           source?: string;
           started_at: string;
+          ticket_design?: string | null;
+          ticket_kind?: string | null;
+          ticket_style?: Json;
           timeline_started_at?: string | null;
           user_id?: string;
         };
@@ -185,6 +194,9 @@ export type Database = {
           nights?: number;
           source?: string;
           started_at?: string;
+          ticket_design?: string | null;
+          ticket_kind?: string | null;
+          ticket_style?: Json;
           timeline_started_at?: string | null;
           user_id?: string;
         };

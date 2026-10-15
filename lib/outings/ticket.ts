@@ -19,6 +19,28 @@ const KINDS: Record<TicketKind["key"], TicketKind> = {
   journey: { key: "journey", name: "旅の切符", latin: "JOURNEY" },
 };
 
+// 種類の一覧（本人が選び直すときの選択肢）
+export const TICKET_KINDS = Object.values(KINDS);
+
+export const isTicketKindKey = (v: unknown): v is TicketKind["key"] =>
+  typeof v === "string" && Object.hasOwn(KINDS, v);
+
+export const kindByKey = (key: TicketKind["key"]): TicketKind => KINDS[key];
+
+// 飛行機・新幹線の記録が無い旅の切符のデザイン
+export const TRIP_DESIGNS = [
+  { value: "atlas", label: "地図帳" },
+  { value: "mint", label: "ミントグリーン" },
+  { value: "sky", label: "水色" },
+  { value: "retro", label: "硬券風" },
+  { value: "noir", label: "黒と金" },
+] as const;
+
+export type TripDesign = (typeof TRIP_DESIGNS)[number]["value"];
+
+export const isTripDesign = (v: unknown): v is TripDesign =>
+  TRIP_DESIGNS.some((d) => d.value === v);
+
 // 電車でこれより遠くへ行ったら、新幹線・特急とみなす
 export const EXPRESS_KM = 100;
 

@@ -5,8 +5,16 @@ import { Palette } from "lucide-react";
 import { type ReactNode, useId, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { JA_NAMES } from "@/lib/geo/airport-names";
 import { isPassDesign, PASS_DESIGNS } from "@/lib/outings/boarding-pass";
 import { isRailDesign, RAIL_DESIGNS } from "@/lib/outings/rail-ticket";
+import {
+  isTicketKindKey,
+  isTripDesign,
+  kindByKey,
+  TICKET_KINDS,
+  TRIP_DESIGNS,
+} from "@/lib/outings/ticket";
 import {
   ACCENT_PRESETS,
   compactStyle,
@@ -19,13 +27,30 @@ import { saveTicketLook } from "./actions";
 import { BoardingPassView, type PassData } from "./boarding-pass-view";
 import { RailTicketView, type RideData } from "./rail-ticket-view";
 import { TicketMarkIcon } from "./ticket-mark";
+import { type TripData, TripTicketView } from "./trip-ticket-view";
 
-// 搭乗券・新幹線の切符を、本人が飾る。
+// 搭乗券・新幹線の切符・旅の切符を、本人が飾る（搭乗券は空港も直せる、旅の切符は種類も選べる）。
 // 「カスタマイズ」を開くと、変えている途中の見た目がその場で切符に出る。「保存」で確定する
 
 type Ticket =
   | { kind: "flight"; data: PassData }
-  | { kind: "ride"; data: RideData };
+  | { kind: "ride"; data: RideData }
+  | { kind: "trip"; data: TripData };
+
+const DESIGNS = {
+  flight: PASS_DESIGNS,
+  ride: RAIL_DESIGNS,
+  trip: TRIP_DESIGNS,
+} as const;
+
+// 空港を直す欄の候補（日本語の名前がある空港）
+const AIRPORT_OPTIONS = Object.entries(JA_NAMES);
+const AIRPORT_CODE = /^[A-Z]{3}$/;
+
+// 直した空港の名前（日本語の名前が無ければ、元の空港ならその名前、それ以外はコードのまま）
+function airportCity(code: string, original: string, originalCity: string) {
+  return JA_NAMES[code] ?? (code === original ? originalCity : code);
+}
 
 // 押すだけで入れられる絵文字（ほかの絵文字は、入力欄にキーボードから入れる）
 const QUICK_EMOJI = ["✨", "🎉", "❤️", "🌸", "🗻", "🏖️", "♨️", "🍣", "🍜", "🎡"];
@@ -97,12 +122,15 @@ export function TicketEditor({
   ticket,
   initialDesign,
   initialStyle,
+  initialKind = "",
   note,
   children,
 }: {
   ticket: Ticket;
   initialDesign: string;
   initialStyle: TicketStyle;
+  // 旅の切符の種類（本人が選んだもの。"" なら自動）
+  initialKind?: string;
   // 切符の下、左に出す注意書き（「時刻は日本時間」など）
   note?: ReactNode;
   // 切符の下、右に出すほかのボタン（「搭乗券を読み込む」など）
@@ -112,34 +140,84 @@ export function TicketEditor({
   const [open, setOpen] = useState(false);
   const [design, setDesign] = useState(initialDesign);
   const [draft, setDraft] = useState<Draft>(() => toDraft(initialStyle));
-  const [failed, setFailed] = useState(false);
+  const [tripKind, setTripKind] = useState(initialKind);
+  // 搭乗券の空港（分からない空港は空欄）
+  const originalAirports =
+    ticket.kind === "flight"
+      ? {
+          from: AIRPORT_CODE.test(ticket.data.fromCode)
+            ? ticket.data.fromCode
+            : "",
+          to: AIRPORT_CODE.test(ticket.data.toCode) ? ticket.data.toCode : "",
+        }
+      : { from: "", to: "" };
+  const [airports, setAirports] = useState(originalAirports);
+  const [failed, setFailed] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const { style, errors } = checkDraft(draft);
-  const hasErrors = Object.keys(errors).length > 0;
-  const designs = ticket.kind === "flight" ? PASS_DESIGNS : RAIL_DESIGNS;
+  const airportsChanged =
+    airports.from !== originalAirports.from ||
+    airports.to !== originalAirports.to;
+  const airportError =
+    ticket.kind === "flight" &&
+    airportsChanged &&
+    !(AIRPORT_CODE.test(airports.from) && AIRPORT_CODE.test(airports.to))
+      ? "空港はアルファベット 3 文字のコード（例：HND）で、出発と到着の両方を入れてください"
+      : null;
+  const hasErrors = Object.keys(errors).length > 0 || airportError !== null;
+  const designs = DESIGNS[ticket.kind];
   // 閉じているときは保存済みの見た目、開いているときは下書きの見た目
   const shownDesign = open ? design : initialDesign;
   const shownStyle = open ? style : initialStyle;
+  const shownKind = open ? tripKind : initialKind;
 
   const start = () => {
     setDesign(initialDesign);
     setDraft(toDraft(initialStyle));
-    setFailed(false);
+    setTripKind(initialKind);
+    setAirports(originalAirports);
+    setFailed(null);
     setOpen(true);
   };
 
   const save = () =>
     startTransition(async () => {
-      const res = await saveTicketLook({
-        kind: ticket.kind,
-        id: ticket.data.id,
-        design,
-        style,
-      });
-      setFailed(!res.ok);
+      const base = { id: ticket.data.id, design, style };
+      const res = await saveTicketLook(
+        ticket.kind === "flight"
+          ? {
+              kind: "flight",
+              ...base,
+              airports: airportsChanged ? airports : undefined,
+            }
+          : ticket.kind === "trip"
+            ? { kind: "trip", ...base, ticketKind: tripKind || null }
+            : { kind: "ride", ...base },
+      );
+      setFailed(res.ok ? null : res.message);
       if (res.ok) setOpen(false);
     });
+
+  // 搭乗券のプレビューには、直している途中の空港を出す
+  const passData =
+    ticket.kind === "flight" && open && airportsChanged
+      ? {
+          ...ticket.data,
+          fromCode: airports.from || "???",
+          fromCity: airportCity(
+            airports.from,
+            ticket.data.fromCode,
+            ticket.data.fromCity,
+          ),
+          toCode: airports.to || "???",
+          toCity: airportCity(
+            airports.to,
+            ticket.data.toCode,
+            ticket.data.toCity,
+          ),
+        }
+      : ticket.data;
 
   const addEmoji = (emoji: string) =>
     setDraft((d) => ({ ...d, emoji: d.emoji + emoji }));
@@ -148,7 +226,7 @@ export function TicketEditor({
     <div className="flex flex-col gap-1.5">
       {ticket.kind === "flight" && isPassDesign(shownDesign) ? (
         <BoardingPassView
-          data={ticket.data}
+          data={passData as PassData}
           design={shownDesign}
           style={shownStyle}
         />
@@ -158,10 +236,19 @@ export function TicketEditor({
           design={shownDesign}
           style={shownStyle}
         />
+      ) : ticket.kind === "trip" && isTripDesign(shownDesign) ? (
+        <TripTicketView
+          data={ticket.data}
+          kind={kindByKey(
+            isTicketKindKey(shownKind) ? shownKind : ticket.data.autoKind,
+          )}
+          design={shownDesign}
+          style={shownStyle}
+        />
       ) : null}
 
       <div className="flex flex-wrap items-start justify-between gap-2 px-1">
-        <span className="text-[0.7rem] text-muted-foreground">{note}</span>
+        <span className="min-w-0 text-sm">{note}</span>
         <div className="flex flex-wrap items-start justify-end gap-3">
           {children}
           <button
@@ -197,6 +284,96 @@ export function TicketEditor({
               ))}
             </select>
           </label>
+
+          {ticket.kind === "trip" && (
+            <label className="flex flex-wrap items-center gap-3">
+              <span className="w-16 shrink-0 text-xs text-muted-foreground">
+                種類
+              </span>
+              <select
+                value={tripKind}
+                onChange={(e) => setTripKind(e.target.value)}
+                className="h-8 rounded-sm border border-input bg-background px-2 text-sm"
+              >
+                <option value="">
+                  自動（{kindByKey(ticket.data.autoKind).name}）
+                </option>
+                {TICKET_KINDS.map((k) => (
+                  <option key={k.key} value={k.key}>
+                    {k.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {ticket.kind === "flight" && (
+            <div className="flex flex-wrap items-start gap-3">
+              <span className="w-16 shrink-0 pt-2 text-xs text-muted-foreground">
+                空港
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    aria-label="出発の空港"
+                    list={`${ids}-airports`}
+                    value={airports.from}
+                    onChange={(e) =>
+                      setAirports((a) => ({
+                        ...a,
+                        from: e.target.value.toUpperCase().trim(),
+                      }))
+                    }
+                    maxLength={3}
+                    placeholder="HND"
+                    aria-invalid={airportError ? true : undefined}
+                    className="h-8 w-20 font-mono uppercase"
+                  />
+                  <span aria-hidden="true">→</span>
+                  <Input
+                    aria-label="到着の空港"
+                    list={`${ids}-airports`}
+                    value={airports.to}
+                    onChange={(e) =>
+                      setAirports((a) => ({
+                        ...a,
+                        to: e.target.value.toUpperCase().trim(),
+                      }))
+                    }
+                    maxLength={3}
+                    placeholder="CTS"
+                    aria-invalid={airportError ? true : undefined}
+                    className="h-8 w-20 font-mono uppercase"
+                  />
+                  {airportsChanged && (
+                    <button
+                      type="button"
+                      onClick={() => setAirports(originalAirports)}
+                      className="text-xs text-muted-foreground underline underline-offset-4"
+                    >
+                      元に戻す
+                    </button>
+                  )}
+                  <datalist id={`${ids}-airports`}>
+                    {AIRPORT_OPTIONS.map(([code, name]) => (
+                      <option key={code} value={code}>
+                        {name}
+                      </option>
+                    ))}
+                  </datalist>
+                </div>
+                <p
+                  className={cn(
+                    "text-xs",
+                    airportError ? "text-destructive" : "text-muted-foreground",
+                  )}
+                >
+                  {airportError ??
+                    "違っていたら直せます。直した空港は、取り込み直しても残ります"}
+                </p>
+              </div>
+            </div>
+          )}
 
           <fieldset className="flex flex-wrap items-center gap-3">
             <legend className="float-left w-16 shrink-0 text-xs text-muted-foreground">
@@ -343,7 +520,11 @@ export function TicketEditor({
                   setDraft((d) => ({ ...d, stamp: e.target.value }))
                 }
                 placeholder={
-                  ticket.kind === "flight" ? "例：初めての沖縄" : "乗車記念"
+                  ticket.kind === "ride"
+                    ? "乗車記念"
+                    : ticket.kind === "trip"
+                      ? ticket.data.labelText
+                      : "例：初めての沖縄"
                 }
                 aria-invalid={errors.stamp ? true : undefined}
                 className="h-8 w-48"
@@ -388,7 +569,7 @@ export function TicketEditor({
             </Button>
             {failed && (
               <span role="status" className="text-xs text-destructive">
-                保存できませんでした
+                {failed}
               </span>
             )}
           </div>

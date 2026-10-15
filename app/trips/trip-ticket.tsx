@@ -2,12 +2,20 @@ import Link from "next/link";
 import { LabelSelect } from "@/app/outings/label-select";
 import { regionName } from "@/lib/geo/names";
 import { labelName } from "@/lib/outings/labels";
-import { destinationOf, ticketKind } from "@/lib/outings/ticket";
+import {
+  destinationOf,
+  isTicketKindKey,
+  isTripDesign,
+  ticketKind,
+} from "@/lib/outings/ticket";
+import { readTicketStyle } from "@/lib/outings/ticket-style";
 import { BoardingPass, type FlightRow } from "./boarding-pass";
 import { RailTicket, type RideRow } from "./rail-ticket";
+import { TicketEditor } from "./ticket-editor";
 
 // 旅の索引の 1 枚。1 回の旅を、行き先の入った切符（航空券・新幹線の特急券など）の形で見せる。
-// 左が券面（種類・出発 → 行き先・経由地・日付）、右が半券（日付・泊数・種類のはんこ）
+// 飛行機・新幹線の記録があれば便・乗車ごとの券を並べ、無ければ旅 1 回で 1 枚の切符（trip-ticket-view.tsx）。
+// どの券も「カスタマイズ」で、種類・デザイン・飾りを本人が選び直せる
 
 export type TicketTrip = {
   id: string;
@@ -22,6 +30,10 @@ export type TicketTrip = {
   label_source: string | null;
   label_confidence: number | null;
   memo: string;
+  // 旅の切符の見た目（本人が選んだもの。null なら自動）
+  ticket_kind: string | null;
+  ticket_design: string | null;
+  ticket_style: unknown;
   regions: { region_code: string; visited_on: string }[];
   // 飛行機の便（あれば、切符の代わりに便ごとの搭乗券を並べる）
   flights: FlightRow[];
@@ -81,6 +93,27 @@ export function TripTicket({
     })),
   ].sort((a, b) => a.at.localeCompare(b.at));
 
+  // 旅の種類を選び直す（取り込んだ旅）／手入力の旅の編集
+  const controls =
+    trip.source === "timeline" ? (
+      <LabelSelect
+        outingId={trip.id}
+        label={trip.label}
+        source={trip.label_source}
+        confidence={trip.label_confidence}
+      />
+    ) : (
+      <span className="flex items-center gap-3 text-xs text-muted-foreground">
+        手入力
+        <Link
+          href={`/trips/${trip.id}/edit`}
+          className="text-foreground underline underline-offset-4"
+        >
+          編集
+        </Link>
+      </span>
+    );
+
   return (
     <li className="flex flex-col gap-2">
       {legs.length > 0 ? (
@@ -109,91 +142,42 @@ export function TripTicket({
           )}
         </>
       ) : (
-        <article className="relative grid grid-cols-[1fr_auto] border border-ink/80 bg-[#fbf9f4] text-ink">
-          {/* 券面 */}
-          <div className="flex min-w-0 flex-col gap-2 p-4">
-            <p className="flex items-baseline gap-2 text-xs">
-              <span className="font-medium">{kind.name}</span>
-              <span className="tracking-[0.2em] text-muted-foreground">
-                {kind.latin}
-              </span>
-            </p>
-            <p className="flex min-w-0 items-baseline gap-3 font-serif">
-              <span className="shrink-0 text-lg text-muted-foreground">
-                {from}
-              </span>
-              <span aria-hidden="true" className="shrink-0 text-vermilion">
-                ⟶
-              </span>
-              <span className="truncate text-3xl font-semibold">
-                {destination ? shortName(destination) : "近場"}
-              </span>
-            </p>
-            {via.length > 0 && (
-              <p className="truncate text-xs text-muted-foreground">
-                経由 {via.map(shortName).join("・")}
-              </p>
-            )}
-            <p className="flex flex-wrap gap-x-4 text-xs text-muted-foreground tabular-nums">
-              <span>
-                {start.y}.{start.m}.{start.d}
-                {endText && ` → ${endText}`}
-              </span>
-              {trip.distance_km > 0 && (
-                <span>{Math.round(trip.distance_km).toLocaleString()} km</span>
-              )}
-            </p>
-          </div>
-
-          {/* 半券。切り取り線と、上下の切れ込み */}
-          <div className="relative flex w-24 flex-col items-center justify-center gap-1 border-l-2 border-dashed border-rule px-2 py-4 text-center sm:w-28">
-            <span
-              aria-hidden="true"
-              className="absolute -top-px -left-[9px] size-4 -translate-y-1/2 rounded-full border border-ink/80 bg-background [clip-path:inset(50%_0_0_0)]"
-            />
-            <span
-              aria-hidden="true"
-              className="absolute -bottom-px -left-[9px] size-4 translate-y-1/2 rounded-full border border-ink/80 bg-background [clip-path:inset(0_0_50%_0)]"
-            />
-            <span className="text-[0.65rem] text-muted-foreground tabular-nums">
-              {start.y}
-            </span>
-            <span className="font-serif text-xl leading-none font-semibold tabular-nums">
-              {start.m}.{start.d}
-            </span>
-            {trip.nights > 0 && (
-              <span className="text-xs text-muted-foreground">
-                {trip.nights} 泊
-              </span>
-            )}
-            <span className="mt-1 -rotate-6 rounded-full border-2 border-vermilion px-2 py-0.5 text-xs font-bold text-vermilion">
-              {labelName(trip.label)}
-            </span>
-          </div>
-        </article>
+        <TicketEditor
+          ticket={{
+            kind: "trip",
+            data: {
+              id: trip.id,
+              autoKind: kind.key,
+              from,
+              destination: destination ? shortName(destination) : "近場",
+              via: via.map(shortName),
+              dateText: `${start.y}.${start.m}.${start.d}${endText ? ` → ${endText}` : ""}`,
+              distanceKm: trip.distance_km,
+              year: start.y,
+              monthDay: `${start.m}.${start.d}`,
+              nights: trip.nights,
+              labelText: labelName(trip.label),
+            },
+          }}
+          initialDesign={
+            isTripDesign(trip.ticket_design) ? trip.ticket_design : "atlas"
+          }
+          initialKind={
+            isTicketKindKey(trip.ticket_kind) ? trip.ticket_kind : ""
+          }
+          initialStyle={readTicketStyle(trip.ticket_style)}
+          note={trip.memo || null}
+        >
+          {controls}
+        </TicketEditor>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-sm">
-        {trip.memo ? <span>{trip.memo}</span> : <span />}
-        {trip.source === "timeline" ? (
-          <LabelSelect
-            outingId={trip.id}
-            label={trip.label}
-            source={trip.label_source}
-            confidence={trip.label_confidence}
-          />
-        ) : (
-          <span className="flex items-center gap-3 text-xs text-muted-foreground">
-            手入力
-            <Link
-              href={`/trips/${trip.id}/edit`}
-              className="text-foreground underline underline-offset-4"
-            >
-              編集
-            </Link>
-          </span>
-        )}
-      </div>
+      {legs.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-sm">
+          {trip.memo ? <span>{trip.memo}</span> : <span />}
+          {controls}
+        </div>
+      )}
     </li>
   );
 }

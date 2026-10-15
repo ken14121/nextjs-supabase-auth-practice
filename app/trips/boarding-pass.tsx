@@ -69,7 +69,13 @@ export function BoardingPass({
       }}
       initialDesign={design}
       initialStyle={readTicketStyle(flight.style)}
-      note={international ? "時刻は日本時間" : null}
+      note={
+        international ? (
+          <span className="text-[0.7rem] text-muted-foreground">
+            時刻は日本時間
+          </span>
+        ) : null
+      }
     >
       {!flight.flight_number && (
         <ScanBoardingPass
