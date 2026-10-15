@@ -52,8 +52,7 @@ export default async function OutingsPage() {
         <p className="text-sm text-muted-foreground">
           取り込んだ外出を Jev
           が「旅行・帰省・日帰り・おでかけ・日常」に分けます。学校など、いつもの場所だけの日は
-          Jev
-          を使わず日常にします。Jev
+          Jev を使わず日常にします。Jev
           が使えないとき（キーや残高が無いとき）は、アプリのルールで判定します。間違っていたら選び直してください（選び直したものは
           Jev が上書きしません）。友達に見えるのは、日常以外の外出だけです。
         </p>
