@@ -46,8 +46,8 @@ test("泊まっていない外出：日常・おでかけ・日帰り", () => {
   expect(judge(0, ["JP-12", "JP-13"], f(30, 180, 60))).toBe("outing");
   // 鎌倉へ日帰り（80km）
   expect(judge(0, ["JP-12", "JP-13", "JP-14"], f(80, 300))).toBe("day_trip");
-  // ふだん行かない場所にちょっとだけ寄った
-  expect(judge(0, ["JP-12"], f(20, 40, 90))).toBe("daily");
+  // いつもの場所以外にいたのが 2 時間に満たない
+  expect(judge(0, ["JP-12"], f(20, 40, 60))).toBe("daily");
 });
 
 test("泊まった外出：旅行・帰省・日常", () => {
@@ -69,21 +69,24 @@ test("泊まった外出：旅行・帰省・日常", () => {
 });
 
 test("おでかけの境目は、変えて比べられる", () => {
-  // ふだん行かない場所 40 分・ときどき行く場所 90 分（20km）
+  // ふだん行かない場所 40 分・ときどき行く場所 60 分（20km）
   const input = {
     started_at: SPRING[0],
     ended_at: SPRING[1],
     nights: 0,
     region_codes: ["JP-12", "JP-13"],
-    features: f(20, 40, 90),
+    features: f(20, 40, 60),
     distance_km: 0,
   };
+  // 今の設定（いつもの場所以外ぜんぶで 120 分）では日常
   expect(ruleJudge(input, ctx).label).toBe("daily");
-  expect(ruleJudge(input, ctx, { outingMinutes: 30 }).label).toBe("outing");
+  expect(ruleJudge(input, ctx, { outingMinutes: 90 }).label).toBe("outing");
   expect(
-    ruleJudge(input, ctx, { outingMinutes: 120, outingMinutesOf: "notUsual" })
-      .label,
+    ruleJudge(input, ctx, { outingMinutes: 30, outingMinutesOf: "rare" }).label,
   ).toBe("outing");
+  expect(
+    ruleJudge(input, ctx, { outingMinutes: 60, outingMinutesOf: "rare" }).label,
+  ).toBe("daily");
 });
 
 test("地点の数字が無い外出は、移動した距離から目安を出す", () => {

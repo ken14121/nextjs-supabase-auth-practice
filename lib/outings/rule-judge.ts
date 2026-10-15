@@ -21,10 +21,14 @@ import { isClearlyDaily, type OutingFeatures } from "@/lib/timeline/features";
 // 数字は本人が確かめた外出で正解率を見ながら決める（/outings/review）
 
 export const DAY_TRIP_KM = 50;
-export const OUTING_MINUTES = 60;
+// 本人が確かめた 81 件で、境目を変えたときの正解率を比べて決めた（10/15）。
+//   ふだん行かない場所だけで見る：30〜180 分のどれでも 73〜75%
+//   いつもの場所以外ぜんぶで見る：90 分 78%・120 分 83%・180 分 83%
+// 120 分と 180 分が同じで安定しているので、短い方の 120 分（2 時間）にした。Jev（84%）とほぼ同じ
+export const OUTING_MINUTES = 120;
 // おでかけかどうかを見る時間：ふだん行かない場所だけ（rare）か、いつもの場所以外ぜんぶ（notUsual = ときどき + ふだん行かない）か
 export type OutingMinutesOf = "rare" | "notUsual";
-export const OUTING_MINUTES_OF: OutingMinutesOf = "rare";
+export const OUTING_MINUTES_OF: OutingMinutesOf = "notUsual";
 
 // 境目を変えたらどうなるかを、確かめるページで計算するときに変える
 export type RuleOptions = {
