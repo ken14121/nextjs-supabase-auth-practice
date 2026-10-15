@@ -17,11 +17,13 @@ import {
   evaluateJev,
   type ReviewedOuting,
 } from "@/lib/jev/evaluate";
+import { buildJevContext } from "@/lib/jev/state";
 import {
   labelName,
   OUTING_LABEL_VALUES,
   type OutingLabel,
 } from "@/lib/outings/labels";
+import { ruleJudge } from "@/lib/outings/rule-judge";
 import { createClient } from "@/lib/supabase/server";
 import { isClearlyDaily, outingFeaturesSchema } from "@/lib/timeline/features";
 
@@ -82,12 +84,15 @@ export default async function ReviewPage() {
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) redirect("/");
 
-  const { data: outings } = await supabase
-    .from("outings")
-    .select(
-      "id, started_at, ended_at, nights, distance_km, features, label, label_source, label_confidence, jev_label, jev_confidence, jev_p_daily, jev_p_homecoming, jev_p_day_trip, visited_regions(region_code)",
-    )
-    .not("jev_label", "is", null);
+  const [{ data: outings }, { data: regions }] = await Promise.all([
+    supabase
+      .from("outings")
+      .select(
+        "id, started_at, ended_at, nights, distance_km, features, label, label_source, label_confidence, jev_label, jev_confidence, jev_p_daily, jev_p_homecoming, jev_p_day_trip, visited_regions(region_code)",
+      )
+      .not("jev_label", "is", null),
+    supabase.rpc("get_my_regions"),
+  ]);
 
   const all = outings ?? [];
   // 本人が確かめたもの（合ってる・直した）
@@ -111,6 +116,25 @@ export default async function ReviewPage() {
     reviewed.map((r, i) => (byRule[i] ? { ...r, jevLabel: "daily" } : r)),
   );
   const ruleCount = byRule.filter(Boolean).length;
+  // Jev を使わず、ルールだけで判定していたら（Jev が使えないときの代わり。lib/outings/rule-judge.ts）
+  const ctx = buildJevContext(regions ?? []);
+  const ruleOnly = evaluateJev(
+    reviewedRows.map((o, i) => {
+      const features = outingFeaturesSchema.safeParse(o.features);
+      return {
+        ...reviewed[i],
+        jevLabel: ruleJudge(
+          {
+            nights: o.nights,
+            distance_km: Number(o.distance_km),
+            region_codes: o.visited_regions.map((r) => r.region_code),
+            features: features.success ? features.data : null,
+          },
+          ctx,
+        ).label,
+      };
+    }),
+  );
   // 「日常」の境目を変えたら（3 つの確率がそろっている外出だけで計算する）
   const thresholdRows = reviewedRows.flatMap((o, i) =>
     o.jev_p_daily !== null &&
@@ -189,6 +213,63 @@ export default async function ReviewPage() {
                 （確かめた {result.total} 件のうち {ruleCount}{" "}
                 件がルールで決まる）。
               </p>
+            )}
+            {result.total > 0 && (
+              <section className="flex flex-col gap-2 rounded-md border px-3 py-3">
+                <h3 className="font-medium">
+                  Jev を使わず、ルールだけで判定したら
+                </h3>
+                <p className="text-sm">
+                  正解率{" "}
+                  <b className="text-xl tabular-nums">
+                    {percent(ruleOnly.accuracy)}
+                  </b>{" "}
+                  <span className="text-muted-foreground">
+                    （同じ {ruleOnly.total} 件。Jev とルールを合わせると{" "}
+                    {percent(withRule.accuracy)}）
+                  </span>
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm tabular-nums">
+                    <thead>
+                      <tr className="border-b text-xs text-muted-foreground">
+                        <th className="py-1.5 text-left font-medium">
+                          ルール ＼ 本人
+                        </th>
+                        {OUTING_LABEL_VALUES.map((l) => (
+                          <th key={l} className="py-1.5 font-medium">
+                            {labelName(l)}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {OUTING_LABEL_VALUES.map((rule) => (
+                        <tr key={rule} className="border-b last:border-0">
+                          <td className="py-1.5">{labelName(rule)}</td>
+                          {OUTING_LABEL_VALUES.map((user) => (
+                            <td
+                              key={user}
+                              className={
+                                rule === user
+                                  ? "py-1.5 text-center font-semibold"
+                                  : "py-1.5 text-center text-muted-foreground"
+                              }
+                            >
+                              {ruleOnly.confusion[rule][user]}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Jev
+                  が使えないとき（キーが無い・残高が無い）は、このルールで判定します。
+                  ルールは本人が確かめた外出を見て決めているので、ほかの人のデータでは当たり方が変わることがあります。
+                </p>
+              </section>
             )}
             <RejudgeButton />
             {result.total < ENOUGH_REVIEWS && (

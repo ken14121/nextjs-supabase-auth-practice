@@ -1,4 +1,4 @@
-import { regionName } from "@/lib/geo/names";
+import { isPrefectureCode, regionName } from "@/lib/geo/names";
 import type { OutingFeatures } from "@/lib/timeline/features";
 
 // Jev に渡す「外出 1 回ぶんの状況」を作る。
@@ -22,6 +22,19 @@ export type JevContext = {
   // 住んでいる都道府県（一番多く行った都道府県とみなす）
   homeRegion: string | null;
 };
+
+// 判定の材料：これまでに行った日数と、住んでいる都道府県（一番多く行った都道府県）
+export function buildJevContext(
+  regions: { region_code: string; visited_days: number }[],
+): JevContext {
+  const home = regions
+    .filter((r) => isPrefectureCode(r.region_code))
+    .sort((a, b) => b.visited_days - a.visited_days)[0];
+  return {
+    visitedDays: new Map(regions.map((r) => [r.region_code, r.visited_days])),
+    homeRegion: home?.region_code ?? null,
+  };
+}
 
 // この日数以上行っている場所は「よく行く場所」とみなす
 export const FREQUENT_DAYS = 30;

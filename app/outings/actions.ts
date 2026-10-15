@@ -3,14 +3,14 @@
 import { APIConnectionError, APIError } from "@typesafe-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { ZodError, z } from "zod";
-import { isPrefectureCode } from "@/lib/geo/names";
 import {
   classifyOuting,
   createJevClient,
   JevNotConfiguredError,
 } from "@/lib/jev/classify";
-import type { JevContext } from "@/lib/jev/state";
-import { OUTING_LABEL_VALUES } from "@/lib/outings/labels";
+import { buildJevContext } from "@/lib/jev/state";
+import { OUTING_LABEL_VALUES, type OutingLabel } from "@/lib/outings/labels";
+import { ruleJudge } from "@/lib/outings/rule-judge";
 import { createClient } from "@/lib/supabase/server";
 import { isClearlyDaily, outingFeaturesSchema } from "@/lib/timeline/features";
 
@@ -70,17 +70,16 @@ function describeError(error: unknown): string {
     : "Jev での判定に失敗しました。";
 }
 
-// 判定の材料：これまでに行った日数と、住んでいる都道府県（一番多く行った都道府県）
-function buildContext(
-  regions: { region_code: string; visited_days: number }[],
-): JevContext {
-  const home = regions
-    .filter((r) => isPrefectureCode(r.region_code))
-    .sort((a, b) => b.visited_days - a.visited_days)[0];
-  return {
-    visitedDays: new Map(regions.map((r) => [r.region_code, r.visited_days])),
-    homeRegion: home?.region_code ?? null,
-  };
+// Jev が使えない状態か（キーが無い・キーが違う・残高や権限が無い）。待てば直るエラーは含めない
+function isUnavailable(error: unknown): boolean {
+  if (error instanceof JevNotConfiguredError) return true;
+  const status =
+    error instanceof APIError
+      ? error.status
+      : typeof (error as { status?: unknown })?.status === "number"
+        ? (error as { status: number }).status
+        : null;
+  return status === 401 || status === 402 || status === 403;
 }
 
 // 配列を limit 件ずつ並行して処理する
@@ -121,19 +120,13 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
       .is("label", null)
       .eq("source", "timeline");
 
-  let client: ReturnType<typeof createJevClient>;
+  // Jev が使えない（キーが無い）ときは、ルールだけで判定する（lib/outings/rule-judge.ts）
+  let client: ReturnType<typeof createJevClient> | null = null;
+  let unavailable: unknown = null;
   try {
     client = createJevClient();
   } catch (error) {
-    const { count } = await pendingQuery();
-    return {
-      ok: false,
-      message: describeError(error),
-      classified: 0,
-      remaining: count ?? 0,
-      requests: 0,
-      tokens: 0,
-    };
+    unavailable = error;
   }
 
   const [{ data: regions }, { data: outings }] = await Promise.all([
@@ -157,9 +150,9 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
   const ruleIds = pending
     .filter((o) => o.features && isClearlyDaily(o.nights, o.features))
     .map((o) => o.id);
-  const jevTargets = pending
-    .filter((o) => !ruleIds.includes(o.id))
-    .slice(0, BATCH_SIZE);
+  const others = pending.filter((o) => !ruleIds.includes(o.id));
+  // Jev に聞くのは少しずつ。Jev が使えないときは、ルールで全部決める
+  const jevTargets = client ? others.slice(0, BATCH_SIZE) : [];
 
   let ruleCount = 0;
   for (let i = 0; i < ruleIds.length; i += 100) {
@@ -172,7 +165,7 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
     ruleCount += updated?.length ?? 0;
   }
 
-  const ctx = buildContext(regions ?? []);
+  const ctx = buildJevContext(regions ?? []);
 
   let classified = ruleCount;
   let requests = 0;
@@ -180,7 +173,7 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
   let firstError: unknown = null;
 
   await runWithLimit(jevTargets, CONCURRENCY, async (outing) => {
-    if (firstError) return; // キーの間違いなどで失敗したら、残りは送らない
+    if (firstError || !client) return; // キーの間違いなどで失敗したら、残りは送らない
     try {
       requests++;
       const result = await classifyOuting(
@@ -214,8 +207,52 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
     }
   });
 
+  // Jev が使えない（キーが無い・キーが違う・残高が無い）ときは、残りをルールで判定する。
+  // 通信の失敗など、待てば直るものはルールにせず、未判定のまま残す
+  let byRules = 0;
+  if (unavailable === null && isUnavailable(firstError)) {
+    unavailable = firstError;
+    firstError = null;
+  }
+  if (unavailable !== null) {
+    const groups = new Map<OutingLabel, string[]>();
+    for (const o of others) {
+      const { label } = ruleJudge(
+        {
+          ...o,
+          region_codes: o.visited_regions.map((r) => r.region_code),
+        },
+        ctx,
+      );
+      groups.set(label, [...(groups.get(label) ?? []), o.id]);
+    }
+    for (const [label, ids] of groups) {
+      for (let i = 0; i < ids.length; i += 100) {
+        const { data: updated } = await supabase
+          .from("outings")
+          .update({ label, label_source: "rule", label_confidence: null })
+          .in("id", ids.slice(i, i + 100))
+          .is("label", null)
+          .select("id");
+        byRules += updated?.length ?? 0;
+      }
+    }
+    classified += byRules;
+  }
+
   const { count: remaining } = await pendingQuery();
   if (classified > 0) refresh();
+
+  if (unavailable !== null) {
+    return {
+      ok: true,
+      message: `Jev が使えないため、ルールで判定しました（${classified} 件。${describeError(unavailable)}）。`,
+      classified,
+      remaining: remaining ?? 0,
+      requests,
+      tokens,
+    };
+  }
 
   if (firstError) {
     return {
@@ -319,7 +356,7 @@ export async function rejudgeWithNewQuestions(): Promise<RejudgeResult> {
       .eq("label_source", "user")
       .not("jev_label", "is", null),
   ]);
-  const ctx = buildContext(regions ?? []);
+  const ctx = buildJevContext(regions ?? []);
 
   let done = 0;
   let firstError: unknown = null;

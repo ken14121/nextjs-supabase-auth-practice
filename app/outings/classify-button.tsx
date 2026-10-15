@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { type ClassifyResult, classifyPendingOutings } from "./actions";
 
-// 未判定の外出を Jev で判定するボタン。
+// 未判定の外出を Jev で判定するボタン（Jev が使えないときは、ルールで判定する）。
 // 「20 件だけ」と「残りをすべて」（20 件ずつくり返す。途中で止められる）の 2 つ
 export function ClassifyButton({ pending }: { pending: number }) {
   const [result, setResult] = useState<ClassifyResult | null>(null);

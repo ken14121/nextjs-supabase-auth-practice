@@ -33,7 +33,7 @@ export function LabelSelect({
           ? "？ Jev の判定・要確認"
           : "Jev の判定"
         : source === "rule"
-          ? "自動（いつもの場所だけ）"
+          ? "ルールで判定"
           : "自分で設定";
   const detail =
     source === "jev" && confidence !== null
