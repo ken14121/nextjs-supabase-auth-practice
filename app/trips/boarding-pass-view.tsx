@@ -26,6 +26,8 @@ export type PassData = {
   departedAt: string;
   arrivedAt: string;
   distanceKm: number;
+  // 便ではなく旅 1 回を搭乗券の形で見せるとき、時刻の代わりに出す文字（出発日・帰った日・泊数）
+  times?: { dep: string; arr: string; length: string };
   // 搭乗券のバーコードから読んだもの（読んでいなければ null）
   airlineName: string | null;
   flightText: string | null;
@@ -230,18 +232,29 @@ export function BoardingPassView({
             >
               <Field
                 label="DEP"
-                value={passTime(data.departedAt)}
+                value={data.times?.dep ?? passTime(data.departedAt)}
                 sub={t.sub}
               />
-              <Field label="ARR" value={passTime(data.arrivedAt)} sub={t.sub} />
+              <Field
+                label="ARR"
+                value={data.times?.arr ?? passTime(data.arrivedAt)}
+                sub={t.sub}
+              />
               <Field
                 label="TIME"
-                value={flightDuration(data.departedAt, data.arrivedAt)}
+                value={
+                  data.times?.length ??
+                  flightDuration(data.departedAt, data.arrivedAt)
+                }
                 sub={t.sub}
               />
               <Field
                 label="DIST"
-                value={`${Math.round(data.distanceKm).toLocaleString()}km`}
+                value={
+                  data.distanceKm > 0
+                    ? `${Math.round(data.distanceKm).toLocaleString()}km`
+                    : "--"
+                }
                 sub={t.sub}
               />
             </div>

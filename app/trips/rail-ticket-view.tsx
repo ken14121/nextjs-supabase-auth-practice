@@ -20,6 +20,8 @@ export type RideData = {
   departedAt: string;
   arrivedAt: string;
   distanceKm: number;
+  // 乗車ではなく旅 1 回を切符の形で見せるとき、時刻の代わりに出す文字（出発日・帰った日・泊数）
+  times?: { dep: string; arr: string; length: string };
 };
 
 type Theme = {
@@ -101,7 +103,7 @@ export function RailTicketView({
               {data.from}
             </span>
             <span className={cn("text-xs tabular-nums", t.sub)}>
-              （{railTime(data.departedAt)}発）
+              （{data.times?.dep ?? railTime(data.departedAt)}発）
             </span>
           </div>
           <span
@@ -125,18 +127,22 @@ export function RailTicketView({
               )}
             </span>
             <span className={cn("text-xs tabular-nums", t.sub)}>
-              （{railTime(data.arrivedAt)}着）
+              （{data.times?.arr ?? railTime(data.arrivedAt)}着）
             </span>
           </div>
         </div>
         <p className="flex flex-wrap gap-x-4 pr-14 text-sm tabular-nums">
           <span className="font-semibold">{railDate(data.departedAt)}</span>
           <span className={t.sub}>
-            所要 {rideDuration(data.departedAt, data.arrivedAt)}
+            {data.times
+              ? data.times.length
+              : `所要 ${rideDuration(data.departedAt, data.arrivedAt)}`}
           </span>
-          <span className={t.sub}>
-            約 {Math.round(data.distanceKm).toLocaleString()} km
-          </span>
+          {data.distanceKm > 0 && (
+            <span className={t.sub}>
+              約 {Math.round(data.distanceKm).toLocaleString()} km
+            </span>
+          )}
         </p>
         <p
           className={cn(

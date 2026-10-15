@@ -1,7 +1,14 @@
 import { cn } from "cn";
 import type { CSSProperties } from "react";
-import type { TicketKind, TripDesign } from "@/lib/outings/ticket";
+import {
+  type CardDesign,
+  type TicketKind,
+  type TripDesign,
+  tripLook,
+} from "@/lib/outings/ticket";
 import type { TicketStyle } from "@/lib/outings/ticket-style";
+import { BoardingPassView, type PassData } from "./boarding-pass-view";
+import { RailTicketView, type RideData } from "./rail-ticket-view";
 import { TicketMarkIcon } from "./ticket-mark";
 
 // 飛行機・新幹線の記録が無い旅（ドライブ・手入力の旅など）の切符の見た目だけ。
@@ -16,6 +23,11 @@ export type TripData = {
   destination: string;
   via: string[];
   dateText: string;
+  startedAt: string;
+  endedAt: string;
+  // 出発日・帰った日（「3/25」）
+  startText: string;
+  endText: string;
   distanceKm: number;
   year: number;
   monthDay: string;
@@ -35,7 +47,7 @@ type Theme = {
   accent: string;
 };
 
-const THEMES: Record<TripDesign, Theme> = {
+const THEMES: Record<CardDesign, Theme> = {
   atlas: {
     card: "border border-ink/80 bg-[#fbf9f4] text-ink",
     pattern: "",
@@ -94,7 +106,7 @@ export function TripTicketView({
 }: {
   data: TripData;
   kind: TicketKind;
-  design: TripDesign;
+  design: CardDesign;
   style: TicketStyle;
 }) {
   const t = THEMES[design];
@@ -186,5 +198,94 @@ export function TripTicketView({
         </span>
       </div>
     </article>
+  );
+}
+
+// 泊数の文字（日帰り / 1泊2日）
+const lengthText = (nights: number) =>
+  nights > 0 ? `${nights}泊${nights + 1}日` : "日帰り";
+
+// 旅 1 回を、搭乗券の形で見せるときの中身（空港の代わりに出発地と行き先、時刻の代わりに日付）
+function asPass(data: TripData): PassData {
+  return {
+    id: data.id,
+    fromCode: data.from,
+    fromCity: "出発",
+    toCode: data.destination,
+    toCity: data.via.length > 0 ? `経由 ${data.via.join("・")}` : "行き先",
+    departedAt: data.startedAt,
+    arrivedAt: data.endedAt,
+    distanceKm: data.distanceKm,
+    airlineName: null,
+    flightText: null,
+    seat: null,
+    index: 0,
+    total: 1,
+    times: {
+      dep: data.startText,
+      arr: data.endText,
+      length: lengthText(data.nights),
+    },
+  };
+}
+
+// 旅 1 回を、新幹線の切符の形で見せるときの中身
+function asRide(data: TripData): RideData {
+  return {
+    id: data.id,
+    from: data.from,
+    to: data.destination,
+    line: data.via.length > 0 ? `経由 ${data.via.join("・")}` : "",
+    departedAt: data.startedAt,
+    arrivedAt: data.endedAt,
+    distanceKm: data.distanceKm,
+    times: {
+      dep: data.startText,
+      arr: data.endText,
+      length: lengthText(data.nights),
+    },
+  };
+}
+
+// 選んだデザインに合わせて、旅の切符・搭乗券・新幹線の切符のどれかの形で描く。
+// はんこは、自分で決めていなければ旅の種類（旅行・帰省など）
+export function TripTicketAnyView({
+  data,
+  kind,
+  design,
+  style,
+}: {
+  data: TripData;
+  kind: TicketKind;
+  design: TripDesign;
+  style: TicketStyle;
+}) {
+  const look = tripLook(design);
+  const stamped = { ...style, stamp: style.stamp || data.labelText };
+  if (look.shape === "pass") {
+    return (
+      <BoardingPassView
+        data={asPass(data)}
+        design={look.design}
+        style={stamped}
+      />
+    );
+  }
+  if (look.shape === "rail") {
+    return (
+      <RailTicketView
+        data={asRide(data)}
+        design={look.design}
+        style={stamped}
+      />
+    );
+  }
+  return (
+    <TripTicketView
+      data={data}
+      kind={kind}
+      design={look.design}
+      style={style}
+    />
   );
 }

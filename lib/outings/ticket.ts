@@ -1,3 +1,6 @@
+import { PASS_DESIGNS, type PassDesign } from "./boarding-pass";
+import { RAIL_DESIGNS, type RailDesign } from "./rail-ticket";
+
 // 旅の索引を「切符」にするための判定。
 //   ・切符の種類：主な移動手段と、自宅から一番遠い地点までの距離から、だいたいで決める
 //     （電車で 100km 以上離れたら新幹線・特急とみなす。正確な列車まではわからない）
@@ -27,19 +30,52 @@ export const isTicketKindKey = (v: unknown): v is TicketKind["key"] =>
 
 export const kindByKey = (key: TicketKind["key"]): TicketKind => KINDS[key];
 
-// 飛行機・新幹線の記録が無い旅の切符のデザイン
-export const TRIP_DESIGNS = [
-  { value: "atlas", label: "地図帳" },
-  { value: "mint", label: "ミントグリーン" },
-  { value: "sky", label: "水色" },
-  { value: "retro", label: "硬券風" },
-  { value: "noir", label: "黒と金" },
+// 飛行機・新幹線の記録が無い旅の切符のデザイン。旅の切符の形 5 つに加えて、
+// 搭乗券（pass-）・新幹線の切符（rail-）の形も選べる
+const CARD_DESIGNS = [
+  { value: "atlas", label: "切符：地図帳" },
+  { value: "mint", label: "切符：ミントグリーン" },
+  { value: "sky", label: "切符：水色" },
+  { value: "retro", label: "切符：硬券風" },
+  { value: "noir", label: "切符：黒と金" },
 ] as const;
 
-export type TripDesign = (typeof TRIP_DESIGNS)[number]["value"];
+export const TRIP_DESIGNS = [
+  ...CARD_DESIGNS,
+  ...PASS_DESIGNS.map((d) => ({
+    value: `pass-${d.value}` as const,
+    label: `搭乗券：${d.label}`,
+  })),
+  ...RAIL_DESIGNS.map((d) => ({
+    value: `rail-${d.value}` as const,
+    label: `新幹線：${d.label}`,
+  })),
+];
+
+export type CardDesign = (typeof CARD_DESIGNS)[number]["value"];
+export type TripDesign =
+  | CardDesign
+  | `pass-${PassDesign}`
+  | `rail-${RailDesign}`;
 
 export const isTripDesign = (v: unknown): v is TripDesign =>
   TRIP_DESIGNS.some((d) => d.value === v);
+
+// どの形で描くか
+export type TripLook =
+  | { shape: "card"; design: CardDesign }
+  | { shape: "pass"; design: PassDesign }
+  | { shape: "rail"; design: RailDesign };
+
+export function tripLook(design: TripDesign): TripLook {
+  if (design.startsWith("pass-")) {
+    return { shape: "pass", design: design.slice(5) as PassDesign };
+  }
+  if (design.startsWith("rail-")) {
+    return { shape: "rail", design: design.slice(5) as RailDesign };
+  }
+  return { shape: "card", design: design as CardDesign };
+}
 
 // 電車でこれより遠くへ行ったら、新幹線・特急とみなす
 export const EXPRESS_KM = 100;

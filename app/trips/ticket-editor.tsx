@@ -27,7 +27,7 @@ import { saveTicketLook } from "./actions";
 import { BoardingPassView, type PassData } from "./boarding-pass-view";
 import { RailTicketView, type RideData } from "./rail-ticket-view";
 import { TicketMarkIcon } from "./ticket-mark";
-import { type TripData, TripTicketView } from "./trip-ticket-view";
+import { type TripData, TripTicketAnyView } from "./trip-ticket-view";
 
 // 搭乗券・新幹線の切符・旅の切符を、本人が飾る（搭乗券は空港も直せる、旅の切符は種類も選べる）。
 // 「カスタマイズ」を開くと、変えている途中の見た目がその場で切符に出る。「保存」で確定する
@@ -237,7 +237,7 @@ export function TicketEditor({
           style={shownStyle}
         />
       ) : ticket.kind === "trip" && isTripDesign(shownDesign) ? (
-        <TripTicketView
+        <TripTicketAnyView
           data={ticket.data}
           kind={kindByKey(
             isTicketKindKey(shownKind) ? shownKind : ticket.data.autoKind,
