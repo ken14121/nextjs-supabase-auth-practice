@@ -103,6 +103,59 @@ export type Database = {
         };
         Relationships: [];
       };
+      ground_legs: {
+        Row: {
+          arrived_at: string;
+          created_at: string;
+          departed_at: string;
+          design: string | null;
+          from_name: string;
+          has_times: boolean;
+          id: string;
+          mode: string;
+          outing_id: string;
+          style: Json;
+          to_name: string;
+          user_id: string;
+        };
+        Insert: {
+          arrived_at: string;
+          created_at?: string;
+          departed_at: string;
+          design?: string | null;
+          from_name: string;
+          has_times?: boolean;
+          id?: string;
+          mode: string;
+          outing_id: string;
+          style?: Json;
+          to_name: string;
+          user_id?: string;
+        };
+        Update: {
+          arrived_at?: string;
+          created_at?: string;
+          departed_at?: string;
+          design?: string | null;
+          from_name?: string;
+          has_times?: boolean;
+          id?: string;
+          mode?: string;
+          outing_id?: string;
+          style?: Json;
+          to_name?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ground_legs_outing_id_fkey";
+            columns: ["outing_id"];
+            isOneToOne: false;
+            referencedRelation: "outings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       municipality_levels: {
         Row: {
           code: string;

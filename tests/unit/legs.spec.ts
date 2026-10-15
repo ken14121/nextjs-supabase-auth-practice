@@ -35,6 +35,28 @@ test("手で足す便・乗車の入力を確かめる", () => {
   ).toBe(true);
 });
 
+test("バスなどは、出発地と到着地を名前で入れる（30 文字まで）", () => {
+  const bus = {
+    kind: "ground",
+    mode: "bus",
+    outingId: id,
+    date: "2022-11-12",
+    depTime: "",
+    arrTime: "",
+    from: " 広島 ",
+    to: "松山",
+  };
+  const parsed = legSchema.safeParse(bus);
+  expect(parsed.success).toBe(true);
+  // 前後の空白は消す
+  expect(parsed.success && parsed.data.from).toBe("広島");
+  expect(legSchema.safeParse({ ...bus, from: "" }).success).toBe(false);
+  expect(legSchema.safeParse({ ...bus, to: "あ".repeat(31) }).success).toBe(
+    false,
+  );
+  expect(legSchema.safeParse({ ...bus, mode: "rocket" }).success).toBe(false);
+});
+
 test("日付と時刻から出発・到着の日時を作る（日本時間）", () => {
   expect(legTimes("2024-09-18", "08:30", "11:45")).toEqual({
     departedAt: "2024-09-17T23:30:00.000Z",

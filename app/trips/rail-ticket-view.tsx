@@ -22,6 +22,8 @@ export type RideData = {
   distanceKm: number;
   // 乗車ではなく旅 1 回を切符の形で見せるとき、時刻の代わりに出す文字（出発日・帰った日・泊数）
   times?: { dep: string; arr: string; length: string };
+  // 新幹線以外（バス・在来線・船・車）の券の名前。あれば列車番号・座席の行は出さない
+  title?: string;
 };
 
 type Theme = {
@@ -132,7 +134,7 @@ export function RailTicketView({
   return (
     <article
       className={cn("relative overflow-hidden shadow-sm", t.card, t.ink)}
-      aria-label={`新幹線の切符 ${data.from} から ${data.to}`}
+      aria-label={`${data.title ?? "新幹線の切符"} ${data.from} から ${data.to}`}
     >
       {t.stripe && (
         <div
@@ -144,7 +146,7 @@ export function RailTicketView({
       <div className={cn("flex flex-col gap-2 p-4", t.pattern)}>
         <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
           <span className="font-bold tracking-[0.3em]">
-            新幹線特急券・乗車券
+            {data.title ?? "新幹線特急券・乗車券"}
           </span>
           <span className={cn("flex items-center gap-1", t.sub)}>
             {style.mark && (
@@ -202,16 +204,18 @@ export function RailTicketView({
             </span>
           )}
         </p>
-        <p
-          className={cn(
-            "flex flex-wrap gap-x-4 border-t border-dashed border-current/30 pt-2 pr-14 text-xs",
-            t.sub,
-          )}
-        >
-          <span>列車 ----号</span>
-          <span>--号車</span>
-          <span>--番--席</span>
-        </p>
+        {!data.title && (
+          <p
+            className={cn(
+              "flex flex-wrap gap-x-4 border-t border-dashed border-current/30 pt-2 pr-14 text-xs",
+              t.sub,
+            )}
+          >
+            <span>列車 ----号</span>
+            <span>--号車</span>
+            <span>--番--席</span>
+          </p>
+        )}
       </div>
       <span
         aria-hidden="true"

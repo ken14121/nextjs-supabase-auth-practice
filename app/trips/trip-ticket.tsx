@@ -11,6 +11,7 @@ import {
 import { readTicketStyle } from "@/lib/outings/ticket-style";
 import { AddLegForm } from "./add-leg-form";
 import { BoardingPass, type FlightRow } from "./boarding-pass";
+import { type GroundRow, GroundTicket } from "./ground-ticket";
 import { RailTicket, type RideRow } from "./rail-ticket";
 import { TicketEditor } from "./ticket-editor";
 
@@ -40,6 +41,8 @@ export type TicketTrip = {
   flights: FlightRow[];
   // 新幹線の乗車（あれば、便と一緒に時刻の順で切符を並べる）
   rides: RideRow[];
+  // 本人が手で足したバス・在来線・船・車の移動
+  grounds: GroundRow[];
 };
 
 // 切符の大きな文字用に短くする（千葉県 → 千葉、東京都 → 東京、大韓民国はそのまま）
@@ -92,6 +95,11 @@ export function TripTicket({
       at: r.departed_at,
       ride: r,
     })),
+    ...trip.grounds.map((g) => ({
+      kind: "ground" as const,
+      at: g.departed_at,
+      ground: g,
+    })),
   ].sort((a, b) => a.at.localeCompare(b.at));
 
   // 旅の種類を選び直す（取り込んだ旅）／手入力の旅の編集
@@ -137,8 +145,10 @@ export function TripTicket({
                 index={leg.index}
                 total={flights.length}
               />
-            ) : (
+            ) : leg.kind === "ride" ? (
               <RailTicket key={leg.ride.id} ride={leg.ride} />
+            ) : (
+              <GroundTicket key={leg.ground.id} leg={leg.ground} />
             ),
           )}
         </>

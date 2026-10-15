@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { JA_NAMES } from "@/lib/geo/airport-names";
 import { STATIONS } from "@/lib/geo/shinkansen";
-import { legSchema } from "@/lib/trips/legs";
+import { GROUND_MODES, type GroundMode, legSchema } from "@/lib/trips/legs";
 import { addLeg, removeLeg } from "./actions";
 
-// 旅に、飛行機の便・新幹線の乗車を手で足す。
+// 旅に、飛行機の便・新幹線の乗車・バスなどの移動を手で足す。
 // 例：成田 → 那覇 → 関西 → 成田 のように、1 回の旅を便ごとに登録できる。
+// 修学旅行で「広島 → 松山 → 高松 → 徳島 → 神戸」をバスでめぐった、のようにも足せる。
 // 手で足したものは、タイムラインを取り込み直しても消えない
 
 const AIRPORT_OPTIONS = Object.entries(JA_NAMES);
@@ -27,7 +28,8 @@ export function AddLegForm({
 }) {
   const ids = useId();
   const [open, setOpen] = useState(false);
-  const [kind, setKind] = useState<"flight" | "ride">("flight");
+  // 飛行機・新幹線、またはバスなど（GROUND_MODES）
+  const [kind, setKind] = useState<"flight" | "ride" | GroundMode>("flight");
   const [date, setDate] = useState(defaultDate);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -36,13 +38,16 @@ export function AddLegForm({
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const values = { kind, outingId, date, depTime, arrTime, from, to };
+  const isGround = kind !== "flight" && kind !== "ride";
+  const values = isGround
+    ? { kind: "ground", mode: kind, outingId, date, depTime, arrTime, from, to }
+    : { kind, outingId, date, depTime, arrTime, from, to };
   const checked = legSchema.safeParse(values);
   // 入れ始めた項目だけ、おかしいところを出す
   const error =
     !checked.success && from && to ? checked.error.issues[0]?.message : null;
 
-  const switchKind = (next: "flight" | "ride") => {
+  const switchKind = (next: "flight" | "ride" | GroundMode) => {
     setKind(next);
     setFrom("");
     setTo("");
@@ -126,6 +131,7 @@ export function AddLegForm({
           [
             ["flight", "飛行機"],
             ["ride", "新幹線"],
+            ...GROUND_MODES.map((m) => [m.value, m.label] as const),
           ] as const
         ).map(([value, label]) => (
           <button
@@ -171,11 +177,31 @@ export function AddLegForm({
               ))}
             </datalist>
           </>
-        ) : (
+        ) : kind === "ride" ? (
           <>
             {stationSelect(from, setFrom, "乗った駅")}
             <span aria-hidden="true">→</span>
             {stationSelect(to, setTo, "降りた駅")}
+          </>
+        ) : (
+          <>
+            <Input
+              aria-label="出発した場所"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              maxLength={30}
+              placeholder="広島"
+              className="h-8 w-36"
+            />
+            <span aria-hidden="true">→</span>
+            <Input
+              aria-label="着いた場所"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              maxLength={30}
+              placeholder="松山"
+              className="h-8 w-36"
+            />
           </>
         )}
       </div>
@@ -233,7 +259,7 @@ export function RemoveLegButton({
   kind,
   id,
 }: {
-  kind: "flight" | "ride";
+  kind: "flight" | "ride" | "ground";
   id: string;
 }) {
   const [confirming, setConfirming] = useState(false);

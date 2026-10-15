@@ -35,11 +35,14 @@ import { type TripData, TripTicketAnyView } from "./trip-ticket-view";
 type Ticket =
   | { kind: "flight"; data: PassData }
   | { kind: "ride"; data: RideData }
+  // バス・在来線・船・車（新幹線の切符と同じ形・同じデザイン）
+  | { kind: "ground"; data: RideData }
   | { kind: "trip"; data: TripData };
 
 const DESIGNS = {
   flight: PASS_DESIGNS,
   ride: RAIL_DESIGNS,
+  ground: RAIL_DESIGNS,
   trip: TRIP_DESIGNS,
 } as const;
 
@@ -193,7 +196,7 @@ export function TicketEditor({
             }
           : ticket.kind === "trip"
             ? { kind: "trip", ...base, ticketKind: tripKind || null }
-            : { kind: "ride", ...base },
+            : { kind: ticket.kind, ...base },
       );
       setFailed(res.ok ? null : res.message);
       if (res.ok) setOpen(false);
@@ -230,7 +233,8 @@ export function TicketEditor({
           design={shownDesign}
           style={shownStyle}
         />
-      ) : ticket.kind === "ride" && isRailDesign(shownDesign) ? (
+      ) : (ticket.kind === "ride" || ticket.kind === "ground") &&
+        isRailDesign(shownDesign) ? (
         <RailTicketView
           data={ticket.data}
           design={shownDesign}

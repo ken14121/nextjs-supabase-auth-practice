@@ -177,6 +177,14 @@ const ticketLookSchema = z.discriminatedUnion("kind", [
     style: ticketStyleSchema,
   }),
   z.object({
+    kind: z.literal("ground"),
+    id: z.uuid(),
+    design: z.enum(
+      RAIL_DESIGNS.map((d) => d.value) as [RailDesign, ...RailDesign[]],
+    ),
+    style: ticketStyleSchema,
+  }),
+  z.object({
     kind: z.literal("trip"),
     id: z.uuid(),
     design: z.enum(
@@ -222,9 +230,9 @@ export async function saveTicketLook(input: unknown): Promise<SaveResult> {
     return { ok: true };
   }
 
-  if (look.kind === "ride") {
+  if (look.kind === "ride" || look.kind === "ground") {
     const { data, error } = await supabase
-      .from("train_rides")
+      .from(look.kind === "ride" ? "train_rides" : "ground_legs")
       .update({ design: look.design, style })
       .eq("id", look.id)
       .select("id");
@@ -317,7 +325,18 @@ export async function addLeg(input: unknown): Promise<SaveResult> {
   );
   const supabase = await createClient();
 
-  if (leg.kind === "flight") {
+  if (leg.kind === "ground") {
+    const { error } = await supabase.from("ground_legs").insert({
+      outing_id: leg.outingId,
+      mode: leg.mode,
+      from_name: leg.from,
+      to_name: leg.to,
+      departed_at: departedAt,
+      arrived_at: arrivedAt,
+      has_times: hasTimes,
+    });
+    if (error) return NOT_SAVED;
+  } else if (leg.kind === "flight") {
     if (!isKnownAirport(leg.from) || !isKnownAirport(leg.to)) {
       return {
         ok: false,
@@ -357,7 +376,7 @@ export async function addLeg(input: unknown): Promise<SaveResult> {
 }
 
 const removeLegSchema = z.object({
-  kind: z.enum(["flight", "ride"]),
+  kind: z.enum(["flight", "ride", "ground"]),
   id: z.uuid(),
 });
 
@@ -366,12 +385,17 @@ export async function removeLeg(input: unknown): Promise<SaveResult> {
   const parsed = removeLegSchema.safeParse(input);
   if (!parsed.success) return NOT_SAVED;
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from(parsed.data.kind === "flight" ? "flights" : "train_rides")
-    .delete()
-    .eq("id", parsed.data.id)
-    .eq("added_by_user", true)
-    .select("id");
+  const { kind, id } = parsed.data;
+  // バスなどは全部本人が足したもの。便・新幹線は、手で足したものだけ消せる
+  const { data, error } =
+    kind === "ground"
+      ? await supabase.from("ground_legs").delete().eq("id", id).select("id")
+      : await supabase
+          .from(kind === "flight" ? "flights" : "train_rides")
+          .delete()
+          .eq("id", id)
+          .eq("added_by_user", true)
+          .select("id");
   if (error || !data?.length) return NOT_SAVED;
   revalidatePath("/trips");
   return { ok: true };
