@@ -82,30 +82,32 @@ export function extractFlights(
 ): FlightDraft[] {
   const sorted = [...segments].sort((a, b) => a.start.localeCompare(b.start));
   const flights: FlightDraft[] = [];
+  // ここまでで一番あとに終わった記録（空港での滞在が重なって複数あることがあるので、
+  // 「直前の記録」は並びの 1 つ前ではなく、終わりが一番遅いもの）
+  let last: TimelineSegment | undefined;
 
-  sorted.forEach((s, i) => {
-    const prev = sorted[i - 1];
+  for (const [i, s] of sorted.entries()) {
+    const prev = last;
+    if (!last || s.end > last.end) last = s;
     const next = sorted[i + 1];
 
-    // 3. 前の記録の終わりから、この記録の始まりまでの空白
-    //   （隣が飛行機の移動なら、その空白は機内で記録が途切れただけなので数えない）
+    // 3. 前の記録の終わりから、この記録までのあいだに、遠くへ動いている
+    //   （隣が飛行機の移動なら、機内で記録が途切れただけなので数えない）
     if (prev && !isFlightLike(prev) && !isFlightLike(s)) {
-      const from = endOf(prev);
-      const to = startOf(s);
-      const km = straightKm(from, to);
-      const hours = hoursBetween(prev.end, s.start);
-      if (hours * 60 >= GAP_MIN_MINUTES && isFast(km, hours)) {
+      const gap = hiddenFlight(prev, s);
+      if (gap) {
         flights.push({
-          departedAt: prev.end,
-          arrivedAt: s.start,
-          from: findAirport(from.lat, from.lng)?.code ?? null,
-          to: findAirport(to.lat, to.lng)?.code ?? null,
-          distanceKm: round1(km),
+          departedAt: gap.departedAt,
+          arrivedAt: gap.arrivedAt,
+          from: findAirport(gap.fromAt.lat, gap.fromAt.lng)?.code ?? null,
+          to: findAirport(gap.toAt.lat, gap.toAt.lng)?.code ?? null,
+          distanceKm: gap.distanceKm,
         });
+        continue;
       }
     }
 
-    if (s.kind !== "activity" || !isFlightLike(s)) return;
+    if (s.kind !== "activity" || !isFlightLike(s)) continue;
     const straight = straightKm(s.from, s.to);
 
     // 直前・直後に地上にいた場所（時間が離れすぎていなければ）
@@ -124,7 +126,7 @@ export function extractFlights(
     if (km < MIN_FLIGHT_KM && before && after) {
       km = Math.max(km, straightKm(before, after));
     }
-    if (km < MIN_FLIGHT_KM) return;
+    if (km < MIN_FLIGHT_KM) continue;
 
     flights.push({
       departedAt: s.start,
@@ -133,7 +135,47 @@ export function extractFlights(
       to: pickAirport(findAirport, s.to, after),
       distanceKm: round1(km),
     });
-  });
+  }
 
   return flights;
+}
+
+// 「飛行機」の記録が無いまま飛んだ便を、前後の記録から見つける。
+//   ・前の記録の終わりから次の記録の始まりまでの空白に、飛行機の速さで遠くへ動いている
+//   ・空白が短すぎる（着いたあとの車や電車の移動に、飛行機の時間が混ざって記録された）ときは、
+//     次の移動の終わりまでを 1 つの便とみなす
+function hiddenFlight(
+  prev: TimelineSegment,
+  s: TimelineSegment,
+):
+  | (Omit<FlightDraft, "from" | "to"> & { fromAt: LatLng; toAt: LatLng })
+  | null {
+  const fromAt = endOf(prev);
+  const jumpTo = startOf(s);
+  const jumpKm = straightKm(fromAt, jumpTo);
+  if (jumpKm < FAST_MIN_KM) return null;
+
+  const hours = hoursBetween(prev.end, s.start);
+  if (hours * 60 >= GAP_MIN_MINUTES && isFast(jumpKm, hours)) {
+    return {
+      departedAt: prev.end,
+      arrivedAt: s.start,
+      fromAt,
+      toAt: jumpTo,
+      distanceKm: round1(jumpKm),
+    };
+  }
+  if (s.kind === "activity") {
+    const km = straightKm(fromAt, s.to);
+    if (isFast(km, hoursBetween(prev.end, s.end))) {
+      return {
+        departedAt: prev.end,
+        arrivedAt: s.end,
+        fromAt,
+        toAt: s.to,
+        distanceKm: round1(km),
+      };
+    }
+  }
+  return null;
 }

@@ -106,6 +106,7 @@ for (const r of rows) {
       `${jst(r.s)} 〜 ${jst(r.e)}  移動 ${r.type}  記録 ${Math.round(r.meters / 1000)} km・直線 ${Math.round(straight)} km・時速 ${speed} km  ${airport(r.from)} → ${airport(r.to)}`,
     );
   }
-  prev = r;
+  // 空港での滞在が重なって複数あることがあるので、終わりが一番遅い記録を「前の記録」にする
+  if (!prev || r.e > prev.e) prev = r;
 }
 console.log(`\n${rows.length} 件（${fromDate} 〜 ${toDate}、日本時間）`);
