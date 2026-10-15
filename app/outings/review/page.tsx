@@ -23,11 +23,19 @@ import {
   OUTING_LABEL_VALUES,
   type OutingLabel,
 } from "@/lib/outings/labels";
-import { ruleJudge } from "@/lib/outings/rule-judge";
+import {
+  OUTING_MINUTES,
+  OUTING_MINUTES_OF,
+  type RuleOptions,
+  ruleJudge,
+} from "@/lib/outings/rule-judge";
 import { createClient } from "@/lib/supabase/server";
 import { isClearlyDaily, outingFeaturesSchema } from "@/lib/timeline/features";
 
 export const metadata = { title: "Jev の判定を確かめる" };
+
+// おでかけの境目の候補（分）
+const OUTING_MINUTE_CANDIDATES = [30, 45, 60, 90, 120, 180];
 
 // 1 回に確かめる件数
 const SAMPLE_SIZE = 20;
@@ -118,23 +126,34 @@ export default async function ReviewPage() {
   const ruleCount = byRule.filter(Boolean).length;
   // Jev を使わず、ルールだけで判定していたら（Jev が使えないときの代わり。lib/outings/rule-judge.ts）
   const ctx = buildJevContext(regions ?? []);
-  const ruleOnly = evaluateJev(
-    reviewedRows.map((o, i) => {
-      const features = outingFeaturesSchema.safeParse(o.features);
-      return {
-        ...reviewed[i],
-        jevLabel: ruleJudge(
-          {
-            nights: o.nights,
-            distance_km: Number(o.distance_km),
-            region_codes: o.visited_regions.map((r) => r.region_code),
-            features: features.success ? features.data : null,
-          },
-          ctx,
-        ).label,
-      };
-    }),
-  );
+  const ruleInputs = reviewedRows.map((o) => {
+    const features = outingFeaturesSchema.safeParse(o.features);
+    return {
+      started_at: o.started_at,
+      ended_at: o.ended_at,
+      nights: o.nights,
+      distance_km: Number(o.distance_km),
+      region_codes: o.visited_regions.map((r) => r.region_code),
+      features: features.success ? features.data : null,
+    };
+  });
+  const evaluateRules = (options?: RuleOptions) =>
+    evaluateJev(
+      reviewed.map((r, i) => ({
+        ...r,
+        jevLabel: ruleJudge(ruleInputs[i], ctx, options).label,
+      })),
+    );
+  const ruleOnly = evaluateRules();
+  // おでかけの境目を変えたら（どの時間で見るか × 何分以上か）
+  const outingSweep = (["rare", "notUsual"] as const).map((of) => ({
+    of,
+    cells: OUTING_MINUTE_CANDIDATES.map((minutes) => ({
+      minutes,
+      accuracy: evaluateRules({ outingMinutes: minutes, outingMinutesOf: of })
+        .accuracy,
+    })),
+  }));
   // 「日常」の境目を変えたら（3 つの確率がそろっている外出だけで計算する）
   const thresholdRows = reviewedRows.flatMap((o, i) =>
     o.jev_p_daily !== null &&
@@ -264,6 +283,52 @@ export default async function ReviewPage() {
                     </tbody>
                   </table>
                 </div>
+                <h4 className="mt-2 text-sm font-medium">
+                  おでかけの境目を変えたら
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm tabular-nums">
+                    <thead>
+                      <tr className="border-b text-xs text-muted-foreground">
+                        <th className="py-1.5 text-left font-medium">
+                          見る時間 ＼ 何分以上
+                        </th>
+                        {OUTING_MINUTE_CANDIDATES.map((m) => (
+                          <th key={m} className="py-1.5 font-medium">
+                            {m} 分
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {outingSweep.map((row) => (
+                        <tr key={row.of} className="border-b last:border-0">
+                          <td className="py-1.5">
+                            {row.of === "rare"
+                              ? "ふだん行かない場所"
+                              : "いつもの場所以外ぜんぶ"}
+                          </td>
+                          {row.cells.map((c) => (
+                            <td
+                              key={c.minutes}
+                              className={
+                                row.of === OUTING_MINUTES_OF &&
+                                c.minutes === OUTING_MINUTES
+                                  ? "py-1.5 text-center font-semibold underline underline-offset-4"
+                                  : "py-1.5 text-center"
+                              }
+                            >
+                              {percent(c.accuracy)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  下線が今の設定。確かめた件数が少ないので、一番高いところだけでなく、まわりも高い安定したところを選びます。
+                </p>
                 <p className="text-xs text-muted-foreground">
                   Jev
                   が使えないとき（キーが無い・残高が無い）は、このルールで判定します。

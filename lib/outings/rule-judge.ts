@@ -1,4 +1,4 @@
-import { FREQUENT_DAYS, type JevContext } from "@/lib/jev/state";
+import { FREQUENT_DAYS, type JevContext, seasonOf } from "@/lib/jev/state";
 import type { OutingLabel } from "@/lib/outings/labels";
 import { isClearlyDaily, type OutingFeatures } from "@/lib/timeline/features";
 
@@ -9,24 +9,36 @@ import { isClearlyDaily, type OutingFeatures } from "@/lib/timeline/features";
 //   泊まっていない
 //     いつもの場所だけ・家の近くだけ → 日常（今までのルール）
 //     自宅から DAY_TRIP_KM 以上離れた → 日帰り
-//     ふだん行かない場所に OUTING_RARE_MINUTES 以上いた → おでかけ
+//     いつもの場所以外に OUTING_MINUTES 以上いた → おでかけ
 //     それ以外 → 日常
 //   泊まった
 //     住んでいる都道府県から出ず、近い → 日常（学校・友人宅に泊まった など）
 //     よく行く場所（FREQUENT_DAYS 日以上）でも、近ければ → 日常（隣の県の友人宅など）
-//     よく行く場所で、遠い（HOMECOMING_KM 以上）→ 帰省
+//     よく行く遠くの場所（HOMECOMING_KM 以上）へ、年末年始・GW・お盆に泊まった → 帰省
+//     （時期で絞らないと、何度も旅行で行く場所まで帰省になった。本人の 81 件で 4 件とも外れ）
 //     それ以外 → 旅行
 //
 // 数字は本人が確かめた外出で正解率を見ながら決める（/outings/review）
 
 export const DAY_TRIP_KM = 50;
-export const OUTING_RARE_MINUTES = 60;
+export const OUTING_MINUTES = 60;
+// おでかけかどうかを見る時間：ふだん行かない場所だけ（rare）か、いつもの場所以外ぜんぶ（notUsual = ときどき + ふだん行かない）か
+export type OutingMinutesOf = "rare" | "notUsual";
+export const OUTING_MINUTES_OF: OutingMinutesOf = "rare";
+
+// 境目を変えたらどうなるかを、確かめるページで計算するときに変える
+export type RuleOptions = {
+  outingMinutes?: number;
+  outingMinutesOf?: OutingMinutesOf;
+};
 // 泊まっても、住んでいる都道府県から出ずにこの距離より近ければ日常
 export const STAY_NEAR_KM = 30;
 // 帰省とみなすのは、よく行く場所がこれより遠いとき
 export const HOMECOMING_KM = 50;
 
 export type RuleInput = {
+  started_at: string;
+  ended_at: string;
   nights: number;
   distance_km: number;
   region_codes: string[];
@@ -39,7 +51,13 @@ export type RuleJudgement = {
   reason: string;
 };
 
-export function ruleJudge(outing: RuleInput, ctx: JevContext): RuleJudgement {
+export function ruleJudge(
+  outing: RuleInput,
+  ctx: JevContext,
+  options: RuleOptions = {},
+): RuleJudgement {
+  const outingMinutes = options.outingMinutes ?? OUTING_MINUTES;
+  const minutesOf = options.outingMinutesOf ?? OUTING_MINUTES_OF;
   const f = outing.features;
   // 地点の数字が無い外出（取り込み直す前のもの）は、移動した距離の半分を「一番遠い地点」の目安にする
   const farKm = f ? f.maxKmFromHome : outing.distance_km / 2;
@@ -54,8 +72,16 @@ export function ruleJudge(outing: RuleInput, ctx: JevContext): RuleJudgement {
     if (farKm >= DAY_TRIP_KM) {
       return { label: "day_trip", reason: `自宅から ${DAY_TRIP_KM} km 以上` };
     }
-    if (f && f.rareMinutes >= OUTING_RARE_MINUTES) {
-      return { label: "outing", reason: "ふだん行かない場所に 1 時間以上" };
+    const awayMinutes = f
+      ? minutesOf === "rare"
+        ? f.rareMinutes
+        : f.rareMinutes + f.sometimesMinutes
+      : 0;
+    if (f && awayMinutes >= outingMinutes) {
+      return {
+        label: "outing",
+        reason: `いつもの場所以外に ${outingMinutes} 分以上`,
+      };
     }
     return { label: "daily", reason: "近くで、いつもの場所が中心" };
   }
@@ -70,7 +96,7 @@ export function ruleJudge(outing: RuleInput, ctx: JevContext): RuleJudgement {
   if (frequent && farKm < HOMECOMING_KM) {
     return { label: "daily", reason: "よく行く近くの場所に泊まり" };
   }
-  if (frequent) {
+  if (frequent && seasonOf(outing.started_at, outing.ended_at)) {
     return {
       label: "homecoming",
       reason: `${FREQUENT_DAYS} 日以上行っている遠くの場所へ泊まり`,
