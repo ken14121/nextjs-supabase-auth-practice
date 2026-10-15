@@ -24,10 +24,12 @@ export default async function TripsPage({
     supabase
       .from("outings")
       .select(
-        "id, started_at, ended_at, nights, distance_km, main_transport, features, source, label, label_source, label_confidence, memo, ticket_kind, ticket_design, ticket_style, visited_regions(region_code, visited_on), flights(id, departed_at, arrived_at, from_airport, to_airport, distance_km, design, style, airline, flight_number, seat, added_by_user, has_times), train_rides(id, departed_at, arrived_at, from_station, to_station, distance_km, design, style, added_by_user, has_times), ground_legs(id, mode, from_name, to_name, departed_at, arrived_at, has_times, design, style)",
+        "id, started_at, ended_at, nights, distance_km, main_transport, features, source, label, label_source, label_confidence, memo, ticket_kind, ticket_design, ticket_style, visited_regions(id, region_code, visited_on), flights(id, departed_at, arrived_at, from_airport, to_airport, distance_km, design, style, airline, flight_number, seat, added_by_user, has_times), train_rides(id, departed_at, arrived_at, from_station, to_station, distance_km, design, style, added_by_user, has_times), ground_legs(id, mode, from_name, to_name, departed_at, arrived_at, has_times, design, style)",
       )
       .in("label", [...TRAVEL_LABELS])
-      .order("started_at", { ascending: false }),
+      .order("started_at", { ascending: false })
+      // 行った県は登録した順（手入力の旅は、どの県も出発日になっているため、並びは入れた順で決まる）
+      .order("id", { referencedTable: "visited_regions" }),
     supabase.rpc("get_my_regions"),
   ]);
 

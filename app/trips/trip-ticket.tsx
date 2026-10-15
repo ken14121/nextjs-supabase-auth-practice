@@ -6,6 +6,7 @@ import {
   destinationOf,
   isTicketKindKey,
   isTripDesign,
+  routeOf,
   ticketKind,
 } from "@/lib/outings/ticket";
 import { readTicketStyle } from "@/lib/outings/ticket-style";
@@ -72,6 +73,8 @@ export function TripTicket({
 }) {
   const kind = ticketKind(trip.main_transport, trip.maxKmFromHome);
   const { destination, via } = destinationOf(trip.regions, homeRegion);
+  // 便・乗車を並べるときの見出しは、行った県を訪れた順にすべて出す
+  const route = routeOf(trip.regions, homeRegion);
   const from = homeRegion ? shortName(homeRegion) : "自宅";
   const start = jst(trip.started_at);
   const end = jst(trip.ended_at);
@@ -140,7 +143,10 @@ export function TripTicket({
         <>
           <p className="flex flex-wrap items-baseline gap-x-3 px-1 font-serif">
             <span className="text-lg font-semibold">
-              {from} → {destination ? shortName(destination) : "近場"}
+              {[
+                from,
+                ...(route.length > 0 ? route.map(shortName) : ["近場"]),
+              ].join(" → ")}
             </span>
             <span className="text-xs text-muted-foreground tabular-nums">
               {start.y}.{start.m}.{start.d}

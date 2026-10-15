@@ -127,3 +127,21 @@ export function destinationOf(
   }
   return { destination, via: away.filter((code) => code !== destination) };
 }
+
+// 行った県・国を、訪れた順に並べる（住んでいる県は除く。同じ日なら記録の順）。
+// 例：修学旅行 → 広島・愛媛・香川・徳島・兵庫
+export function routeOf(
+  regions: { region_code: string; visited_on: string }[],
+  homeRegion: string | null,
+): string[] {
+  const first = new Map<string, string>();
+  for (const r of regions) {
+    if (r.region_code === homeRegion) continue;
+    const seen = first.get(r.region_code);
+    if (!seen || r.visited_on < seen) first.set(r.region_code, r.visited_on);
+  }
+  return [...first.entries()]
+    .map(([code, on], i) => ({ code, on, i }))
+    .sort((a, b) => a.on.localeCompare(b.on) || a.i - b.i)
+    .map((r) => r.code);
+}
