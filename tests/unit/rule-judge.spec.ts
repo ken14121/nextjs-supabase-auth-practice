@@ -68,6 +68,19 @@ test("泊まった外出：旅行・帰省・日常", () => {
   expect(judge(1, ["JP-12"], f(15))).toBe("daily");
 });
 
+test("帰省がほとんど無い人は、年末年始に実家の方へ泊まっても旅行", () => {
+  const input = {
+    started_at: "2025-12-29T00:00:00Z",
+    ended_at: "2026-01-02T00:00:00Z",
+    nights: 3,
+    region_codes: ["JP-12", "JP-01"],
+    features: f(800, 200),
+    distance_km: 0,
+  };
+  expect(ruleJudge(input, ctx).label).toBe("homecoming");
+  expect(ruleJudge(input, { ...ctx, homecoming: false }).label).toBe("trip");
+});
+
 test("おでかけの境目は、変えて比べられる", () => {
   // ふだん行かない場所 40 分・ときどき行く場所 60 分（20km）
   const input = {

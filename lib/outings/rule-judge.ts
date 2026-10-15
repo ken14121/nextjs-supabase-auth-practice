@@ -16,6 +16,7 @@ import { isClearlyDaily, type OutingFeatures } from "@/lib/timeline/features";
 //     よく行く場所（FREQUENT_DAYS 日以上）でも、近ければ → 日常（隣の県の友人宅など）
 //     よく行く遠くの場所（HOMECOMING_KM 以上）へ、年末年始・GW・お盆に泊まった → 帰省
 //     （時期で絞らないと、何度も旅行で行く場所まで帰省になった。本人の 81 件で 4 件とも外れ）
+//     （本人が「帰省はほとんどない」と設定していれば、帰省にはしない）
 //     それ以外 → 旅行
 //
 // 数字は本人が確かめた外出で正解率を見ながら決める（/outings/review）
@@ -100,7 +101,11 @@ export function ruleJudge(
   if (frequent && farKm < HOMECOMING_KM) {
     return { label: "daily", reason: "よく行く近くの場所に泊まり" };
   }
-  if (frequent && seasonOf(outing.started_at, outing.ended_at)) {
+  if (
+    frequent &&
+    ctx.homecoming !== false &&
+    seasonOf(outing.started_at, outing.ended_at)
+  ) {
     return {
       label: "homecoming",
       reason: `${FREQUENT_DAYS} 日以上行っている遠くの場所へ泊まり`,

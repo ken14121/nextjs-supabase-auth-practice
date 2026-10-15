@@ -92,15 +92,17 @@ export default async function ReviewPage() {
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) redirect("/");
 
-  const [{ data: outings }, { data: regions }] = await Promise.all([
-    supabase
-      .from("outings")
-      .select(
-        "id, started_at, ended_at, nights, distance_km, features, label, label_source, label_confidence, jev_label, jev_confidence, jev_p_daily, jev_p_homecoming, jev_p_day_trip, visited_regions(region_code)",
-      )
-      .not("jev_label", "is", null),
-    supabase.rpc("get_my_regions"),
-  ]);
+  const [{ data: outings }, { data: regions }, { data: settings }] =
+    await Promise.all([
+      supabase
+        .from("outings")
+        .select(
+          "id, started_at, ended_at, nights, distance_km, features, label, label_source, label_confidence, jev_label, jev_confidence, jev_p_daily, jev_p_homecoming, jev_p_day_trip, visited_regions(region_code)",
+        )
+        .not("jev_label", "is", null),
+      supabase.rpc("get_my_regions"),
+      supabase.from("judge_settings").select("homecoming").maybeSingle(),
+    ]);
 
   const all = outings ?? [];
   // 本人が確かめたもの（合ってる・直した）
@@ -125,7 +127,7 @@ export default async function ReviewPage() {
   );
   const ruleCount = byRule.filter(Boolean).length;
   // Jev を使わず、ルールだけで判定していたら（Jev が使えないときの代わり。lib/outings/rule-judge.ts）
-  const ctx = buildJevContext(regions ?? []);
+  const ctx = buildJevContext(regions ?? [], settings);
   const ruleInputs = reviewedRows.map((o) => {
     const features = outingFeaturesSchema.safeParse(o.features);
     return {

@@ -45,6 +45,7 @@ export function GroundTicket({ leg }: { leg: GroundRow }) {
           arrivedAt: leg.arrived_at,
           distanceKm: 0,
           title: groundMode(mode).title,
+          stamp: groundMode(mode).stamp,
           times: leg.has_times
             ? undefined
             : { dep: "--:--", arr: "--:--", length: "時刻なし" },

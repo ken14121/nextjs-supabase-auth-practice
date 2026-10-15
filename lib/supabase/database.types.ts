@@ -156,6 +156,24 @@ export type Database = {
           },
         ];
       };
+      judge_settings: {
+        Row: {
+          homecoming: boolean;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          homecoming?: boolean;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          homecoming?: boolean;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       municipality_levels: {
         Row: {
           code: string;

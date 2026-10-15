@@ -21,11 +21,14 @@ export type JevContext = {
   visitedDays: Map<string, number>;
   // 住んでいる都道府県（一番多く行った都道府県とみなす）
   homeRegion: string | null;
+  // 本人が「帰省することがある」と答えているか（判定の設定。false なら帰省にしない）
+  homecoming?: boolean;
 };
 
 // 判定の材料：これまでに行った日数と、住んでいる都道府県（一番多く行った都道府県）
 export function buildJevContext(
   regions: { region_code: string; visited_days: number }[],
+  settings?: { homecoming: boolean } | null,
 ): JevContext {
   const home = regions
     .filter((r) => isPrefectureCode(r.region_code))
@@ -33,7 +36,16 @@ export function buildJevContext(
   return {
     visitedDays: new Map(regions.map((r) => [r.region_code, r.visited_days])),
     homeRegion: home?.region_code ?? null,
+    homecoming: settings?.homecoming ?? true,
   };
+}
+
+// 帰省することがほとんど無い人には、帰省を旅行として扱う
+export function applyHomecomingSetting<T extends string>(
+  label: T,
+  ctx: JevContext,
+): T | "trip" {
+  return label === "homecoming" && ctx.homecoming === false ? "trip" : label;
 }
 
 // この日数以上行っている場所は「よく行く場所」とみなす

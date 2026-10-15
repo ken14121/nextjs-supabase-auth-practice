@@ -24,6 +24,8 @@ export type RideData = {
   times?: { dep: string; arr: string; length: string };
   // 新幹線以外（バス・在来線・船・車）の券の名前。あれば列車番号・座席の行は出さない
   title?: string;
+  // はんこの初期の文字（無ければ「乗車記念」。船は「乗船記念」など）
+  stamp?: string;
 };
 
 type Theme = {
@@ -222,7 +224,7 @@ export function RailTicketView({
         className="absolute right-3 bottom-3 grid size-14 rotate-[-12deg] place-items-center rounded-full border-2 text-center text-[0.6rem] leading-tight font-bold opacity-80"
         style={{ borderColor: accent, color: accent }}
       >
-        {stampLines(style.stamp || "乗車記念").map((line, i) => (
+        {stampLines(style.stamp || data.stamp || "乗車記念").map((line, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: 同じ文字の行があり得る。並びは変わらない
           <span key={i}>{line}</span>
         ))}

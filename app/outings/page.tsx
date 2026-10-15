@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ClassifyButton } from "@/app/outings/classify-button";
+import { JudgeSettings } from "@/app/outings/judge-settings";
 import { LabelSelect } from "@/app/outings/label-select";
 import { regionName } from "@/lib/geo/names";
 import { labelName } from "@/lib/outings/labels";
@@ -27,23 +28,26 @@ export default async function OutingsPage() {
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) redirect("/");
 
-  const [{ data: outings, count }, { count: pendingCount }] = await Promise.all(
-    [
-      supabase
-        .from("outings")
-        .select(
-          "id, started_at, nights, distance_km, main_transport, source, label, label_source, label_confidence, visited_regions(region_code)",
-          { count: "exact" },
-        )
-        .order("started_at", { ascending: false })
-        .limit(PAGE_SIZE),
-      supabase
-        .from("outings")
-        .select("id", { count: "exact", head: true })
-        .is("label", null)
-        .eq("source", "timeline"),
-    ],
-  );
+  const [
+    { data: outings, count },
+    { count: pendingCount },
+    { data: settings },
+  ] = await Promise.all([
+    supabase
+      .from("outings")
+      .select(
+        "id, started_at, nights, distance_km, main_transport, source, label, label_source, label_confidence, visited_regions(region_code)",
+        { count: "exact" },
+      )
+      .order("started_at", { ascending: false })
+      .limit(PAGE_SIZE),
+    supabase
+      .from("outings")
+      .select("id", { count: "exact", head: true })
+      .is("label", null)
+      .eq("source", "timeline"),
+    supabase.from("judge_settings").select("homecoming").maybeSingle(),
+  ]);
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6">
@@ -61,6 +65,7 @@ export default async function OutingsPage() {
       <section className="flex flex-col gap-3 border-t-2 border-ink pt-4">
         <h2 className="font-serif text-lg font-semibold">Jev の判定</h2>
         <ClassifyButton pending={pendingCount ?? 0} />
+        <JudgeSettings homecoming={settings?.homecoming ?? true} />
         <Link
           href="/outings/review"
           className="w-fit text-sm underline underline-offset-4 hover:text-vermilion"

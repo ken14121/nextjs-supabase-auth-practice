@@ -8,7 +8,7 @@ import {
   createJevClient,
   JevNotConfiguredError,
 } from "@/lib/jev/classify";
-import { buildJevContext } from "@/lib/jev/state";
+import { applyHomecomingSetting, buildJevContext } from "@/lib/jev/state";
 import { OUTING_LABEL_VALUES, type OutingLabel } from "@/lib/outings/labels";
 import { ruleJudge } from "@/lib/outings/rule-judge";
 import { createClient } from "@/lib/supabase/server";
@@ -129,18 +129,20 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
     unavailable = error;
   }
 
-  const [{ data: regions }, { data: outings }] = await Promise.all([
-    supabase.rpc("get_my_regions"),
-    supabase
-      .from("outings")
-      .select(
-        "id, started_at, ended_at, nights, distance_km, main_transport, features, visited_regions(region_code)",
-      )
-      .is("label", null)
-      .eq("source", "timeline")
-      .order("started_at", { ascending: false })
-      .limit(RULE_SCAN_SIZE),
-  ]);
+  const [{ data: regions }, { data: outings }, { data: settings }] =
+    await Promise.all([
+      supabase.rpc("get_my_regions"),
+      supabase
+        .from("outings")
+        .select(
+          "id, started_at, ended_at, nights, distance_km, main_transport, features, visited_regions(region_code)",
+        )
+        .is("label", null)
+        .eq("source", "timeline")
+        .order("started_at", { ascending: false })
+        .limit(RULE_SCAN_SIZE),
+      supabase.from("judge_settings").select("homecoming").maybeSingle(),
+    ]);
 
   // いつもの場所にしか行っていない日は、Jev に聞かずにコードで「日常」と決める（クレジットを使わない）
   const pending = (outings ?? []).map((o) => {
@@ -165,7 +167,7 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
     ruleCount += updated?.length ?? 0;
   }
 
-  const ctx = buildJevContext(regions ?? []);
+  const ctx = buildJevContext(regions ?? [], settings);
 
   let classified = ruleCount;
   let requests = 0;
@@ -188,11 +190,12 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
       const { error } = await supabase
         .from("outings")
         .update({
-          label: result.label,
+          // 帰省がほとんど無い人には、帰省を旅行として扱う（判定の設定）
+          label: applyHomecomingSetting(result.label, ctx),
           label_confidence: result.confidence,
           label_source: "jev",
           // 本人が直しても消えないように、Jev の答えを別の列にも残す
-          jev_label: result.label,
+          jev_label: applyHomecomingSetting(result.label, ctx),
           jev_confidence: result.confidence,
           jev_p_daily: result.pDaily,
           jev_p_homecoming: result.pHomecoming,
@@ -345,18 +348,20 @@ export async function rejudgeWithNewQuestions(): Promise<RejudgeResult> {
     .eq("label_source", "jev");
   if (resetError) return { ok: false, message: "未判定に戻せませんでした。" };
 
-  const [{ data: regions }, { data: reviewed }] = await Promise.all([
-    supabase.rpc("get_my_regions"),
-    supabase
-      .from("outings")
-      .select(
-        "id, started_at, ended_at, nights, distance_km, main_transport, features, visited_regions(region_code)",
-      )
-      .eq("source", "timeline")
-      .eq("label_source", "user")
-      .not("jev_label", "is", null),
-  ]);
-  const ctx = buildJevContext(regions ?? []);
+  const [{ data: regions }, { data: reviewed }, { data: settings }] =
+    await Promise.all([
+      supabase.rpc("get_my_regions"),
+      supabase
+        .from("outings")
+        .select(
+          "id, started_at, ended_at, nights, distance_km, main_transport, features, visited_regions(region_code)",
+        )
+        .eq("source", "timeline")
+        .eq("label_source", "user")
+        .not("jev_label", "is", null),
+      supabase.from("judge_settings").select("homecoming").maybeSingle(),
+    ]);
+  const ctx = buildJevContext(regions ?? [], settings);
 
   let done = 0;
   let firstError: unknown = null;
@@ -376,7 +381,7 @@ export async function rejudgeWithNewQuestions(): Promise<RejudgeResult> {
       const { error } = await supabase
         .from("outings")
         .update({
-          jev_label: result.label,
+          jev_label: applyHomecomingSetting(result.label, ctx),
           jev_confidence: result.confidence,
           jev_p_daily: result.pDaily,
           jev_p_homecoming: result.pHomecoming,
@@ -399,5 +404,53 @@ export async function rejudgeWithNewQuestions(): Promise<RejudgeResult> {
   return {
     ok: true,
     message: `確かめた外出 ${done} 件を新しい質問で聞き直しました。まだ確かめていない外出は未判定に戻したので、マイページで判定し直してください。`,
+  };
+}
+
+const judgeSettingsSchema = z.object({ homecoming: z.boolean() });
+
+// 判定の設定を保存する（今は「帰省することがあるか」だけ。本人だけが見られる表）。
+// 「ほとんどない」にしたら、Jev・ルールが帰省にした外出を旅行に直す（本人が選んだものはそのまま）
+export async function saveJudgeSettings(
+  input: unknown,
+): Promise<{ ok: boolean; message: string }> {
+  const parsed = judgeSettingsSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: "選び直してください。" };
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims)
+    return { ok: false, message: "ログインし直してください。" };
+
+  const { error } = await supabase.from("judge_settings").upsert(
+    {
+      user_id: data.claims.sub,
+      homecoming: parsed.data.homecoming,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+  if (error) return { ok: false, message: "保存できませんでした。" };
+
+  let changed = 0;
+  if (!parsed.data.homecoming) {
+    const { data: updated } = await supabase
+      .from("outings")
+      .update({ label: "trip" })
+      .eq("label", "homecoming")
+      .in("label_source", ["jev", "rule"])
+      .select("id");
+    changed = updated?.length ?? 0;
+    await supabase
+      .from("outings")
+      .update({ jev_label: "trip" })
+      .eq("jev_label", "homecoming");
+  }
+  refresh();
+  return {
+    ok: true,
+    message:
+      changed > 0
+        ? `保存しました。自動で帰省になっていた ${changed} 件を旅行にしました。`
+        : "保存しました。",
   };
 }

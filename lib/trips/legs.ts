@@ -2,10 +2,10 @@ import { z } from "zod";
 
 // 飛行機・新幹線のほかに足せる移動（出発地・到着地は本人が書いた名前）
 export const GROUND_MODES = [
-  { value: "bus", label: "バス", title: "バス乗車券" },
-  { value: "train", label: "在来線", title: "乗車券" },
-  { value: "boat", label: "船", title: "乗船券" },
-  { value: "car", label: "車", title: "ドライブ" },
+  { value: "bus", label: "バス", title: "バス乗車券", stamp: "乗車記念" },
+  { value: "train", label: "在来線", title: "乗車券", stamp: "乗車記念" },
+  { value: "boat", label: "船", title: "乗船券", stamp: "乗船記念" },
+  { value: "car", label: "車", title: "ドライブ", stamp: "ドライブ記念" },
 ] as const;
 export type GroundMode = (typeof GROUND_MODES)[number]["value"];
 export const isGroundMode = (v: unknown): v is GroundMode =>
