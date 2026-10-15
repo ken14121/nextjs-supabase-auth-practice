@@ -52,6 +52,9 @@ function shortName(code: string): string {
   return name.replace(/(都|府|県)$/, "");
 }
 
+const jstDay = (iso: string) =>
+  new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+
 function jst(iso: string) {
   const [y, m, d] = new Date(iso)
     .toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" })
@@ -87,20 +90,28 @@ export function TripTicket({
     ...flights.map((f, i) => ({
       kind: "flight" as const,
       at: f.departed_at,
+      end: f.arrived_at,
       flight: f,
       index: i,
     })),
     ...trip.rides.map((r) => ({
       kind: "ride" as const,
       at: r.departed_at,
+      end: r.arrived_at,
       ride: r,
     })),
     ...trip.grounds.map((g) => ({
       kind: "ground" as const,
       at: g.departed_at,
+      end: g.arrived_at,
       ground: g,
     })),
-  ].sort((a, b) => a.at.localeCompare(b.at));
+  ].sort(
+    // 出発した日の順。同じ日なら先に着いた方を前に
+    //（時刻の無いバスの 11/11〜11/15 より、11/11 の朝の新幹線を先に）
+    (a, b) =>
+      jstDay(a.at).localeCompare(jstDay(b.at)) || a.end.localeCompare(b.end),
+  );
 
   // 旅の種類を選び直す（取り込んだ旅）／手入力の旅の編集
   const controls =

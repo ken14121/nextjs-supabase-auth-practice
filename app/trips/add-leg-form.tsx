@@ -31,6 +31,8 @@ export function AddLegForm({
   // 飛行機・新幹線、またはバスなど（GROUND_MODES）
   const [kind, setKind] = useState<"flight" | "ride" | GroundMode>("flight");
   const [date, setDate] = useState(defaultDate);
+  // 何日かかけた移動の終わりの日（バスなどだけ。null なら 1 日だけ）
+  const [endDate, setEndDate] = useState<string | null>(null);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [depTime, setDepTime] = useState("");
@@ -40,7 +42,17 @@ export function AddLegForm({
 
   const isGround = kind !== "flight" && kind !== "ride";
   const values = isGround
-    ? { kind: "ground", mode: kind, outingId, date, depTime, arrTime, from, to }
+    ? {
+        kind: "ground",
+        mode: kind,
+        outingId,
+        date,
+        endDate: endDate ?? "",
+        depTime,
+        arrTime,
+        from,
+        to,
+      }
     : { kind, outingId, date, depTime, arrTime, from, to };
   const checked = legSchema.safeParse(values);
   // 入れ始めた項目だけ、おかしいところを出す
@@ -62,6 +74,7 @@ export function AddLegForm({
         setTo("");
         setDepTime("");
         setArrTime("");
+        setEndDate(null);
         setMessage(null);
       } else {
         setMessage(res.message);
@@ -161,6 +174,36 @@ export function AddLegForm({
             className={fieldClass}
           />
         </label>
+        {isGround &&
+          (endDate === null ? (
+            <button
+              type="button"
+              onClick={() => setEndDate(date)}
+              className="flex items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              <Plus className="size-3.5" aria-hidden="true" />
+              終わりの日（何日かかけたとき）
+            </button>
+          ) : (
+            <>
+              <span aria-hidden="true">〜</span>
+              <input
+                type="date"
+                aria-label="終わりの日"
+                value={endDate}
+                min={date}
+                onChange={(e) => setEndDate(e.target.value)}
+                className={fieldClass}
+              />
+              <button
+                type="button"
+                onClick={() => setEndDate(null)}
+                className="text-xs text-muted-foreground underline underline-offset-4"
+              >
+                1 日だけにする
+              </button>
+            </>
+          ))}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

@@ -27,6 +27,11 @@ const time = z
 const base = {
   outingId: z.uuid(),
   date,
+  // 何日かかけた移動の、終わりの日（バスで 5 日間めぐった など）。1 日だけなら空
+  endDate: z
+    .string()
+    .regex(/^(\d{4}-\d{2}-\d{2})?$/, "終わりの日を入れてください")
+    .default(""),
   depTime: time,
   arrTime: time,
 };
@@ -63,6 +68,10 @@ export const legSchema = z
     message: "出発と到着が同じです",
     path: ["to"],
   })
+  .refine((v) => v.endDate === "" || v.endDate >= v.date, {
+    message: "終わりの日は、始まりの日より後にしてください",
+    path: ["endDate"],
+  })
   .refine((v) => (v.depTime === "") === (v.arrTime === ""), {
     message: "時刻は、出発と到着の両方を入れるか、両方とも空にしてください",
     path: ["arrTime"],
@@ -71,18 +80,24 @@ export const legSchema = z
 export type LegValues = z.infer<typeof legSchema>;
 
 // 日付と時刻（日本時間）から、出発・到着の日時を作る。
-// 到着が出発より前の時刻なら、次の日に着いたとみなす。時刻が無ければ、その日の 0:00 にする
+// 終わりの日があれば、その日に着いたとする。同じ日で、到着が出発より前の時刻なら、次の日に着いたとみなす。
+// 時刻が無ければ、その日の 0:00 にする
 export function legTimes(
   dateText: string,
   depTime: string,
   arrTime: string,
+  endDateText = "",
 ): { departedAt: string; arrivedAt: string; hasTimes: boolean } {
+  const endText = endDateText || dateText;
   if (!depTime || !arrTime) {
-    const at = new Date(`${dateText}T00:00:00+09:00`).toISOString();
-    return { departedAt: at, arrivedAt: at, hasTimes: false };
+    return {
+      departedAt: new Date(`${dateText}T00:00:00+09:00`).toISOString(),
+      arrivedAt: new Date(`${endText}T00:00:00+09:00`).toISOString(),
+      hasTimes: false,
+    };
   }
   const dep = new Date(`${dateText}T${depTime}:00+09:00`);
-  const arr = new Date(`${dateText}T${arrTime}:00+09:00`);
+  const arr = new Date(`${endText}T${arrTime}:00+09:00`);
   if (arr < dep) arr.setUTCDate(arr.getUTCDate() + 1);
   return {
     departedAt: dep.toISOString(),

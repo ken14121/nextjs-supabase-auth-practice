@@ -55,6 +55,13 @@ test("バスなどは、出発地と到着地を名前で入れる（30 文字�
     false,
   );
   expect(legSchema.safeParse({ ...bus, mode: "rocket" }).success).toBe(false);
+  // 終わりの日は、始まりの日より後
+  expect(legSchema.safeParse({ ...bus, endDate: "2022-11-15" }).success).toBe(
+    true,
+  );
+  expect(legSchema.safeParse({ ...bus, endDate: "2022-11-10" }).success).toBe(
+    false,
+  );
 });
 
 test("日付と時刻から出発・到着の日時を作る（日本時間）", () => {
@@ -66,6 +73,15 @@ test("日付と時刻から出発・到着の日時を作る（日本時間）",
   // 夜に出て日付をまたいで着く
   expect(legTimes("2024-09-18", "23:30", "01:10").arrivedAt).toBe(
     "2024-09-18T16:10:00.000Z",
+  );
+  // 何日かかけた移動：終わりの日に着く
+  expect(legTimes("2022-11-11", "", "", "2022-11-15")).toEqual({
+    departedAt: "2022-11-10T15:00:00.000Z",
+    arrivedAt: "2022-11-14T15:00:00.000Z",
+    hasTimes: false,
+  });
+  expect(legTimes("2022-11-11", "09:00", "17:30", "2022-11-15").arrivedAt).toBe(
+    "2022-11-15T08:30:00.000Z",
   );
   // 時刻なし：その日の 0:00
   expect(legTimes("2024-09-18", "", "")).toEqual({

@@ -28,6 +28,29 @@ const DEFAULT_DESIGN: Record<GroundMode, RailDesign> = {
   car: "retro",
 };
 
+// 日本時間の日付（「2022-11-11」）
+const jstDay = (iso: string) =>
+  new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+// 「11/11」
+const monthDay = (day: string) => {
+  const [, m, d] = day.split("-").map(Number);
+  return `${m}/${d}`;
+};
+
+// 時刻の代わりに出す文字。何日かかけた移動は日付と日数（11/11 → 11/15・5日間）
+function timesOf(leg: GroundRow) {
+  const from = jstDay(leg.departed_at);
+  const to = jstDay(leg.arrived_at);
+  if (from !== to) {
+    const days =
+      Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000) + 1;
+    return { dep: monthDay(from), arr: monthDay(to), length: `${days}日間` };
+  }
+  return leg.has_times
+    ? undefined
+    : { dep: "--:--", arr: "--:--", length: "時刻なし" };
+}
+
 export function GroundTicket({ leg }: { leg: GroundRow }) {
   const mode = isGroundMode(leg.mode) ? leg.mode : "bus";
   const design = isRailDesign(leg.design) ? leg.design : DEFAULT_DESIGN[mode];
@@ -46,9 +69,7 @@ export function GroundTicket({ leg }: { leg: GroundRow }) {
           distanceKm: 0,
           title: groundMode(mode).title,
           stamp: groundMode(mode).stamp,
-          times: leg.has_times
-            ? undefined
-            : { dep: "--:--", arr: "--:--", length: "時刻なし" },
+          times: timesOf(leg),
         },
       }}
       initialDesign={design}

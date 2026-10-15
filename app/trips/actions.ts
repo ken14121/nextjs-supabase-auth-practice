@@ -322,6 +322,7 @@ export async function addLeg(input: unknown): Promise<SaveResult> {
     leg.date,
     leg.depTime,
     leg.arrTime,
+    leg.endDate,
   );
   const supabase = await createClient();
 
