@@ -140,15 +140,44 @@ function roughKm(lat1: number, lng1: number, lat2: number, lng2: number) {
   return Math.sqrt(x * x + (lat2 - lat1) ** 2) * 111.2;
 }
 
-// 例: 羽田空港の近く → "HND"。近くに空港が無い → null
-export function nearestAirport(lat: number, lng: number): string | null {
-  let best: { iata: string; km: number } | null = null;
+export type AirportHit = { code: string; km: number };
+
+// 一番近い空港と、そこまでの距離。近くに空港が無い → null
+export function findAirport(lat: number, lng: number): AirportHit | null {
+  let best: AirportHit | null = null;
   for (const [iata, aLat, aLng] of AIRPORTS) {
     if (Math.abs(aLat - lat) > 1 || Math.abs(aLng - lng) > 1.5) continue;
     const km = roughKm(lat, lng, aLat, aLng);
-    if (km <= MAX_AIRPORT_KM && (!best || km < best.km)) best = { iata, km };
+    if (km <= MAX_AIRPORT_KM && (!best || km < best.km)) {
+      best = { code: iata, km };
+    }
   }
-  return best?.iata ?? null;
+  return best;
+}
+
+// 例: 羽田空港の近く → "HND"。近くに空港が無い → null
+export function nearestAirport(lat: number, lng: number): string | null {
+  return findAirport(lat, lng)?.code ?? null;
+}
+
+// 一覧にある空港か（本人が空港を直すときに確かめる）
+export function isKnownAirport(iata: string): boolean {
+  return AIRPORTS.some((a) => a[0] === iata);
+}
+
+// 2 つの空港のあいだの直線距離（km）。どちらかが分からなければ null
+export function airportDistanceKm(from: string, to: string): number | null {
+  const a = AIRPORTS.find((r) => r[0] === from);
+  const b = AIRPORTS.find((r) => r[0] === to);
+  if (!a || !b) return null;
+  const R = 6371;
+  const rad = (deg: number) => (deg * Math.PI) / 180;
+  const h =
+    Math.sin(rad(b[1] - a[1]) / 2) ** 2 +
+    Math.cos(rad(a[1])) *
+      Math.cos(rad(b[1])) *
+      Math.sin(rad(b[2] - a[2]) / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
 }
 
 export type AirportLabel = { code: string; city: string; country: string };

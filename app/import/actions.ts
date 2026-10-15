@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { nearestAirport } from "@/lib/geo/airports";
+import { findAirport } from "@/lib/geo/airports";
 import { lookupMunicipality } from "@/lib/geo/municipalities";
 import { lookupRegion } from "@/lib/geo/regions";
 import { nearestShinkansenStation } from "@/lib/geo/shinkansen";
@@ -381,7 +381,7 @@ export async function importTimeline(path: string): Promise<ImportResult> {
         startedAt: Date.parse(d.startedAt),
         endedAt: Date.parse(d.endedAt),
       })),
-      extractFlights(parsed.data.segments, nearestAirport),
+      extractFlights(parsed.data.segments, findAirport),
     );
 
     // 新幹線の乗車（切符）。便と同じく、選んだデザインは出発時刻で引き継ぐ
