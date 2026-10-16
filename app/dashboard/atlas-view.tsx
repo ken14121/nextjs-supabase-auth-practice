@@ -6,6 +6,7 @@ import { APP_NAME_LATIN } from "@/lib/app-name";
 import { isPrefectureCode, PREFECTURES, regionName } from "@/lib/geo/names";
 import type { VisitedRegion } from "@/lib/geo/visited-colors";
 import { labelName } from "@/lib/outings/labels";
+import { DeleteAccount } from "./delete-account";
 
 const monthFormat = new Intl.DateTimeFormat("ja-JP", {
   timeZone: "Asia/Tokyo",
@@ -239,6 +240,9 @@ export function AtlasView({
         <Link href="/guide" className="underline underline-offset-4">
           書き出し方
         </Link>
+        <Link href="/privacy" className="underline underline-offset-4">
+          プライバシー
+        </Link>
         <form action={signOut} className="ml-auto">
           <button
             type="submit"
@@ -247,6 +251,9 @@ export function AtlasView({
             ログアウト
           </button>
         </form>
+        <div className="w-full">
+          <DeleteAccount />
+        </div>
       </footer>
     </main>
   );

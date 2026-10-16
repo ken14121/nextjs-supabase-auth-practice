@@ -6,6 +6,7 @@ import { ZodError, z } from "zod";
 import {
   classifyOuting,
   createJevClient,
+  JevNotAllowedError,
   JevNotConfiguredError,
 } from "@/lib/jev/classify";
 import { applyHomecomingSetting, buildJevContext } from "@/lib/jev/state";
@@ -41,6 +42,9 @@ function refresh() {
 // Jev のエラーを、画面に出せる日本語にする（キーそのものは絶対に出さない）。
 // SDK のエラーの種類（instanceof）に加えて、HTTP のステータスコードでも見分ける
 function describeError(error: unknown): string {
+  if (error instanceof JevNotAllowedError) {
+    return "このアカウントでは Jev を使わず、アプリのルールで判定します。";
+  }
   if (error instanceof JevNotConfiguredError) {
     return ".env.local に JEV_API_KEY が設定されていません。設定してから yarn dev を起動し直してください。";
   }
@@ -73,6 +77,7 @@ function describeError(error: unknown): string {
 // Jev が使えない状態か（キーが無い・キーが違う・残高や権限が無い）。待てば直るエラーは含めない
 function isUnavailable(error: unknown): boolean {
   if (error instanceof JevNotConfiguredError) return true;
+  if (error instanceof JevNotAllowedError) return true;
   const status =
     error instanceof APIError
       ? error.status
@@ -124,7 +129,7 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
   let client: ReturnType<typeof createJevClient> | null = null;
   let unavailable: unknown = null;
   try {
-    client = createJevClient();
+    client = createJevClient({ userId: data.claims.sub });
   } catch (error) {
     unavailable = error;
   }
@@ -249,7 +254,13 @@ export async function classifyPendingOutings(): Promise<ClassifyResult> {
   if (unavailable !== null) {
     return {
       ok: true,
-      message: `Jev が使えないため、ルールで判定しました（${classified} 件。${describeError(unavailable)}）。`,
+      // Jev を使わないアカウント（公開サイトの、本人以外）には、ふつうの言葉で返す
+      message:
+        unavailable instanceof JevNotAllowedError
+          ? classified > 0
+            ? `${classified} 件を判定しました。`
+            : "判定が必要な外出はありません。"
+          : `Jev が使えないため、ルールで判定しました（${classified} 件。${describeError(unavailable)}）。`,
       classified,
       remaining: remaining ?? 0,
       requests,
@@ -336,7 +347,7 @@ export async function rejudgeWithNewQuestions(): Promise<RejudgeResult> {
 
   let client: ReturnType<typeof createJevClient>;
   try {
-    client = createJevClient();
+    client = createJevClient({ userId: data.claims.sub });
   } catch (error) {
     return { ok: false, message: describeError(error) };
   }

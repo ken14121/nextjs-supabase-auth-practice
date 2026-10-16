@@ -393,6 +393,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      delete_my_account: {
+        Args: never;
+        Returns: undefined;
+      };
       find_profile_by_friend_code: {
         Args: { code: string };
         Returns: {

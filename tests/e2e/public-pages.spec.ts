@@ -6,7 +6,9 @@ test("トップページが表示され、Google でログインのボタンが�
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByText("旅の記録アプリ")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "旅の地図帳" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Google でログイン" }),
   ).toBeVisible();
@@ -20,6 +22,14 @@ test("ログインに失敗して戻ってきたら、エラーを表示する",
 test("書き出し方のページは、ログインしなくても見られる", async ({ page }) => {
   await page.goto("/guide");
   await expect(page).toHaveURL(/\/guide$/);
+});
+
+test("プライバシーのページは、ログインしなくても見られる", async ({ page }) => {
+  await page.goto("/privacy");
+  await expect(page).toHaveURL(/\/privacy$/);
+  await expect(
+    page.getByText("位置の座標（緯度・経度）は保存しません。"),
+  ).toBeVisible();
 });
 
 // ログインが必要なページは、トップページに戻される

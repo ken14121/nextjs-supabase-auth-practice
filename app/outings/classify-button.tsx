@@ -7,7 +7,14 @@ import { type ClassifyResult, classifyPendingOutings } from "./actions";
 
 // 未判定の外出を Jev で判定するボタン（Jev が使えないときは、ルールで判定する）。
 // 「20 件だけ」と「残りをすべて」（20 件ずつくり返す。途中で止められる）の 2 つ
-export function ClassifyButton({ pending }: { pending: number }) {
+export function ClassifyButton({
+  pending,
+  jev = true,
+}: {
+  pending: number;
+  // このアカウントで Jev を使うか（使わない人はルールで判定するので、ボタンの言葉を変える）
+  jev?: boolean;
+}) {
   const [result, setResult] = useState<ClassifyResult | null>(null);
   const [running, setRunning] = useState<"once" | "all" | null>(null);
   const [doneInRun, setDoneInRun] = useState(0);
@@ -66,7 +73,7 @@ export function ClassifyButton({ pending }: { pending: number }) {
           ) : (
             <Sparkles />
           )}
-          Jev で 20 件判定
+          {jev ? "Jev で 20 件判定" : "判定する"}
         </Button>
         {running === "all" ? (
           <Button

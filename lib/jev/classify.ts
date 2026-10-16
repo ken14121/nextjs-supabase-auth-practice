@@ -44,8 +44,27 @@ const QUESTIONS = {
 };
 
 export class JevNotConfiguredError extends Error {}
+// Jev はお金がかかるので、公開サイトでは JEV_OWNER_USER_IDS に書いた人（本人）だけが使える。
+// それ以外の人は、ルールだけで判定する（lib/outings/rule-judge.ts）
+export class JevNotAllowedError extends Error {}
 
-export function createJevClient(options?: { fetch?: Fetch }): TypeSafeClient {
+// Jev を使ってよい人か。JEV_OWNER_USER_IDS（カンマ区切りのユーザー ID）に書いた人だけ。
+// 書いていなければ、だれも使わない（公開したときに、うっかり全員がクレジットを使わないように）
+export function isJevAllowed(userId: string): boolean {
+  const owners = (process.env.JEV_OWNER_USER_IDS ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return owners.includes(userId);
+}
+
+export function createJevClient(options?: {
+  fetch?: Fetch;
+  userId?: string;
+}): TypeSafeClient {
+  if (options?.userId !== undefined && !isJevAllowed(options.userId)) {
+    throw new JevNotAllowedError("このアカウントでは Jev を使いません");
+  }
   const apiKey = process.env.JEV_API_KEY?.trim();
   if (!apiKey) {
     throw new JevNotConfiguredError(

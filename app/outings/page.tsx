@@ -4,6 +4,7 @@ import { ClassifyButton } from "@/app/outings/classify-button";
 import { JudgeSettings } from "@/app/outings/judge-settings";
 import { LabelSelect } from "@/app/outings/label-select";
 import { regionName } from "@/lib/geo/names";
+import { isJevAllowed } from "@/lib/jev/classify";
 import { labelName } from "@/lib/outings/labels";
 import { TRANSPORT_LABELS } from "@/lib/outings/transport";
 import { createClient } from "@/lib/supabase/server";
@@ -58,13 +59,17 @@ export default async function OutingsPage() {
           が「旅行・帰省・日帰り・おでかけ・日常」に分けます。学校など、いつもの場所だけの日は
           Jev を使わず日常にします。Jev
           が使えないとき（キーや残高が無いとき）は、アプリのルールで判定します。間違っていたら選び直してください（選び直したものは
-          Jev が上書きしません）。友達に見えるのは、日常以外の外出だけです。
+          Jev
+          が上書きしません）。友達に見えるのは、旅行・帰省・日帰りの外出で行った県・国と日付だけです。
         </p>
       </header>
 
       <section className="flex flex-col gap-3 border-t-2 border-ink pt-4">
         <h2 className="font-serif text-lg font-semibold">Jev の判定</h2>
-        <ClassifyButton pending={pendingCount ?? 0} />
+        <ClassifyButton
+          pending={pendingCount ?? 0}
+          jev={isJevAllowed(data.claims.sub)}
+        />
         <JudgeSettings homecoming={settings?.homecoming ?? true} />
         <Link
           href="/outings/review"
