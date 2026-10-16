@@ -432,14 +432,23 @@ export async function saveJudgeSettings(
   if (!data?.claims)
     return { ok: false, message: "ログインし直してください。" };
 
-  const { error } = await supabase.from("judge_settings").upsert(
-    {
-      user_id: data.claims.sub,
-      homecoming: parsed.data.homecoming,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id" },
-  );
+  // upsert は user_id 列も書き換えようとするが、user_id には update の権限を付けていないので、
+  // 先に update し、行が無ければ insert する
+  const values = {
+    homecoming: parsed.data.homecoming,
+    updated_at: new Date().toISOString(),
+  };
+  const { data: updatedRows, error: updateError } = await supabase
+    .from("judge_settings")
+    .update(values)
+    .eq("user_id", data.claims.sub)
+    .select("user_id");
+  const { error } =
+    updateError || (updatedRows?.length ?? 0) > 0
+      ? { error: updateError }
+      : await supabase
+          .from("judge_settings")
+          .insert({ user_id: data.claims.sub, ...values });
   if (error) return { ok: false, message: "保存できませんでした。" };
 
   let changed = 0;
