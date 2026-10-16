@@ -1,0 +1,424 @@
+<title>旅アプリ開発 5日目ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --surface-2: #e9eff3;
+    --ink: #15212c;
+    --muted: #566676;
+    --line: #d4dde5;
+    --accent: #1a6a9c;
+    --accent-soft: #dcebf5;
+    --pending: #a36b00;
+    --pending-soft: #fbefd4;
+    --ok: #2d7a4c;
+    --ok-soft: #dcefe3;
+    --ng: #b03a2e;
+    --ng-soft: #f6dedb;
+    --code-bg: #edf2f6;
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e151c;
+      --surface: #15202a;
+      --surface-2: #1b2934;
+      --ink: #e4ecf2;
+      --muted: #9aabba;
+      --line: #2a3a47;
+      --accent: #62b0e3;
+      --accent-soft: #173247;
+      --pending: #e3b453;
+      --pending-soft: #3a2e14;
+      --ok: #6cc48f;
+      --ok-soft: #173325;
+      --ng: #ee8a7e;
+      --ng-soft: #3d1e1a;
+      --code-bg: #1c2833;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e151c;
+    --surface: #15202a;
+    --surface-2: #1b2934;
+    --ink: #e4ecf2;
+    --muted: #9aabba;
+    --line: #2a3a47;
+    --accent: #62b0e3;
+    --accent-soft: #173247;
+    --pending: #e3b453;
+    --pending-soft: #3a2e14;
+    --ok: #6cc48f;
+    --ok-soft: #173325;
+    --ng: #ee8a7e;
+    --ng-soft: #3d1e1a;
+    --code-bg: #1c2833;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.35; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 900; }
+  h2 { font-size: 1.45rem; font-weight: 900; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ヘッダー：きっぷ風 */
+  header.ticket {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+  }
+  .ticket-main { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .ticket-main .lead { color: var(--muted); max-width: 60ch; }
+  .ticket-stub {
+    border-left: 2px dashed var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: var(--surface-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 140px;
+  }
+  .stub-label { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+  .stub-value { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  @media (max-width: 560px) {
+    header.ticket { grid-template-columns: 1fr; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; flex-wrap: wrap; gap: 4px 20px; }
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -32px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.88rem;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .sec-no { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+  .note { color: var(--muted); font-size: 0.95rem; }
+
+  /* 全体像 */
+  .map { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .map-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+  @media (max-width: 640px) { .map-row { grid-template-columns: 1fr; } .map-arrow { transform: rotate(90deg); justify-self: center; } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .box-title { font-family: var(--font-display); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.93rem; }
+  .tool-list li { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px; }
+  .tool-list b { font-weight: 700; }
+  .map-arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .map-arrow span { font-size: 1.6rem; line-height: 1; color: var(--accent); }
+  .localhost { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+  .pending-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .pending-row { grid-template-columns: 1fr; } }
+  .pending-row .box { border-style: dashed; }
+  .chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip.pending { color: var(--pending); background: var(--pending-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.ng { color: var(--ng); background: var(--ng-soft); }
+  .chip.step { color: var(--accent); background: var(--accent-soft); }
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  /* リスト */
+  dl.facts { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 16px; }
+  dl.facts dt { font-weight: 700; color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 10px; } }
+
+  /* 表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 路線図（ログインの流れ） */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.route li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  ol.route li:last-child { padding-bottom: 0; }
+  ol.route li::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent);
+  }
+  ol.route li:last-child::before { display: none; }
+  .station {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--accent);
+    position: relative; z-index: 1;
+  }
+  .stop { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .who { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+  /* Git の流れ */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.93rem; }
+  .flow .stepbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; }
+  .flow .stepbox small { color: var(--muted); font-size: 0.78rem; }
+  .flow .arr { color: var(--accent); font-weight: 700; }
+
+  /* クイズ */
+  ol.quiz { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: q; }
+  ol.quiz li { counter-increment: q; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  ol.quiz li > p::before { content: "Q" counter(q) "　"; font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; font-weight: 700; width: fit-content; }
+  details[open] summary { margin-bottom: 6px; }
+  details p { color: var(--ink); font-size: 0.95rem; }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+<style>
+  .memo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+  .memo pre { margin: 0; font-family: var(--font-body); white-space: pre-wrap; font-size: 0.95rem; line-height: 1.8; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .stat b { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 0.8rem; color: var(--muted); }
+</style>
+<style>
+  .swatch { display: inline-block; width: 0.9em; height: 0.9em; border-radius: 3px; vertical-align: -0.1em; margin-right: 6px; }
+</style>
+
+<div class="wrap">
+
+  <header class="ticket">
+    <div class="ticket-main">
+      <span class="eyebrow">ZENDASH 臨地実習 ／ 学習ノート</span>
+      <h1>旅アプリ開発 5日目ノート</h1>
+      <p class="lead">フレンドコードで友達になり、行った都道府県・国を比べられるようにした。架空のタイムラインと Google のサブアカウントで、申請 → 承認 → 比較までを本番の DB で確かめた。1 週目のまとめと週報も作った。</p>
+    </div>
+    <div class="ticket-stub">
+      <span class="stub-label">日付</span>
+      <span class="stub-value">2026.10.02 金</span>
+      <span class="stub-label">場所</span>
+      <span class="stub-value">在宅</span>
+      <span class="stub-label">進んだところ</span>
+      <span class="stub-value">Step 6 完了</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#result">今日の成果</a>
+    <a href="#flow">友達申請の流れ</a>
+    <a href="#compare">比べるページ</a>
+    <a href="#shared">共通部品と色</a>
+    <a href="#sample">サンプルデータ</a>
+    <a href="#troubles">つまずき</a>
+    <a href="#quiz">理解度チェック</a>
+    <a href="#report">日報</a>
+    <a href="#week">1 週目のまとめ</a>
+  </nav>
+
+  <section id="result">
+    <div class="sec-head"><span class="sec-no">00</span><h2>今日の成果</h2></div>
+    <div class="stats">
+      <div class="stat"><span>新しいページ</span><b>2</b></div>
+      <div class="stat"><span>試したアカウント</span><b>2</b></div>
+      <div class="stat"><span>作業時間</span><b>8.5 h</b></div>
+      <div class="stat"><span>累計</span><b>40.5 h</b></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ページ</th><th>できること</th></tr></thead>
+        <tbody>
+          <tr><td><code>/friends</code></td><td>自分のフレンドコード（コピーボタン付き）、コードを入れて申請、届いた申請の承認・お断り、送った申請の取り消し、友達をやめる</td></tr>
+          <tr><td><code>/friends/[id]</code></td><td>承認済みの友達とだけ比べられる。都道府県の制覇率、どちらも / 自分だけ / 友達だけ を 3 色で塗った地図（日本・世界）、一覧</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="flow">
+    <div class="sec-head"><span class="sec-no">01</span><h2>友達申請の流れ</h2></div>
+    <ol class="route">
+      <li><span class="station">1</span><div class="stop"><span class="who">A さん（/friends）</span><p>B さんのフレンドコードを入れて「申請」。フォームは react-hook-form ＋ Zod（8 文字の英数字か。大文字や前後の空白は直してから調べる）</p></div></li>
+      <li><span class="station">2</span><div class="stop"><span class="who">SERVER ACTION（app/friends/actions.ts）</span><p><code>find_profile_by_friend_code</code> で相手を探す（自分のコードでは見つからない）。すでに友達・申請済みなら、そう伝える。B さんから申請が届いていたら、そのまま承認する</p></div></li>
+      <li><span class="station">3</span><div class="stop"><span class="who">DB（friendships）</span><p><code>requester_id = A, addressee_id = B, status = pending</code> の行ができる。A→B と B→A の 2 行は一意インデックスで作れない</p></div></li>
+      <li><span class="station">4</span><div class="stop"><span class="who">B さん（/friends）</span><p>「届いた申請」に A さんが出る。承認すると <code>status = accepted</code>。承認できるのは申請された側（addressee）だけ ← RLS が守る</p></div></li>
+      <li><span class="station">5</span><div class="stop"><span class="who">比べるページ</span><p>友達の訪問地は <code>get_friend_visited_regions</code> 関数から。中で「承認済みの友達か」を確かめ、県・国と日付だけを返す</p></div></li>
+    </ol>
+    <p class="note">「断る」「取り消す」「友達をやめる」は、どれも 2 人の行を消すだけ。だから Server Action は 1 つ（<code>removeFriendship</code>）にまとめた。</p>
+  </section>
+
+  <section id="compare">
+    <div class="sec-head"><span class="sec-no">02</span><h2>比べるページ</h2></div>
+    <dl class="facts">
+      <dt>比べ方</dt>
+      <dd>自分の県・国の集合と、友達の集合を比べて 3 つに分ける（<code>lib/friends/compare.ts</code>）。国で比べるときは、都道府県をまとめて「日本」にする</dd>
+      <dt>友達側の範囲</dt>
+      <dd>旅行・帰省・日帰りと判定された外出だけ。日常の外出と、まだ判定していない外出は共有しない（家のまわりや毎日の行動を見せないため）</dd>
+      <dt>今の状態</dt>
+      <dd>タイムラインから取り込んだ外出は Jev で判定する前なので「未判定」。<b>今は手入力した旅だけが友達に見える</b>（メイン垢の比較が 7 県だったのはこのため）。来週 Step 7 で解決する</dd>
+      <dt>見つからないとき</dt>
+      <dd>友達でない人の ID を URL に入れても、<code>notFound()</code> で「ページが無い」扱いにする。ID の形（UUID）も Zod で確かめる</dd>
+    </dl>
+  </section>
+
+  <section id="shared">
+    <div class="sec-head"><span class="sec-no">03</span><h2>共通部品と色</h2></div>
+    <dl class="facts">
+      <dt>共通部品</dt>
+      <dd>日本地図・世界地図を描く部分を <code>components/region-maps.tsx</code> にまとめた。何色に塗るかは使う側が <code>paint</code> 関数で決める。マイページ（日数で 4 段階）と比べるページ（3 グループ）で同じ部品を使う</dd>
+      <dt>3 色</dt>
+      <dd><span class="swatch" style="background:#2a78d6"></span>自分だけ　<span class="swatch" style="background:#eb6834"></span>友達だけ　<span class="swatch" style="background:#1baf7a"></span>どちらも　—— 色覚の違い（赤緑など）があっても見分けられるかを、ツールで計算して確かめた</dd>
+      <dt>色だけに頼らない</dt>
+      <dd>緑は白い背景だと少し薄いので、グループごとの一覧（文字）も必ず出す。地図の県にカーソルを合わせると「どちらも行った」などの文字も出る</dd>
+    </dl>
+  </section>
+
+  <section id="sample">
+    <div class="sec-head"><span class="sec-no">04</span><h2>動作確認用のサンプルデータ</h2></div>
+    <p><code>docs/samples/sample-timeline-osaka.json</code>：大阪に住む<b>架空の人</b>の 1 年 3 か月分（iPhone 形式）。自宅は大阪城公園のあたりに置いた。アプリと同じ取り込み処理に通して、外出 37 回（日常 24 ＋ 旅 13）・15 府県＋韓国になることを確かめてから渡した。</p>
+    <p class="note">本物の位置情報はリポジトリに入れない。架空のデータなら、来週の Playwright のテストにも使える。</p>
+  </section>
+
+  <section id="troubles">
+    <div class="sec-head"><span class="sec-no">05</span><h2>つまずいたことと学び</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>起きたこと</th><th>原因</th><th>対処</th></tr></thead>
+        <tbody>
+          <tr><td><code>Module not found: Can't resolve 'd3-geo'</code></td><td>別の PC で、pull したあとに <code>yarn install</code> していなかった</td><td><code>yarn install</code>。<b>pull したら、まず install</b></td></tr>
+          <tr><td><code>not a git repository</code>、<code>yarn v1.22.22</code> が動く</td><td>ホームフォルダ（<code>C:\Users\kenda</code>）でコマンドを打っていた</td><td>プロジェクトのフォルダに <code>cd</code>。<code>yarn -v</code> が 4.5.3 なら正しい場所</td></tr>
+          <tr><td>「workspace root」の警告</td><td>間違えてできたホームの <code>yarn.lock</code> を、Next.js がプロジェクトの目印と勘違いした</td><td>そのファイルを削除</td></tr>
+          <tr><td><code>bad_oauth_state</code> でログイン失敗</td><td>ログインの途中で時間が経った・古い画面から続けた、など</td><td>開き直してログインし直す。トップページにエラーを出すように直した</td></tr>
+          <tr><td>友達の県が少ない</td><td>取り込んだ外出は未判定なので共有されない（仕様）</td><td>Step 7 で Jev の判定を入れる</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head"><span class="sec-no">06</span><h2>理解度チェック</h2></div>
+    <ol class="quiz">
+      <li><p>申請した側（A さん）が、自分で <code>status</code> を <code>accepted</code> に書き換えられないのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>friendships の更新の RLS が「<code>addressee_id = 自分</code> の行だけ」になっているから。A さんが更新しようとしても 0 行しか変わらない。アプリのコードではなく、DB 側で守っている。</p></details></li>
+      <li><p>A さんが B さんに申請中のとき、B さんが A さんのコードで申請するとどうなる？</p>
+        <details><summary>答えを見る</summary><p>Server Action が「相手から申請が届いている」ことに気づいて、そのまま承認する（2 人はすぐ友達になる）。B→A の行を新しく作ろうとしても、一意インデックスで弾かれる。</p></details></li>
+      <li><p>友達の訪問地を、<code>visited_regions</code> テーブルから直接 select しないのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>テーブルは RLS で本人しか読めないから。友達向けには security definer の関数を通し、「承認済みの友達か」を確かめてから、県・国と日付だけを、日常を除いて返す。</p></details></li>
+      <li><p>友達でない人の比較ページの URL を直接開いたら、何が表示される？</p>
+        <details><summary>答えを見る</summary><p>「ページが見つかりません」（<code>notFound()</code>）。もし画面が出てしまっても、関数が友達かどうかを確かめるので、相手の訪問地は 0 件しか返らない（二重に守っている）。</p></details></li>
+      <li><p>比べる地図で、色に加えてグループごとの一覧（文字）も出しているのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>色の見え方は人によって違い、白い背景だと見えにくい色もあるから。色だけで意味を伝えない。</p></details></li>
+      <li><p>別の PC で <code>git pull</code> したら、次に何をする？ その理由は？</p>
+        <details><summary>答えを見る</summary><p><code>yarn install</code>。package.json に新しい部品が増えていても、node_modules（実際の部品）は PC ごとに入れ直す必要があるから。</p></details></li>
+    </ol>
+  </section>
+
+  <section id="report">
+    <div class="sec-head"><span class="sec-no">07</span><h2>日報と作業時間</h2></div>
+    <div class="memo">
+<pre>10月2日(金)　8:00〜18:00（8.5時間）在宅
+やったこと：フレンドコードで友達申請・承認・取り消しができる画面と、友達と行った都道府県・国を比べるページ（どちらも／自分だけ／友達だけを3色で塗り分けた地図と制覇率）を作成。動作確認用に架空のタイムラインデータを用意し、Googleのサブアカウントと友達になって比較できることを確認した。
+詰まったこと：別のPCで起動したら部品が見つからないエラーが出た（yarn installのし忘れと、ホームフォルダで実行して余計なyarn.lockができていたのが原因。削除して解決）。友達に共有されるのは判定済みの外出だけなので、取り込んだ旅がまだ比較に出ない（来週Jevの判定を入れて解決する予定）。
+学んだこと：友達申請のような2人の関係をDBで扱う方法（RLSで自分が関係する申請だけ見え、承認できるのは申請された側だけ）、色覚の違いに配慮した色の選び方、コマンドを実行する場所を確認する大切さ。</pre>
+    </div>
+    <p class="note">作業時間：8:00〜18:00 から昼休み 1 時間を引くと 9 時間。7.5 時間を超えたので 30 分の休憩が入り <b>8.5 時間</b>。累計 <b>40.5 時間</b> / 225 時間。</p>
+    <div class="memo">
+<pre>10/2 (金) 18:00業務終了します。お疲れ様でした。業務時間8.5h 累計業務時間40.5h</pre>
+    </div>
+  </section>
+
+  <section id="week">
+    <div class="sec-head"><span class="sec-no">08</span><h2>1 週目のまとめ（9/28〜10/2）</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>日</th><th>進んだところ</th><th>時間</th></tr></thead>
+        <tbody>
+          <tr><td>9/28 月</td><td>方向性を決定、アカウント作成、開発環境</td><td class="num">8 h</td></tr>
+          <tr><td>9/29 火</td><td>Google ログイン・ログアウト、マイページ</td><td class="num">8 h</td></tr>
+          <tr><td>9/30 水</td><td>テーブルと RLS、タイムラインの取り込み</td><td class="num">8 h</td></tr>
+          <tr><td>10/1 木</td><td>書き出し方ページ、2D 地図、手入力、3D 地図</td><td class="num">8 h</td></tr>
+          <tr><td>10/2 金</td><td>友達申請、友達との比較</td><td class="num">8.5 h</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">できたこと<span class="chip ok">予定より早い</span></div>
+        <p>計画では 1 週目は「環境構築とログインまで」だったが、Step 0〜6（取り込み・地図・友達との比較）まで終わった</p>
+      </div>
+      <div class="box">
+        <div class="box-title">来週<span class="chip step">Step 7〜9</span></div>
+        <p>Jev で外出を判定（旅行 / 帰省 / 日帰り / 日常）→ Playwright でテスト → GitHub Pages の紹介ページの準備</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>nextjs-supabase-auth-practice ／ docs/notes/2026-10-02.html</footer>
+</div>

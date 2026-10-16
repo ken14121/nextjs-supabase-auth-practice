@@ -1,0 +1,2 @@
+# 改行コードを LF にそろえる（Windows でも Biome のフォーマットチェックが通るように）
+* text=auto eol=lf
