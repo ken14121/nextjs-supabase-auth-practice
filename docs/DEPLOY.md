@@ -55,7 +55,9 @@ Authentication → URL Configuration
 Google Cloud Console → Google Auth Platform（OAuth 同意画面）
 
 1. アプリのホームページに `https://（プロジェクト名）.vercel.app`、プライバシーポリシーに `https://（プロジェクト名）.vercel.app/privacy` を入れる
-2. 公開ステータスを「テスト中」から「本番環境」にする
+   - 「承認済みドメイン」に `nextjs-supabase-auth-practice.vercel.app` を足す（`vercel.app` はみんなで共有しているドメインなので、自分のサイトの部分まで書く）。Supabase のドメインは消さない
+   - ロゴは上げない（上げると Google の審査が必要になる）
+2. 公開ステータスを「テスト中」から「本番環境」にする（「対象」の画面）
    - 使うのは名前・メールアドレスなどの基本的な情報だけなので、通常は審査がいらない
 3. 「承認済みのリダイレクト URI」は Supabase のコールバック（`https://（Supabase のプロジェクト）.supabase.co/auth/v1/callback`）のままでよい（変えない）
 
