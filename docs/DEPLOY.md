@@ -3,6 +3,8 @@
 アプリ本体は Vercel に置く（ログイン・Server Actions などサーバーで動く処理があるので、GitHub Pages では動かない）。
 紹介ページ（静的なページ）は GitHub Pages に置き、そこからアプリにリンクする。
 
+公開した URL：**https://nextjs-supabase-auth-practice.vercel.app**（10/19 に公開。`main` に push すると自動で更新される）
+
 > Vercel・Supabase・Google の画面の名前や場所は変わることがある。見つからないときは、それぞれの公式ドキュメントで確かめる。
 
 ## 0. 公開の前にコードで済ませたこと（10/16）
