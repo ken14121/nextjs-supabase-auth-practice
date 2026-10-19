@@ -1,0 +1,557 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5";
+  };
+  public: {
+    Tables: {
+      flights: {
+        Row: {
+          added_by_user: boolean;
+          has_times: boolean;
+          airline: string | null;
+          airports_fixed: boolean;
+          arrived_at: string;
+          created_at: string;
+          departed_at: string;
+          design: string | null;
+          distance_km: number;
+          flight_number: string | null;
+          from_airport: string | null;
+          id: string;
+          outing_id: string;
+          seat: string | null;
+          style: Json;
+          to_airport: string | null;
+          user_id: string;
+        };
+        Insert: {
+          added_by_user?: boolean;
+          has_times?: boolean;
+          airline?: string | null;
+          airports_fixed?: boolean;
+          arrived_at: string;
+          created_at?: string;
+          departed_at: string;
+          design?: string | null;
+          distance_km?: number;
+          flight_number?: string | null;
+          from_airport?: string | null;
+          id?: string;
+          outing_id: string;
+          seat?: string | null;
+          style?: Json;
+          to_airport?: string | null;
+          user_id?: string;
+        };
+        Update: {
+          added_by_user?: boolean;
+          has_times?: boolean;
+          airline?: string | null;
+          airports_fixed?: boolean;
+          arrived_at?: string;
+          created_at?: string;
+          departed_at?: string;
+          design?: string | null;
+          distance_km?: number;
+          flight_number?: string | null;
+          from_airport?: string | null;
+          id?: string;
+          outing_id?: string;
+          seat?: string | null;
+          style?: Json;
+          to_airport?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "flights_outing_id_fkey";
+            columns: ["outing_id"];
+            isOneToOne: false;
+            referencedRelation: "outings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      friendships: {
+        Row: {
+          addressee_id: string;
+          created_at: string;
+          requester_id: string;
+          status: string;
+        };
+        Insert: {
+          addressee_id: string;
+          created_at?: string;
+          requester_id?: string;
+          status?: string;
+        };
+        Update: {
+          addressee_id?: string;
+          created_at?: string;
+          requester_id?: string;
+          status?: string;
+        };
+        Relationships: [];
+      };
+      ground_legs: {
+        Row: {
+          arrived_at: string;
+          created_at: string;
+          departed_at: string;
+          design: string | null;
+          from_name: string;
+          has_times: boolean;
+          id: string;
+          mode: string;
+          outing_id: string;
+          style: Json;
+          to_name: string;
+          user_id: string;
+        };
+        Insert: {
+          arrived_at: string;
+          created_at?: string;
+          departed_at: string;
+          design?: string | null;
+          from_name: string;
+          has_times?: boolean;
+          id?: string;
+          mode: string;
+          outing_id: string;
+          style?: Json;
+          to_name: string;
+          user_id?: string;
+        };
+        Update: {
+          arrived_at?: string;
+          created_at?: string;
+          departed_at?: string;
+          design?: string | null;
+          from_name?: string;
+          has_times?: boolean;
+          id?: string;
+          mode?: string;
+          outing_id?: string;
+          style?: Json;
+          to_name?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ground_legs_outing_id_fkey";
+            columns: ["outing_id"];
+            isOneToOne: false;
+            referencedRelation: "outings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      judge_settings: {
+        Row: {
+          homecoming: boolean;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          homecoming?: boolean;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          homecoming?: boolean;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      municipality_levels: {
+        Row: {
+          code: string;
+          first_visited_on: string;
+          last_visited_on: string;
+          level: number;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          code: string;
+          first_visited_on: string;
+          last_visited_on: string;
+          level: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          code?: string;
+          first_visited_on?: string;
+          last_visited_on?: string;
+          level?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      outings: {
+        Row: {
+          created_at: string;
+          distance_km: number;
+          ended_at: string;
+          features: Json | null;
+          id: string;
+          jev_confidence: number | null;
+          jev_label: string | null;
+          jev_p_daily: number | null;
+          jev_p_day_trip: number | null;
+          jev_p_homecoming: number | null;
+          label: string | null;
+          label_confidence: number | null;
+          label_source: string | null;
+          main_transport: string | null;
+          memo: string;
+          nights: number;
+          source: string;
+          started_at: string;
+          ticket_design: string | null;
+          ticket_kind: string | null;
+          ticket_style: Json;
+          timeline_started_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          distance_km?: number;
+          ended_at: string;
+          features?: Json | null;
+          id?: string;
+          jev_confidence?: number | null;
+          jev_label?: string | null;
+          jev_p_daily?: number | null;
+          jev_p_day_trip?: number | null;
+          jev_p_homecoming?: number | null;
+          label?: string | null;
+          label_confidence?: number | null;
+          label_source?: string | null;
+          main_transport?: string | null;
+          memo?: string;
+          nights?: number;
+          source?: string;
+          started_at: string;
+          ticket_design?: string | null;
+          ticket_kind?: string | null;
+          ticket_style?: Json;
+          timeline_started_at?: string | null;
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          distance_km?: number;
+          ended_at?: string;
+          features?: Json | null;
+          id?: string;
+          jev_confidence?: number | null;
+          jev_label?: string | null;
+          jev_p_daily?: number | null;
+          jev_p_day_trip?: number | null;
+          jev_p_homecoming?: number | null;
+          label?: string | null;
+          label_confidence?: number | null;
+          label_source?: string | null;
+          main_transport?: string | null;
+          memo?: string;
+          nights?: number;
+          source?: string;
+          started_at?: string;
+          ticket_design?: string | null;
+          ticket_kind?: string | null;
+          ticket_style?: Json;
+          timeline_started_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      profiles: {
+        Row: {
+          created_at: string;
+          display_name: string;
+          friend_code: string;
+          id: string;
+        };
+        Insert: {
+          created_at?: string;
+          display_name?: string;
+          friend_code?: string;
+          id: string;
+        };
+        Update: {
+          created_at?: string;
+          display_name?: string;
+          friend_code?: string;
+          id?: string;
+        };
+        Relationships: [];
+      };
+      train_rides: {
+        Row: {
+          added_by_user: boolean;
+          has_times: boolean;
+          arrived_at: string;
+          created_at: string;
+          departed_at: string;
+          design: string | null;
+          distance_km: number;
+          from_station: string;
+          id: string;
+          outing_id: string;
+          style: Json;
+          to_station: string;
+          user_id: string;
+        };
+        Insert: {
+          added_by_user?: boolean;
+          has_times?: boolean;
+          arrived_at: string;
+          created_at?: string;
+          departed_at: string;
+          design?: string | null;
+          distance_km?: number;
+          from_station: string;
+          id?: string;
+          outing_id: string;
+          style?: Json;
+          to_station: string;
+          user_id?: string;
+        };
+        Update: {
+          added_by_user?: boolean;
+          has_times?: boolean;
+          arrived_at?: string;
+          created_at?: string;
+          departed_at?: string;
+          design?: string | null;
+          distance_km?: number;
+          from_station?: string;
+          id?: string;
+          outing_id?: string;
+          style?: Json;
+          to_station?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "train_rides_outing_id_fkey";
+            columns: ["outing_id"];
+            isOneToOne: false;
+            referencedRelation: "outings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      visited_regions: {
+        Row: {
+          id: number;
+          outing_id: string;
+          region_code: string;
+          user_id: string;
+          visited_on: string;
+        };
+        Insert: {
+          id?: never;
+          outing_id: string;
+          region_code: string;
+          user_id?: string;
+          visited_on: string;
+        };
+        Update: {
+          id?: never;
+          outing_id?: string;
+          region_code?: string;
+          user_id?: string;
+          visited_on?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "visited_regions_outing_id_fkey";
+            columns: ["outing_id"];
+            isOneToOne: false;
+            referencedRelation: "outings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      delete_my_account: {
+        Args: never;
+        Returns: undefined;
+      };
+      find_profile_by_friend_code: {
+        Args: { code: string };
+        Returns: {
+          display_name: string;
+          id: string;
+        }[];
+      };
+      get_friend_visited_regions: {
+        Args: { friend_id: string };
+        Returns: {
+          region_code: string;
+          visited_on: string;
+        }[];
+      };
+      get_my_regions: {
+        Args: never;
+        Returns: {
+          first_visited_on: string;
+          last_visited_on: string;
+          region_code: string;
+          visited_days: number;
+        }[];
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
+};
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<
+  keyof Database,
+  "public"
+>];
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R;
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R;
+      }
+      ? R
+      : never
+    : never;
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I;
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I;
+      }
+      ? I
+      : never
+    : never;
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U;
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U;
+      }
+      ? U
+      : never
+    : never;
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never;
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never;
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const;

@@ -1,0 +1,226 @@
+<title>折り返し面談 10/15</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+  /* 面談の 1 枚。アプリ自身の「地図帳」の見た目（紙・墨・朱、明朝の見出し、罫線で区切る）に合わせる */
+  :root {
+    --paper: #f6f3ec;
+    --ink: #1d1c1a;
+    --muted: #6b665d;
+    --rule: #d8d1c2;
+    --vermilion: #c8432c;
+    --tint: #ece6d8;
+    --serif: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+    --sans: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1b1a18; --ink: #ece7dc; --muted: #a39d91; --rule: #3a3731;
+      --vermilion: #e0674f; --tint: #262420; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1b1a18; --ink: #ece7dc; --muted: #a39d91; --rule: #3a3731;
+    --vermilion: #e0674f; --tint: #262420; color-scheme: dark;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .sheet {
+    max-width: 980px;
+    margin: 0 auto;
+    padding-block: 28px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: grid;
+    gap: 22px;
+  }
+  h1, h2 { font-family: var(--serif); font-weight: 700; text-wrap: balance; margin: 0; }
+  h1 { font-size: 1.75rem; line-height: 1.3; }
+  h2 {
+    font-size: 1.05rem;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--ink);
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  }
+  h2 small { font-family: var(--sans); font-weight: 400; font-size: 0.75rem; color: var(--muted); }
+  p { margin: 0; }
+  ul, ol { margin: 0; padding-left: 1.2em; }
+  li + li { margin-top: 2px; }
+  b { font-weight: 700; }
+  .num { font-variant-numeric: tabular-nums; }
+  .muted { color: var(--muted); }
+
+  /* 見出しの帯 */
+  .masthead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 24px;
+    align-items: end;
+    border-bottom: 3px double var(--ink);
+    padding-bottom: 12px;
+  }
+  .eyebrow { font-size: 0.72rem; letter-spacing: 0.18em; color: var(--muted); }
+  .who { text-align: right; font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
+  .who b { color: var(--ink); }
+  .lead { max-width: 62ch; }
+
+  /* 作業時間のものさし（225 時間を 100% とする） */
+  .gauge { display: grid; gap: 6px; }
+  .gauge-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .gauge-head .big { font-family: var(--serif); font-size: 1.6rem; font-weight: 700; }
+  .bar { position: relative; height: 14px; background: var(--tint); border: 1px solid var(--rule); }
+  .bar .done { position: absolute; inset: 0 auto 0 0; width: 47.16%; background: var(--vermilion); }
+  .bar .today { position: absolute; inset: 0 auto 0 47.16%; width: 2.84%; background: repeating-linear-gradient(135deg, var(--vermilion) 0 2px, transparent 2px 5px); opacity: 0.6; }
+  .bar .half { position: absolute; top: -5px; bottom: -5px; left: 50%; width: 0; border-left: 2px solid var(--ink); }
+  .ticks { position: relative; height: 1.3em; font-size: 0.72rem; color: var(--muted); }
+  .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .ticks span:first-child { transform: none; }
+  .ticks span:last-child { transform: translateX(-100%); }
+
+  .cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 22px 32px; }
+  .col { display: grid; gap: 22px; align-content: start; min-width: 0; }
+
+  /* 週ごとの記録 */
+  .weeks { display: grid; gap: 12px; margin-top: 10px; }
+  .week { display: grid; grid-template-columns: 5.2em minmax(0, 1fr); gap: 4px 14px; }
+  .week-label { font-family: var(--serif); font-weight: 700; line-height: 1.35; }
+  .week-label span { display: block; font-family: var(--sans); font-weight: 400; font-size: 0.72rem; color: var(--muted); }
+  .week ul { padding-left: 1em; }
+  .week li::marker { color: var(--vermilion); }
+
+  /* 最低限の機能 */
+  .core { list-style: none; padding: 0; margin-top: 10px; display: grid; gap: 6px; }
+  .core li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; }
+  .stamp {
+    font-size: 0.68rem; font-weight: 700; color: var(--vermilion);
+    border: 1.5px solid var(--vermilion); border-radius: 999px;
+    padding: 0 7px; line-height: 1.6; white-space: nowrap; margin-top: 2px;
+  }
+
+  /* 残りの予定 */
+  .plan { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .plan th, .plan td { text-align: left; vertical-align: top; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+  .plan th { font-family: var(--serif); font-weight: 700; white-space: nowrap; padding-right: 14px; width: 1%; }
+  .plan th span { display: block; font-family: var(--sans); font-weight: 400; font-size: 0.72rem; color: var(--muted); }
+
+  .asks { margin-top: 10px; display: grid; gap: 8px; padding-left: 1.4em; }
+  .asks li::marker { font-family: var(--serif); font-weight: 700; color: var(--vermilion); }
+  .asks p { color: var(--muted); font-size: 0.85rem; }
+
+  .note { font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 8px; }
+
+  @media (max-width: 720px) {
+    .cols { grid-template-columns: minmax(0, 1fr); }
+    .masthead { grid-template-columns: minmax(0, 1fr); }
+    .who { text-align: left; }
+  }
+  @media print {
+    body { font-size: 11px; background: #fff; }
+    .sheet { padding-block: 0; gap: 12px; }
+    h1 { font-size: 1.4rem; }
+  }
+</style>
+
+<div class="sheet">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">ZENDASH 臨地実務実習 ／ 折り返しの面談</p>
+      <h1>旅の地図帳（仮）をここまで作りました</h1>
+    </div>
+    <p class="who"><b>貞保 健太郎</b><br>10/15（木）3 限 ／ 30 階<br>担当：吉田先生</p>
+    <p class="lead">Google マップのタイムラインを取り込み、行った県・国・市区町村を地図で振り返り、友達と比べるアプリ。旅かどうかの判定に Jev を使っています。</p>
+  </header>
+
+  <section class="gauge" aria-label="作業時間">
+    <div class="gauge-head">
+      <p><span class="big num">106 h 07 m</span> <span class="muted">/ 225 h（47%）</span></p>
+      <p class="muted">今日 6.5 時間ほどで折り返しの 112.5 h。残りは約 119 h（1 日 8 h で 15 日ほど）</p>
+    </div>
+    <div class="bar" role="img" aria-label="225 時間のうち 106 時間 7 分が終わり、今日で 112.5 時間の折り返しに届く見込み">
+      <div class="done"></div><div class="today"></div><div class="half"></div>
+    </div>
+    <div class="ticks num"><span style="left:0">0 h</span><span style="left:50%">112.5 h（半分）</span><span style="left:100%">225 h</span></div>
+  </section>
+
+  <div class="cols">
+    <div class="col">
+      <section>
+        <h2>ここまでにやったこと <small>9/28〜10/14・13 日</small></h2>
+        <div class="weeks">
+          <div class="week">
+            <p class="week-label">1 週目<span class="num">40.5 h</span></p>
+            <ul>
+              <li>Google ログイン、DB と RLS（自分のデータだけ見える）</li>
+              <li>Timeline.json の取り込み：約 2 年分 → <b>外出 382 件・25 都道府県</b></li>
+              <li>行った県・国の地図、友達申請と比較、手入力の旅、検索バー</li>
+            </ul>
+          </div>
+          <div class="week">
+            <p class="week-label">2 週目<span class="num">42 h 03 m</span></p>
+            <ul>
+              <li>Jev で外出を「旅行・帰省・日帰り・おでかけ・日常」に判定。自分で 81 件確かめ、<b>正解率 75% → 84%</b></li>
+              <li>Playwright のテスト（本物の DB に触らない）</li>
+              <li>3D の地球儀：近づくと 3D の建物が建ち上がる「線の地球儀」</li>
+            </ul>
+          </div>
+          <div class="week">
+            <p class="week-label">3 週目<span class="num">23 h 34 m（3 日）</span></p>
+            <ul>
+              <li>助言を受けて <b>UI を見直し</b>：3 案を比べて「地図帳」の見た目に決め、全ページに入れた</li>
+              <li>市区町村の踏破地図（住居・宿泊・訪問・接地・通過の経験値）</li>
+              <li>旅の索引を切符の形に。飛行機は<b>搭乗券</b>、新幹線は<b>特急券</b>を記録から自動で作り、バーコードの読み込みと飾り付けもできる</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>最低限の機能（完成の条件）</h2>
+        <ul class="core">
+          <li><span class="stamp">済</span><span>Timeline.json を入れると、行った都道府県・国が地図で塗られる</span></li>
+          <li><span class="stamp">済</span><span>Jev が外出を 1 回ずつ判定し、旅行だけを旅の一覧にまとめる</span></li>
+          <li><span class="stamp">済</span><span>友達とつながり、行った県を比べられる（共通・自分だけ・友達だけ・制覇率）</span></li>
+        </ul>
+      </section>
+    </div>
+
+    <div class="col">
+      <section>
+        <h2>残りの予定 <small>約 119 h</small></h2>
+        <table class="plan">
+          <tbody>
+            <tr><th>3 週目<span>10/15〜16</span></th><td>本物の記録で切符とカスタマイズを確かめる。金曜に週報</td></tr>
+            <tr><th>4 週目<span>10/19〜</span></th><td><b>紹介ページ（GitHub Pages）</b>を作り始める。線の地球儀を表紙に、Jev の正解率を上げた経緯を中心に</td></tr>
+            <tr><th>5 週目<span>10/26〜</span></th><td>GitHub Actions でテストを自動で回す。アプリの名前などを決める。友達の Android のファイルで確かめる。スクリーンショットの個人情報を確認</td></tr>
+            <tr><th>6 週目<span>11/2〜</span></th><td>Syllabuzz の改善提案、総括レポート（引き継ぎ資料）</td></tr>
+          </tbody>
+        </table>
+        <p class="note">機能は最初の計画より早く進んだぶん、紹介ページ（計画では 5 週目）はまだ始めていない。後半はまとめと伝え方を中心にしたい。</p>
+      </section>
+
+      <section>
+        <h2>相談したいこと</h2>
+        <ol class="asks">
+          <li>後半の時間の使い方
+            <p>機能を足すのはここで止めて、紹介ページと Syllabuzz の提案に時間を使ってよいか。</p></li>
+          <li>見直した UI の感想
+            <p>地図帳の見た目と切符の形で「自分なりの UI」になっているか。直すならどこか。</p></li>
+          <li>紹介ページの見せ方
+            <p>Jev の判定を良くした経緯（正解率が 75% → 58% → 84% と動いた）を中心にする案でよいか。</p></li>
+          <li>アプリの名前
+            <p>仮の名前は「旅の地図帳」。ほかに良い案があれば。</p></li>
+        </ol>
+      </section>
+    </div>
+  </div>
+
+  <p class="note">日々の記録：docs/notes（学習ノート）、docs/reports（週報）、docs/INTERNSHIP.md（作業時間）。位置の座標・搭乗券の名前と予約番号は保存しない作りにしている。</p>
+</div>

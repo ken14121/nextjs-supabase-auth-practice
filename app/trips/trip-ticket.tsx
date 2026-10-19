@@ -1,0 +1,220 @@
+import Link from "next/link";
+import { LabelSelect } from "@/app/outings/label-select";
+import { regionName } from "@/lib/geo/names";
+import { labelName } from "@/lib/outings/labels";
+import {
+  destinationOf,
+  isTicketKindKey,
+  isTripDesign,
+  routeOf,
+  ticketKind,
+} from "@/lib/outings/ticket";
+import { readTicketStyle } from "@/lib/outings/ticket-style";
+import { AddLegForm } from "./add-leg-form";
+import { BoardingPass, type FlightRow } from "./boarding-pass";
+import { type GroundRow, GroundTicket } from "./ground-ticket";
+import { RailTicket, type RideRow } from "./rail-ticket";
+import { TicketEditor } from "./ticket-editor";
+
+// 旅の索引の 1 枚。1 回の旅を、行き先の入った切符（航空券・新幹線の特急券など）の形で見せる。
+// 飛行機・新幹線の記録があれば便・乗車ごとの券を並べ、無ければ旅 1 回で 1 枚の切符（trip-ticket-view.tsx）。
+// どの券も「カスタマイズ」で、種類・デザイン・飾りを本人が選び直せる
+
+export type TicketTrip = {
+  id: string;
+  started_at: string;
+  ended_at: string;
+  nights: number;
+  distance_km: number;
+  main_transport: string | null;
+  maxKmFromHome: number | null;
+  source: string;
+  label: string | null;
+  label_source: string | null;
+  label_confidence: number | null;
+  memo: string;
+  // 旅の切符の見た目（本人が選んだもの。null なら自動）
+  ticket_kind: string | null;
+  ticket_design: string | null;
+  ticket_style: unknown;
+  regions: { region_code: string; visited_on: string }[];
+  // 飛行機の便（あれば、切符の代わりに便ごとの搭乗券を並べる）
+  flights: FlightRow[];
+  // 新幹線の乗車（あれば、便と一緒に時刻の順で切符を並べる）
+  rides: RideRow[];
+  // 本人が手で足したバス・在来線・船・車の移動
+  grounds: GroundRow[];
+};
+
+// 切符の大きな文字用に短くする（千葉県 → 千葉、東京都 → 東京、大韓民国はそのまま）
+function shortName(code: string): string {
+  const name = regionName(code);
+  if (name === "北海道") return name;
+  return name.replace(/(都|府|県)$/, "");
+}
+
+const jstDay = (iso: string) =>
+  new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+
+function jst(iso: string) {
+  const [y, m, d] = new Date(iso)
+    .toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" })
+    .split("-")
+    .map(Number);
+  return { y, m, d };
+}
+
+export function TripTicket({
+  trip,
+  homeRegion,
+}: {
+  trip: TicketTrip;
+  homeRegion: string | null;
+}) {
+  const kind = ticketKind(trip.main_transport, trip.maxKmFromHome);
+  const { destination, via } = destinationOf(trip.regions, homeRegion);
+  // 便・乗車を並べるときの見出しは、行った県を訪れた順にすべて出す
+  const route = routeOf(trip.regions, homeRegion);
+  const from = homeRegion ? shortName(homeRegion) : "自宅";
+  const start = jst(trip.started_at);
+  const end = jst(trip.ended_at);
+  const endText =
+    start.y === end.y && start.m === end.m && start.d === end.d
+      ? null
+      : start.y === end.y
+        ? `${end.m}.${end.d}`
+        : `${end.y}.${end.m}.${end.d}`;
+
+  const flights = [...trip.flights].sort((a, b) =>
+    a.departed_at.localeCompare(b.departed_at),
+  );
+  // 飛行機と新幹線を、乗った順に並べる
+  const legs = [
+    ...flights.map((f, i) => ({
+      kind: "flight" as const,
+      at: f.departed_at,
+      end: f.arrived_at,
+      flight: f,
+      index: i,
+    })),
+    ...trip.rides.map((r) => ({
+      kind: "ride" as const,
+      at: r.departed_at,
+      end: r.arrived_at,
+      ride: r,
+    })),
+    ...trip.grounds.map((g) => ({
+      kind: "ground" as const,
+      at: g.departed_at,
+      end: g.arrived_at,
+      ground: g,
+    })),
+  ].sort(
+    // 出発した日の順。同じ日なら先に着いた方を前に
+    //（時刻の無いバスの 11/11〜11/15 より、11/11 の朝の新幹線を先に）
+    (a, b) =>
+      jstDay(a.at).localeCompare(jstDay(b.at)) || a.end.localeCompare(b.end),
+  );
+
+  // 旅の種類を選び直す（取り込んだ旅）／手入力の旅の編集
+  const controls =
+    trip.source === "timeline" ? (
+      <LabelSelect
+        outingId={trip.id}
+        label={trip.label}
+        source={trip.label_source}
+        confidence={trip.label_confidence}
+      />
+    ) : (
+      <span className="flex items-center gap-3 text-xs text-muted-foreground">
+        手入力
+        <Link
+          href={`/trips/${trip.id}/edit`}
+          className="text-foreground underline underline-offset-4"
+        >
+          編集
+        </Link>
+      </span>
+    );
+
+  return (
+    <li className="flex flex-col gap-2">
+      {legs.length > 0 ? (
+        <>
+          <p className="flex flex-wrap items-baseline gap-x-3 px-1 font-serif">
+            <span className="text-lg font-semibold">
+              {[
+                from,
+                ...(route.length > 0 ? route.map(shortName) : ["近場"]),
+              ].join(" → ")}
+            </span>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {start.y}.{start.m}.{start.d}
+              {endText && ` → ${endText}`}
+              {trip.nights > 0 && `・${trip.nights} 泊`}
+            </span>
+          </p>
+          {legs.map((leg) =>
+            leg.kind === "flight" ? (
+              <BoardingPass
+                key={leg.flight.id}
+                flight={leg.flight}
+                index={leg.index}
+                total={flights.length}
+              />
+            ) : leg.kind === "ride" ? (
+              <RailTicket key={leg.ride.id} ride={leg.ride} />
+            ) : (
+              <GroundTicket key={leg.ground.id} leg={leg.ground} />
+            ),
+          )}
+        </>
+      ) : (
+        <TicketEditor
+          ticket={{
+            kind: "trip",
+            data: {
+              id: trip.id,
+              autoKind: kind.key,
+              from,
+              destination: destination ? shortName(destination) : "近場",
+              via: via.map(shortName),
+              dateText: `${start.y}.${start.m}.${start.d}${endText ? ` → ${endText}` : ""}`,
+              startedAt: trip.started_at,
+              endedAt: trip.ended_at,
+              startText: `${start.m}/${start.d}`,
+              endText: `${end.m}/${end.d}`,
+              distanceKm: trip.distance_km,
+              year: start.y,
+              monthDay: `${start.m}.${start.d}`,
+              nights: trip.nights,
+              labelText: labelName(trip.label),
+            },
+          }}
+          initialDesign={
+            isTripDesign(trip.ticket_design) ? trip.ticket_design : "atlas"
+          }
+          initialKind={
+            isTicketKindKey(trip.ticket_kind) ? trip.ticket_kind : ""
+          }
+          initialStyle={readTicketStyle(trip.ticket_style)}
+          note={trip.memo || null}
+        >
+          {controls}
+        </TicketEditor>
+      )}
+
+      {legs.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-sm">
+          {trip.memo ? <span>{trip.memo}</span> : <span />}
+          {controls}
+        </div>
+      )}
+
+      <AddLegForm
+        outingId={trip.id}
+        defaultDate={`${start.y}-${String(start.m).padStart(2, "0")}-${String(start.d).padStart(2, "0")}`}
+      />
+    </li>
+  );
+}
