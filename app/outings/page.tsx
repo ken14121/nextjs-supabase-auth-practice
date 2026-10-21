@@ -28,6 +28,8 @@ export default async function OutingsPage() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) redirect("/");
+  // Jev を使えるのは本人だけ。それ以外の人はアプリのルールで判定する
+  const jev = isJevAllowed(data.claims.sub);
 
   const [
     { data: outings, count },
@@ -65,17 +67,16 @@ export default async function OutingsPage() {
       </header>
 
       <section className="flex flex-col gap-3 border-t-2 border-ink pt-4">
-        <h2 className="font-serif text-lg font-semibold">Jev の判定</h2>
-        <ClassifyButton
-          pending={pendingCount ?? 0}
-          jev={isJevAllowed(data.claims.sub)}
-        />
+        <h2 className="font-serif text-lg font-semibold">
+          {jev ? "Jev の判定" : "判定"}
+        </h2>
+        <ClassifyButton pending={pendingCount ?? 0} jev={jev} />
         <JudgeSettings homecoming={settings?.homecoming ?? true} />
         <Link
           href="/outings/review"
           className="w-fit text-sm underline underline-offset-4 hover:text-vermilion"
         >
-          Jev の判定を確かめる（正解率を見る）
+          {jev ? "Jev の判定を確かめる" : "判定を確かめる"}（正解率を見る）
         </Link>
       </section>
 
