@@ -3,6 +3,8 @@
 アプリ本体は Vercel に置く（ログイン・Server Actions などサーバーで動く処理があるので、GitHub Pages では動かない）。
 紹介ページ（静的なページ）は GitHub Pages に置き、そこからアプリにリンクする。
 
+公開した URL：**https://nextjs-supabase-auth-practice.vercel.app**（10/19 に公開。`main` に push すると自動で更新される）
+
 > Vercel・Supabase・Google の画面の名前や場所は変わることがある。見つからないときは、それぞれの公式ドキュメントで確かめる。
 
 ## 0. 公開の前にコードで済ませたこと（10/16）
@@ -53,7 +55,9 @@ Authentication → URL Configuration
 Google Cloud Console → Google Auth Platform（OAuth 同意画面）
 
 1. アプリのホームページに `https://（プロジェクト名）.vercel.app`、プライバシーポリシーに `https://（プロジェクト名）.vercel.app/privacy` を入れる
-2. 公開ステータスを「テスト中」から「本番環境」にする
+   - 「承認済みドメイン」に `nextjs-supabase-auth-practice.vercel.app` を足す（`vercel.app` はみんなで共有しているドメインなので、自分のサイトの部分まで書く）。Supabase のドメインは消さない
+   - ロゴは上げない（上げると Google の審査が必要になる）
+2. 公開ステータスを「テスト中」から「本番環境」にする（「対象」の画面）
    - 使うのは名前・メールアドレスなどの基本的な情報だけなので、通常は審査がいらない
 3. 「承認済みのリダイレクト URI」は Supabase のコールバック（`https://（Supabase のプロジェクト）.supabase.co/auth/v1/callback`）のままでよい（変えない）
 
@@ -68,6 +72,10 @@ Google Cloud Console → Google Auth Platform（OAuth 同意画面）
 
 ## 気をつけること
 
+- `JEV_OWNER_USER_IDS` は**自分の UID 1 つだけ**にする。空にしておくと、自分も含めてだれも Jev を使わない（安全側に倒れる）。
+  `JEV_API_KEY` は `NEXT_PUBLIC_` が付かないのでサーバーの中だけで読まれ、ほかの人には見えない。ほかの人の判定はルールに切り替わり、クレジットは減らない
+- Vercel のプロジェクトにほかの人をメンバーとして招待しない（メンバーは環境変数の画面でキーを見られる）
+- Vercel の「Optional Integrations」にある Supabase の「Add」は押さない（新しい Supabase のプロジェクトが別にできてしまう。今のプロジェクトをそのまま使う）
 - Supabase の無料プランは、しばらく使われないとプロジェクトが止まる（止まったら Supabase の画面から再開する）
 - Vercel の無料プラン（Hobby）は個人の非商用向け
 - 知らない人の位置情報を預かることになる。困ったことが起きたら、Google の公開ステータスを「テスト中」に戻せば、テストユーザーに登録した人以外はログインできなくなる

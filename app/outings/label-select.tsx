@@ -79,8 +79,8 @@ export function LabelSelect({
       >
         {error ? "直せませんでした" : note}
       </span>
-      {/* 合っていたことも記録すると、Jev の正解率が出せる（/outings/review） */}
-      {source === "jev" && label !== null && (
+      {/* 合っていたことも記録すると、Jev やルールの正解率が出せる（/outings/review） */}
+      {(source === "jev" || source === "rule") && label !== null && (
         <button
           type="button"
           disabled={isPending}
