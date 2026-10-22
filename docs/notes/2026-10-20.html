@@ -1,0 +1,398 @@
+<title>旅アプリ開発 15日目ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --surface-2: #e9eff3;
+    --ink: #15212c;
+    --muted: #566676;
+    --line: #d4dde5;
+    --accent: #1a6a9c;
+    --accent-soft: #dcebf5;
+    --pending: #a36b00;
+    --pending-soft: #fbefd4;
+    --ok: #2d7a4c;
+    --ok-soft: #dcefe3;
+    --ng: #b03a2e;
+    --ng-soft: #f6dedb;
+    --code-bg: #edf2f6;
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e151c;
+      --surface: #15202a;
+      --surface-2: #1b2934;
+      --ink: #e4ecf2;
+      --muted: #9aabba;
+      --line: #2a3a47;
+      --accent: #62b0e3;
+      --accent-soft: #173247;
+      --pending: #e3b453;
+      --pending-soft: #3a2e14;
+      --ok: #6cc48f;
+      --ok-soft: #173325;
+      --ng: #ee8a7e;
+      --ng-soft: #3d1e1a;
+      --code-bg: #1c2833;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e151c;
+    --surface: #15202a;
+    --surface-2: #1b2934;
+    --ink: #e4ecf2;
+    --muted: #9aabba;
+    --line: #2a3a47;
+    --accent: #62b0e3;
+    --accent-soft: #173247;
+    --pending: #e3b453;
+    --pending-soft: #3a2e14;
+    --ok: #6cc48f;
+    --ok-soft: #173325;
+    --ng: #ee8a7e;
+    --ng-soft: #3d1e1a;
+    --code-bg: #1c2833;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.35; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 900; }
+  h2 { font-size: 1.45rem; font-weight: 900; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ヘッダー：きっぷ風 */
+  header.ticket {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+  }
+  .ticket-main { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .ticket-main .lead { color: var(--muted); max-width: 60ch; }
+  .ticket-stub {
+    border-left: 2px dashed var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: var(--surface-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 140px;
+  }
+  .stub-label { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+  .stub-value { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  @media (max-width: 560px) {
+    header.ticket { grid-template-columns: 1fr; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; flex-wrap: wrap; gap: 4px 20px; }
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -32px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.88rem;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .sec-no { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+  .note { color: var(--muted); font-size: 0.95rem; }
+
+  /* 全体像 */
+  .map { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .map-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+  @media (max-width: 640px) { .map-row { grid-template-columns: 1fr; } .map-arrow { transform: rotate(90deg); justify-self: center; } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .box-title { font-family: var(--font-display); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.93rem; }
+  .tool-list li { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px; }
+  .tool-list b { font-weight: 700; }
+  .map-arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .map-arrow span { font-size: 1.6rem; line-height: 1; color: var(--accent); }
+  .localhost { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+  .pending-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .pending-row { grid-template-columns: 1fr; } }
+  .pending-row .box { border-style: dashed; }
+  .chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip.pending { color: var(--pending); background: var(--pending-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.ng { color: var(--ng); background: var(--ng-soft); }
+  .chip.step { color: var(--accent); background: var(--accent-soft); }
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  /* リスト */
+  dl.facts { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 16px; }
+  dl.facts dt { font-weight: 700; color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 10px; } }
+
+  /* 表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 路線図（ログインの流れ） */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.route li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  ol.route li:last-child { padding-bottom: 0; }
+  ol.route li::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent);
+  }
+  ol.route li:last-child::before { display: none; }
+  .station {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--accent);
+    position: relative; z-index: 1;
+  }
+  .stop { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .who { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+  /* Git の流れ */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.93rem; }
+  .flow .stepbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; }
+  .flow .stepbox small { color: var(--muted); font-size: 0.78rem; }
+  .flow .arr { color: var(--accent); font-weight: 700; }
+
+  /* クイズ */
+  ol.quiz { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: q; }
+  ol.quiz li { counter-increment: q; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  ol.quiz li > p::before { content: "Q" counter(q) "　"; font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; font-weight: 700; width: fit-content; }
+  details[open] summary { margin-bottom: 6px; }
+  details p { color: var(--ink); font-size: 0.95rem; }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+<style>
+  .memo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+  .memo pre { margin: 0; font-family: var(--font-body); white-space: pre-wrap; font-size: 0.95rem; line-height: 1.8; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .stat b { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 0.8rem; color: var(--muted); }
+</style>
+<div class="wrap">
+
+  <header class="ticket">
+    <div class="ticket-main">
+      <span class="eyebrow">ZENDASH 臨地実習 ／ 学習ノート</span>
+      <h1>旅アプリ開発 15日目ノート</h1>
+      <p class="lead">メンターからの課題で、Syllabuzz（大学の授業選び・学生生活のサービス）のデモを、初めて触る人の目で使った。止まったところ、エラー、良かったところを、その場でメモして表にまとめた。エラーは「どこで・何をして・何回中何回出るか」までそろえると、原因と改善案まで書けると分かった。</p>
+    </div>
+    <div class="ticket-stub">
+      <span class="stub-label">日付</span>
+      <span class="stub-value">2026.10.20 火</span>
+      <span class="stub-label">場所</span>
+      <span class="stub-value">在宅</span>
+      <span class="stub-label">進んだところ</span>
+      <span class="stub-value">Syllabuzz を触る</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#result">今日の成果</a>
+    <a href="#how">触り方</a>
+    <a href="#error">翻訳とエラー</a>
+    <a href="#unclear">分かりづらい点</a>
+    <a href="#good">良かった点</a>
+    <a href="#limits">やらないこと</a>
+    <a href="#quiz">理解度チェック</a>
+    <a href="#report">日報</a>
+  </nav>
+
+  <section id="result">
+    <div class="sec-head"><span class="sec-no">00</span><h2>今日の成果</h2></div>
+    <div class="stats">
+      <div class="stat"><span>エラー</span><b>1 件</b></div>
+      <div class="stat"><span>分かりづらい点</span><b>2 件</b></div>
+      <div class="stat"><span>良かった点</span><b>2 件</b></div>
+      <div class="stat"><span>累計</span><b>138h17m</b></div>
+    </div>
+    <ul class="plain">
+      <li>Syllabuzz の LP とデモを触り、気づいたことを <code>docs/syllabuzz/feedback.md</code> の表にまとめた</li>
+      <li>AI のおすすめで出る<b>エラーの原因</b>を切り分けた（ブラウザの翻訳が原因だった）</li>
+      <li>良かった点は「なぜ分かりやすいか」まで分けて書いた</li>
+    </ul>
+  </section>
+
+  <section id="how">
+    <div class="sec-head"><span class="sec-no">01</span><h2>フィードバックの集め方</h2></div>
+    <dl class="facts">
+      <dt>頼まれたこと</dt>
+      <dd>LP を見て何ができるかを知り、「Try Syllabuzz Demo」から触る。分かりづらかった点と改善案、エラー（どこで・再現できるか）を金曜に出す</dd>
+      <dt>メモの仕方</dt>
+      <dd>触りながら、その場で短く書く。あとから思い出すと「慣れた人の目」になってしまう</dd>
+      <dt>エラーの表</dt>
+      <dd>場所・やったこと（手順）・期待したこと・実際に起きたこと・再現できるか（何回中何回）・環境</dd>
+      <dt>個人情報</dt>
+      <dd>スクリーンショットは、名前やメールアドレスが写っていないものだけ使う</dd>
+    </dl>
+  </section>
+
+  <section id="error">
+    <div class="sec-head"><span class="sec-no">02</span><h2>エラー：ブラウザの翻訳とぶつかって落ちる</h2></div>
+    <p>プロフィールの「AI コース推奨」で「デモ結果の生成」を押すと、毎回、黒い全画面のエラー「何かがうまくいかなかった」になった。下に <code>NotFoundError</code>（Failed to execute 'removeChild' on 'Node'）と出ていた。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>試したこと</th><th>結果</th></tr></thead>
+        <tbody>
+          <tr><td>Edge の「ページの翻訳」オン（日本語で表示）</td><td>毎回エラー</td></tr>
+          <tr><td>翻訳オフ（英語のまま）</td><td>エラーにならず、おすすめが出た</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>ブラウザの翻訳は、ページの文字を勝手に書き換える。React は「自分が作った画面の部品」を覚えていて、それを消そうとしたときに、翻訳で差し替えられていて見つからず、落ちる。</p>
+    <div class="callout">改善案：① 翻訳されても壊れないつくりにする　② 落ちたときに技術的な中身（NotFoundError の生のデータ）を利用者に見せない　③ 自前の言語の切り替えを用意して、ブラウザの翻訳に頼らせない</div>
+  </section>
+
+  <section id="unclear">
+    <div class="sec-head"><span class="sec-no">03</span><h2>分かりづらかった点</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>場所</th><th>起きたこと</th><th>改善案</th></tr></thead>
+        <tbody>
+          <tr><td>左のプロフィールカード</td><td>名前などの文字の上を押すと、移動せずに文字が選ばれて（反転して）しまう。右上のアイコンからだと移動する</td><td>カード全体を 1 つのリンクにする／カードの文字を選べないようにする（<code>user-select: none</code>）</td></tr>
+          <tr><td>コース一覧の並び替え</td><td>「レビュー」から「Rating」に変えても、コースを 1 つ開いて戻ると「レビュー」に戻る</td><td>選んだ並び順を覚えておく（URL に並び順を付ける、など）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="good">
+    <div class="sec-head"><span class="sec-no">04</span><h2>良かった点（なぜ分かりやすいか）</h2></div>
+    <ul class="plain">
+      <li><b>キャンパス・コンパス</b>：到着前 → 最初の週 → 住まい → 引っ越し → お金 … と、着く前から着いた後までが<b>時系列</b>に並び、中に入るとすぐ見られる<b>要点のまとめ</b>、<b>注意点</b>、<b>提出先の URL</b> がそろっている</li>
+      <li><b>検索</b>：今いる場所に合わせて探す範囲が変わる。コースのページではコース名だけ、ホームでは全体から探せる</li>
+    </ul>
+    <p class="note">良かった点も「なぜ」まで分けて書くと、ほかのページへの改善提案に使える（例：エラーが出たページにも「順番・要点・注意点・リンク」の形を使う）。</p>
+  </section>
+
+  <section id="limits">
+    <div class="sec-head"><span class="sec-no">05</span><h2>やらないと決めたこと</h2></div>
+    <dl class="facts">
+      <dt>コードを入れて試す</dt>
+      <dd>入力欄に JavaScript を入れて動くか試す（XSS）のは、頼まれた範囲（使いやすさとエラーの報告）を超えるので、やらない。許可の無い攻撃は、練習でも相手のサーバーで動いてしまう。ふつうに使っていて見つけた入力のおかしさだけを書く</dd>
+      <dt>重さの測定</dt>
+      <dd>ページの重さを測った（サーバーの応答は 0.2〜0.5 秒と速く、ブラウザに送る JavaScript が約 2 MB）。ただ、報告には入れないことにした</dd>
+    </dl>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head"><span class="sec-no">06</span><h2>理解度チェック</h2></div>
+    <ol class="quiz">
+      <li><p>翻訳オンのときだけ <code>removeChild</code> のエラーが出たのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>ブラウザの翻訳がページの文字を書き換えるので、React が覚えている部品と実際の画面が食い違い、消そうとした部品が見つからなかったから。</p></details></li>
+      <li><p>エラーの報告に「何回中何回出たか」を書くのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>毎回出るのか、たまにしか出ないのかで、直す人の調べ方が変わるから。条件を変えて（翻訳オン／オフ）比べると、原因まで絞れる。</p></details></li>
+      <li><p>気づいたことを、触りながらその場でメモするのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>あとから思い出すと、使い方に慣れたあとの目で書いてしまい、初めての人がつまずくところを忘れてしまうから。</p></details></li>
+      <li><p>入力欄に攻撃用のコードを入れて試さなかったのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>頼まれたのは使いやすさとエラーの報告で、脆弱性を試す許可はもらっていないから。他社の本番サイトに許可なく攻撃コードを送るのは、規約違反や違法になることがある。</p></details></li>
+    </ol>
+  </section>
+
+  <section id="report">
+    <div class="sec-head"><span class="sec-no">07</span><h2>日報と作業時間</h2></div>
+    <div class="memo">
+<pre>10月20日(火)　10:36〜19:16（7時間10分）在宅
+やったこと：メインの自分のアプリ（旅の地図帳）は昨日公開できたので、今日は Syllabuzz のフィードバックを進めた。LP とデモを初めて触る人の目で触り、気づいたことを docs/syllabuzz/feedback.md にまとめた。分かりづらかった点（プロフィールカードの文字を押すと移動せず選択されてしまう／コースの並び順を変えても戻ると初期値に戻る）と、エラー（AI 推奨の「デモ結果の生成」で全画面エラーになる）を記録した。良かった点も、キャンパス・コンパス（着く前から着いた後までが時系列＋要点＋注意点＋手続きのリンクでまとまっている）と、場所に合わせて探す範囲が変わる検索を挙げた。
+詰まったこと：AI 推奨のエラーが最初は毎回出ていたが、ブラウザの翻訳をオフにすると出なくなった。原因はブラウザの自動翻訳が画面を書き換え、サイト側の更新とぶつかっていたこと。
+学んだこと：初めて触る人の第一印象（どこで迷うか）は、慣れる前にその場でメモするのが大事。エラーは「どこで・何をして・再現するか」をそろえると、原因と改善案まで書ける。良い点も「なぜ分かりやすいか」まで分けて書くと、改善提案に使える。</pre>
+    </div>
+    <p class="note">作業時間：10:36〜19:16 から昼休み 1 時間を引くと 7 時間 40 分。7.5 時間を超えるので 30 分休憩も引いて <b>7 時間 10 分</b>。累計 <b>138 時間 17 分</b> / 225 時間。</p>
+  </section>
+
+  <section id="next">
+    <div class="sec-head"><span class="sec-no">08</span><h2>次回</h2></div>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">Syllabuzz の続き<span class="chip step">次</span></div>
+        <p>まだ触っていないところ（カレンダー同期など）を試す</p>
+      </div>
+      <div class="box">
+        <div class="box-title">Jev のノート<span class="chip pending">相談</span></div>
+        <p>Jev について調べたこと・結果・分析を、公開できる記事の形にまとめる</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>nextjs-supabase-auth-practice ／ docs/notes/2026-10-20.html</footer>
+</div>

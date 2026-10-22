@@ -1,0 +1,409 @@
+<title>旅アプリ開発 13日目ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --surface-2: #e9eff3;
+    --ink: #15212c;
+    --muted: #566676;
+    --line: #d4dde5;
+    --accent: #1a6a9c;
+    --accent-soft: #dcebf5;
+    --pending: #a36b00;
+    --pending-soft: #fbefd4;
+    --ok: #2d7a4c;
+    --ok-soft: #dcefe3;
+    --ng: #b03a2e;
+    --ng-soft: #f6dedb;
+    --code-bg: #edf2f6;
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e151c;
+      --surface: #15202a;
+      --surface-2: #1b2934;
+      --ink: #e4ecf2;
+      --muted: #9aabba;
+      --line: #2a3a47;
+      --accent: #62b0e3;
+      --accent-soft: #173247;
+      --pending: #e3b453;
+      --pending-soft: #3a2e14;
+      --ok: #6cc48f;
+      --ok-soft: #173325;
+      --ng: #ee8a7e;
+      --ng-soft: #3d1e1a;
+      --code-bg: #1c2833;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e151c;
+    --surface: #15202a;
+    --surface-2: #1b2934;
+    --ink: #e4ecf2;
+    --muted: #9aabba;
+    --line: #2a3a47;
+    --accent: #62b0e3;
+    --accent-soft: #173247;
+    --pending: #e3b453;
+    --pending-soft: #3a2e14;
+    --ok: #6cc48f;
+    --ok-soft: #173325;
+    --ng: #ee8a7e;
+    --ng-soft: #3d1e1a;
+    --code-bg: #1c2833;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.35; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 900; }
+  h2 { font-size: 1.45rem; font-weight: 900; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ヘッダー：きっぷ風 */
+  header.ticket {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+  }
+  .ticket-main { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .ticket-main .lead { color: var(--muted); max-width: 60ch; }
+  .ticket-stub {
+    border-left: 2px dashed var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: var(--surface-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 140px;
+  }
+  .stub-label { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+  .stub-value { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  @media (max-width: 560px) {
+    header.ticket { grid-template-columns: 1fr; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; flex-wrap: wrap; gap: 4px 20px; }
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -32px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.88rem;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .sec-no { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+  .note { color: var(--muted); font-size: 0.95rem; }
+
+  /* 全体像 */
+  .map { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .map-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+  @media (max-width: 640px) { .map-row { grid-template-columns: 1fr; } .map-arrow { transform: rotate(90deg); justify-self: center; } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .box-title { font-family: var(--font-display); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.93rem; }
+  .tool-list li { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px; }
+  .tool-list b { font-weight: 700; }
+  .map-arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .map-arrow span { font-size: 1.6rem; line-height: 1; color: var(--accent); }
+  .localhost { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+  .pending-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .pending-row { grid-template-columns: 1fr; } }
+  .pending-row .box { border-style: dashed; }
+  .chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip.pending { color: var(--pending); background: var(--pending-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.ng { color: var(--ng); background: var(--ng-soft); }
+  .chip.step { color: var(--accent); background: var(--accent-soft); }
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  /* リスト */
+  dl.facts { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 16px; }
+  dl.facts dt { font-weight: 700; color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 10px; } }
+
+  /* 表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 路線図（ログインの流れ） */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.route li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  ol.route li:last-child { padding-bottom: 0; }
+  ol.route li::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent);
+  }
+  ol.route li:last-child::before { display: none; }
+  .station {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--accent);
+    position: relative; z-index: 1;
+  }
+  .stop { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .who { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+  /* Git の流れ */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.93rem; }
+  .flow .stepbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; }
+  .flow .stepbox small { color: var(--muted); font-size: 0.78rem; }
+  .flow .arr { color: var(--accent); font-weight: 700; }
+
+  /* クイズ */
+  ol.quiz { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: q; }
+  ol.quiz li { counter-increment: q; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  ol.quiz li > p::before { content: "Q" counter(q) "　"; font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; font-weight: 700; width: fit-content; }
+  details[open] summary { margin-bottom: 6px; }
+  details p { color: var(--ink); font-size: 0.95rem; }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+<style>
+  .memo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+  .memo pre { margin: 0; font-family: var(--font-body); white-space: pre-wrap; font-size: 0.95rem; line-height: 1.8; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .stat b { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 0.8rem; color: var(--muted); }
+</style>
+<div class="wrap">
+
+  <header class="ticket">
+    <div class="ticket-main">
+      <span class="eyebrow">ZENDASH 臨地実習 ／ 学習ノート</span>
+      <h1>旅アプリ開発 13日目ノート</h1>
+      <p class="lead">知らない人にも使ってもらえる公開サイトにするための準備をした。トップページ、プライバシーと使い方の約束、アカウントとデータを全部消す機能を作り、Jev は自分だけが使うようにした。最後にアプリ全体の安全面を確かめて、main へのプルリクエストにまとめた。</p>
+    </div>
+    <div class="ticket-stub">
+      <span class="stub-label">日付</span>
+      <span class="stub-value">2026.10.16 金</span>
+      <span class="stub-label">場所</span>
+      <span class="stub-value">在宅</span>
+      <span class="stub-label">進んだところ</span>
+      <span class="stub-value">公開の準備</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#result">今日の成果</a>
+    <a href="#where">どこに置くか</a>
+    <a href="#pages">ページと削除</a>
+    <a href="#jev">Jev は本人だけ</a>
+    <a href="#security">安全面のチェック</a>
+    <a href="#troubles">つまずき</a>
+    <a href="#quiz">理解度チェック</a>
+    <a href="#report">日報</a>
+  </nav>
+
+  <section id="result">
+    <div class="sec-head"><span class="sec-no">00</span><h2>今日の成果</h2></div>
+    <div class="stats">
+      <div class="stat"><span>新しいページ</span><b>2 枚</b></div>
+      <div class="stat"><span>他人のデータを読み書きできる経路</span><b>0</b></div>
+      <div class="stat"><span>3 週目の作業時間</span><b>39h34m</b></div>
+      <div class="stat"><span>累計</span><b>122h07m</b></div>
+    </div>
+    <ul class="plain">
+      <li>だれでも見られる<b>トップページ</b>を作り直した（何ができるか・位置情報をどう扱うか）</li>
+      <li><b>プライバシーと使い方の約束</b>のページ（<code>/privacy</code>）を作った</li>
+      <li><b>アカウントとデータを全部消す</b>機能を作った（「削除」と打ってから消す）</li>
+      <li>Jev は <code>JEV_OWNER_USER_IDS</code> に書いた人（自分）だけ。ほかの人はルールで判定する</li>
+      <li>アプリ全体の<b>安全面のチェック</b>をして、見つかった不具合を直した</li>
+      <li>公開の手順を <code>docs/DEPLOY.md</code> にまとめ、main へのプルリクエスト（#1）を作った</li>
+      <li>3 週目の週報を Word と md で作った</li>
+    </ul>
+  </section>
+
+  <section id="where">
+    <div class="sec-head"><span class="sec-no">01</span><h2>どこに置くか（Vercel と GitHub Pages）</h2></div>
+    <p>はじめは GitHub Pages で公開するつもりだったが、GitHub Pages は決まったファイル（HTML・画像など）を配るだけで、サーバーで動く処理は動かせない。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>置くもの</th><th>置く場所</th><th>理由</th></tr></thead>
+        <tbody>
+          <tr><td>アプリ本体</td><td>Vercel</td><td>ログイン・Server Actions・判定など、サーバーで動く処理がある。Next.js を作っている会社のサービス</td></tr>
+          <tr><td>紹介ページ</td><td>GitHub Pages</td><td>文章と画像だけの静的なページなので、こちらで足りる</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>だれでもログインできるようにする（Google のログイン画面を「本番環境」にする）ことと、Jev は自分だけにすることを決めた。</p>
+  </section>
+
+  <section id="pages">
+    <div class="sec-head"><span class="sec-no">02</span><h2>約束のページと、全部消す機能</h2></div>
+    <dl class="facts">
+      <dt>トップページ</dt>
+      <dd>「行った場所が、地図帳になる。」。できること 3 つと、位置情報の扱い（座標は保存しない、ファイルは小さくしてから送り、調べ終えたらすぐ消す）</dd>
+      <dt>/privacy</dt>
+      <dd>何を保存し、だれに見えるか。友達に見えるのは表示名と、旅行・帰省・日帰りで行った県・国と日付だけ。メールアドレスはほかの人に見えない</dd>
+      <dt>削除の流れ</dt>
+      <dd>保存した画像（Storage）を消す → <code>delete_my_account()</code> でユーザーを消す → 外出・切符・友達などは連鎖して消える（cascade） → ログアウトしてトップへ</dd>
+      <dt>delete_my_account</dt>
+      <dd><code>security definer</code> の関数。ログインしている本人（<code>auth.uid()</code>）しか消せず、ログインしていない人は呼べない</dd>
+    </dl>
+  </section>
+
+  <section id="jev">
+    <div class="sec-head"><span class="sec-no">03</span><h2>Jev を使えるのは本人だけ</h2></div>
+    <p>Jev はお金がかかるので、公開サイトでだれでも使えると、知らない人にクレジットを使われてしまう。</p>
+    <ul class="plain">
+      <li><code>JEV_OWNER_USER_IDS</code>（サーバーだけの環境変数）にユーザー ID を書いた人だけが Jev を使える</li>
+      <li><b>書いていなければ、だれも使わない</b>（設定を忘れても、お金がかかる側に倒れない）</li>
+      <li>ほかの人はルールで判定する。画面のボタンも「Jev で判定」ではなく「判定する」になる</li>
+    </ul>
+  </section>
+
+  <section id="security">
+    <div class="sec-head"><span class="sec-no">04</span><h2>公開前の安全面のチェック</h2></div>
+    <p>別のエージェントに、アプリ全体を「他人のデータを読み書きできる経路が無いか」の目で見てもらった。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>見たこと</th><th>結果</th></tr></thead>
+        <tbody>
+          <tr><td>他人の外出・切符・設定を読める／書ける経路</td><td>無し（RLS と列ごとの権限で守られている）</td></tr>
+          <tr><td>リポジトリに秘密の値が入っていないか</td><td>無し。service_role のキーも使っていない</td></tr>
+          <tr><td>帰省の設定の保存（upsert）</td><td>不具合あり：<code>user_id</code> を更新する権限が無く失敗する → 「更新して、無ければ足す」に直した</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="troubles">
+    <div class="sec-head"><span class="sec-no">05</span><h2>つまずいたことと学び</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>起きたこと</th><th>原因</th><th>対処</th></tr></thead>
+        <tbody>
+          <tr><td>GitHub Pages ではアプリが動かないと分かった</td><td>サーバーで動く処理がある</td><td>アプリは Vercel、紹介ページは GitHub Pages に分けた</td></tr>
+          <tr><td>約束のページの説明が、実際の動きと違っていた</td><td>「友達に見えるもの」を思い込みで書いていた（おでかけは見せていない・表示名は見える）</td><td>コードを確かめて書き直した</td></tr>
+          <tr><td>安全チェックのコマンドが動かなかった</td><td><code>origin/HEAD</code> が設定されていなかった</td><td><code>git remote set-head origin main</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">知らない人のデータを預かるときは、「何を保存して、だれに見えるか」を書き出して、コードと食い違いが無いか確かめる。書いてみたことで、説明のまちがいに気づけた。</div>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head"><span class="sec-no">06</span><h2>理解度チェック</h2></div>
+    <ol class="quiz">
+      <li><p>このアプリを GitHub Pages だけで公開できないのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>GitHub Pages はファイルを配るだけで、ログインや Server Actions のようなサーバーで動く処理を動かせないから。</p></details></li>
+      <li><p><code>JEV_OWNER_USER_IDS</code> が空のとき、だれも Jev を使えないようにしたのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>設定を忘れたときに、全員が Jev を使ってクレジットが減る、という危ない側に倒れないようにするため（安全側に倒す）。</p></details></li>
+      <li><p>アカウント削除で、外出や切符を 1 つずつ消さなくてよいのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>表がユーザーに <code>on delete cascade</code> でつながっているので、ユーザーを消すと一緒に消えるから。Storage の画像だけは別なので、先に消す。</p></details></li>
+      <li><p>帰省の設定を、だれでも読めるプロフィールではなく別の表に置いたのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>プロフィールは友達にも読めるから。帰省するかどうかは家庭の事情なので、本人しか読めない表にした。</p></details></li>
+    </ol>
+  </section>
+
+  <section id="report">
+    <div class="sec-head"><span class="sec-no">07</span><h2>日報と作業時間</h2></div>
+    <div class="memo">
+<pre>10月16日(金)　8:00〜18:30（9時間）在宅
+やったこと：アプリを公開サイトにするための準備。トップページの作り直し、プライバシーと使い方の約束のページ、アカウントとデータを全部消す機能を追加し、Jevは自分のアカウントだけ・ほかの人はルールで判定するようにした。公開前にアプリ全体の安全面のチェックを行い（他人のデータを読み書きできる経路が無いことを確認）、見つかった不具合を直して、mainへのプルリクエストにまとめた。公開の手順（Vercel・Supabase・Google）を資料にした。
+詰まったこと：アプリ本体はサーバーで動く処理があるのでGitHub Pagesでは動かないと分かった（アプリはVercel、紹介ページはGitHub Pagesに分けることにした）。
+学んだこと：知らない人のデータを預かるときは、何を保存してだれに見えるかを書き出し、コードと食い違いが無いか確かめること。</pre>
+    </div>
+    <p class="note">作業時間：8:00〜18:30 から昼休み 1 時間を引くと 9 時間 30 分。7.5 時間を超えるので 30 分休憩も引いて <b>9 時間</b>。累計 <b>122 時間 07 分</b> / 225 時間。</p>
+  </section>
+
+  <section id="next">
+    <div class="sec-head"><span class="sec-no">08</span><h2>次回</h2></div>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">公開する<span class="chip step">次</span></div>
+        <p>プルリクエストをマージ → <code>db push</code> → Vercel → Supabase の戻り先 → Google を本番に</p>
+      </div>
+      <div class="box">
+        <div class="box-title">Syllabuzz<span class="chip pending">10/23 提出</span></div>
+        <p>メンターからの課題。LP とデモを初めて触る人の目で見て、分かりづらい点とエラーをまとめる</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>nextjs-supabase-auth-practice ／ docs/notes/2026-10-16.html</footer>
+</div>

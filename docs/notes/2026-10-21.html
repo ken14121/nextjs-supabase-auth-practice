@@ -1,0 +1,413 @@
+<title>旅アプリ開発 16日目ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --surface-2: #e9eff3;
+    --ink: #15212c;
+    --muted: #566676;
+    --line: #d4dde5;
+    --accent: #1a6a9c;
+    --accent-soft: #dcebf5;
+    --pending: #a36b00;
+    --pending-soft: #fbefd4;
+    --ok: #2d7a4c;
+    --ok-soft: #dcefe3;
+    --ng: #b03a2e;
+    --ng-soft: #f6dedb;
+    --code-bg: #edf2f6;
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e151c;
+      --surface: #15202a;
+      --surface-2: #1b2934;
+      --ink: #e4ecf2;
+      --muted: #9aabba;
+      --line: #2a3a47;
+      --accent: #62b0e3;
+      --accent-soft: #173247;
+      --pending: #e3b453;
+      --pending-soft: #3a2e14;
+      --ok: #6cc48f;
+      --ok-soft: #173325;
+      --ng: #ee8a7e;
+      --ng-soft: #3d1e1a;
+      --code-bg: #1c2833;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e151c;
+    --surface: #15202a;
+    --surface-2: #1b2934;
+    --ink: #e4ecf2;
+    --muted: #9aabba;
+    --line: #2a3a47;
+    --accent: #62b0e3;
+    --accent-soft: #173247;
+    --pending: #e3b453;
+    --pending-soft: #3a2e14;
+    --ok: #6cc48f;
+    --ok-soft: #173325;
+    --ng: #ee8a7e;
+    --ng-soft: #3d1e1a;
+    --code-bg: #1c2833;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.35; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 900; }
+  h2 { font-size: 1.45rem; font-weight: 900; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ヘッダー：きっぷ風 */
+  header.ticket {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+  }
+  .ticket-main { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .ticket-main .lead { color: var(--muted); max-width: 60ch; }
+  .ticket-stub {
+    border-left: 2px dashed var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: var(--surface-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 140px;
+  }
+  .stub-label { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+  .stub-value { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  @media (max-width: 560px) {
+    header.ticket { grid-template-columns: 1fr; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; flex-wrap: wrap; gap: 4px 20px; }
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -32px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.88rem;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .sec-no { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+  .note { color: var(--muted); font-size: 0.95rem; }
+
+  /* 全体像 */
+  .map { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .map-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+  @media (max-width: 640px) { .map-row { grid-template-columns: 1fr; } .map-arrow { transform: rotate(90deg); justify-self: center; } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .box-title { font-family: var(--font-display); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.93rem; }
+  .tool-list li { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px; }
+  .tool-list b { font-weight: 700; }
+  .map-arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .map-arrow span { font-size: 1.6rem; line-height: 1; color: var(--accent); }
+  .localhost { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+  .pending-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .pending-row { grid-template-columns: 1fr; } }
+  .pending-row .box { border-style: dashed; }
+  .chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip.pending { color: var(--pending); background: var(--pending-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.ng { color: var(--ng); background: var(--ng-soft); }
+  .chip.step { color: var(--accent); background: var(--accent-soft); }
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  /* リスト */
+  dl.facts { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 16px; }
+  dl.facts dt { font-weight: 700; color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 10px; } }
+
+  /* 表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 路線図（ログインの流れ） */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.route li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  ol.route li:last-child { padding-bottom: 0; }
+  ol.route li::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent);
+  }
+  ol.route li:last-child::before { display: none; }
+  .station {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--accent);
+    position: relative; z-index: 1;
+  }
+  .stop { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .who { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+  /* Git の流れ */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.93rem; }
+  .flow .stepbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; }
+  .flow .stepbox small { color: var(--muted); font-size: 0.78rem; }
+  .flow .arr { color: var(--accent); font-weight: 700; }
+
+  /* クイズ */
+  ol.quiz { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: q; }
+  ol.quiz li { counter-increment: q; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  ol.quiz li > p::before { content: "Q" counter(q) "　"; font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; font-weight: 700; width: fit-content; }
+  details[open] summary { margin-bottom: 6px; }
+  details p { color: var(--ink); font-size: 0.95rem; }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+<style>
+  .memo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+  .memo pre { margin: 0; font-family: var(--font-body); white-space: pre-wrap; font-size: 0.95rem; line-height: 1.8; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .stat b { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 0.8rem; color: var(--muted); }
+</style>
+<div class="wrap">
+
+  <header class="ticket">
+    <div class="ticket-main">
+      <span class="eyebrow">ZENDASH 臨地実習 ／ 学習ノート</span>
+      <h1>旅アプリ開発 16日目ノート</h1>
+      <p class="lead">Jev について調べたことを、一般公開できる記事の形にまとめ始めた。記事のいちばんの弱点「自分 1 人のデータで基準を決めて、同じデータで測っている」を埋めるため、友達が判定を確かめられるようにアプリを直し、自分のデータで交差検証をする準備をした。</p>
+    </div>
+    <div class="ticket-stub">
+      <span class="stub-label">日付</span>
+      <span class="stub-value">2026.10.21 水</span>
+      <span class="stub-label">場所</span>
+      <span class="stub-value">在宅</span>
+      <span class="stub-label">進んだところ</span>
+      <span class="stub-value">Jev の記事と検証</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#result">今日の成果</a>
+    <a href="#calendar">カレンダー同期</a>
+    <a href="#report-plan">記事の組み立て</a>
+    <a href="#gaps">足りないデータ</a>
+    <a href="#friends">友達に頼む</a>
+    <a href="#cv">交差検証</a>
+    <a href="#quiz">理解度チェック</a>
+    <a href="#report">日報</a>
+  </nav>
+
+  <section id="result">
+    <div class="sec-head"><span class="sec-no">00</span><h2>今日の成果</h2></div>
+    <div class="stats">
+      <div class="stat"><span>記事のたたき台</span><b>7 章</b></div>
+      <div class="stat"><span>プルリクエスト</span><b>#2</b></div>
+      <div class="stat"><span>テスト</span><b>66 件</b></div>
+      <div class="stat"><span>累計</span><b>146h40m</b></div>
+    </div>
+    <ul class="plain">
+      <li>Syllabuzz：カレンダー同期で、イベントが月のほぼ全ての週にくり返し入る不具合を記録した</li>
+      <li>Jev の記事のたたき台を <code>docs/research/jev-report.md</code> に作った</li>
+      <li>友達（Jev を使えない人）も「判定を確かめる」ページを使えるようにした（PR #2）</li>
+      <li>自分のデータで検証するための、データを取り出す SQL と分析のスクリプトを作った</li>
+    </ul>
+  </section>
+
+  <section id="calendar">
+    <div class="sec-head"><span class="sec-no">01</span><h2>Syllabuzz：カレンダー同期</h2></div>
+    <p>「カレンダー同期 → Google」で Syllabuzz のカレンダーを Google カレンダーに追加すると、3 つのイベント（AI in Management Workshop など）が、月のほぼ全ての週に終日の帯で並んだ。</p>
+    <ul class="plain">
+      <li>同じ画面に「python」という予定もたくさん出ていたが、これは<b>自分で入れていた予定</b>で、不具合ではなかった（報告からは外した）</li>
+      <li>入ってしまったイベントは、「他のカレンダー」の Syllabuzz Event Calendar の登録を解除すれば、まとめて消える</li>
+    </ul>
+    <p class="note">報告の前に、それが本当にそのサービスのせいかを確かめる。自分の予定や設定が混ざっていないかを見る。</p>
+  </section>
+
+  <section id="report-plan">
+    <div class="sec-head"><span class="sec-no">02</span><h2>Jev の記事の組み立て方</h2></div>
+    <p>Qiita などで公開し、吉田先生や Zendash にも見せる。まず Markdown で中身を固め、見た目は後から整える。</p>
+    <div class="flow">
+      <div class="stepbox">背景・目的</div>
+      <span class="arr">→</span>
+      <div class="stepbox">Jev とは</div>
+      <span class="arr">→</span>
+      <div class="stepbox">やったこと</div>
+      <span class="arr">→</span>
+      <div class="stepbox">結果</div>
+      <span class="arr">→</span>
+      <div class="stepbox">分析</div>
+      <span class="arr">→</span>
+      <div class="stepbox">応用（推測）</div>
+    </div>
+    <div class="callout"><b>事実</b>（やったこと・結果）、<b>分析</b>（なぜそうなったか）、<b>推測</b>（こう使えそう）の 3 つを混ぜない。混ぜると、どこまでが本当でどこからが意見か、読む人に伝わらない。</div>
+    <p>公開するので、API キー・残高・座標・メールアドレス・前任者の名前は書かない。正解率は件数と割合だけにする。</p>
+  </section>
+
+  <section id="gaps">
+    <div class="sec-head"><span class="sec-no">03</span><h2>足りないデータ</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>足りないもの</th><th>なぜ要るか</th><th>どう集めるか</th></tr></thead>
+        <tbody>
+          <tr><td>自分以外のデータ</td><td>今の数字は全部、自分 1 人の 81 件</td><td>友達に「判定を確かめる」をやってもらう</td></tr>
+          <tr><td>ルールと Jev が分かれた外出</td><td>「ほぼ互角」の先、どこで Jev が勝つかが言える</td><td>分析スクリプトで数える</td></tr>
+          <tr><td>見ていないデータでの正解率</td><td>境目を選んだデータで測ると、良く出すぎる</td><td>交差検証</td></tr>
+          <tr><td>組み合わせ（ルール＋Jev）の実測</td><td>応用の章で「本命」と書いたが、まだ数字が無い</td><td>あとで実装して測る</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="friends">
+    <div class="sec-head"><span class="sec-no">04</span><h2>友達に頼む（データはもらわない）</h2></div>
+    <p>友達にデータをもらおうとしたら「個人情報すぎる」と断られた。そこで、データを渡してもらうのではなく、友達が自分のアカウントで確かめて、<b>正解率の画面だけ</b>を送ってもらう形にした。</p>
+    <dl class="facts">
+      <dt>足りなかったこと</dt>
+      <dd>確かめるページは、Jev の答えがある外出しか出さなかった。友達は Jev を使えない（ルールで判定される）ので、何も出なかった</dd>
+      <dt>直したこと</dt>
+      <dd>Jev を使えない人には、ルールで判定された外出からでたらめに 20 件を出す。ルールの答えは保存した材料からいつでも計算し直せるので、本人の答えと比べられる</dd>
+      <dt>テスト</dt>
+      <dd>分け方と数え方を <code>lib/outings/review.ts</code> にまとめ、テストを足した（自分の画面と数字は今までと同じ）</dd>
+      <dt>正直に伝えること</dt>
+      <dd>座標は保存しないが、行った県・市区町村と日付は残る。ほかのユーザーには見えないが、Supabase の持ち主は管理画面から技術的には見られる。終わったら削除してもらう</dd>
+    </dl>
+  </section>
+
+  <section id="cv">
+    <div class="sec-head"><span class="sec-no">05</span><h2>「別の県に移す」より交差検証</h2></div>
+    <p>「自分のデータを別の県に移して検証する」案を考えたが、判定の材料は「自宅からの距離」「その場所に何日行ったか」「何分いたか」のような<b>相対的な数字</b>なので、全部を動かしても結果は変わらない。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>やり方</th><th>分かること</th></tr></thead>
+        <tbody>
+          <tr><td>交差検証（一部で境目を選び、残りで測る、をくり返す）</td><td>境目を選ぶときに見ていない外出での正解率</td></tr>
+          <tr><td>暮らし方を変える（距離 2〜3 倍・引っ越したばかり・寄り道が多い）</td><td>どんな人だと外れやすいか</td></tr>
+          <tr><td>県を移す</td><td>結果が変わらないことの確認（数字で示す）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>取り出す SQL（<code>scripts/export-reviewed-outings.sql</code>）は、本物と同じ構成のデータベース（PGlite）で、自分の分だけが取れることを確かめた。取り出したデータはリポジトリに入れない。</p>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head"><span class="sec-no">06</span><h2>理解度チェック</h2></div>
+    <ol class="quiz">
+      <li><p>記事で「事実・分析・推測」を分けるのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>読む人が、どこまでが測って分かったことで、どこからが考えやアイデアかを区別できるようにするため。推測を推測と書くと、かえって説得力が上がる。</p></details></li>
+      <li><p>境目を選んだのと同じデータで正解率を測ると、何が問題？</p>
+        <details><summary>答えを見る</summary><p>そのデータにたまたま合う境目を選んでいるので、新しいデータより正解率が良く出てしまう。交差検証で、選ぶデータと測るデータを分ける。</p></details></li>
+      <li><p>データを全部別の県に移しても、ルールの結果が変わらないのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>ルールの材料が、自宅からの距離や行った日数のような相対的な数字だから。全部を同じだけ動かしても、これらの数字は変わらない。</p></details></li>
+      <li><p>友達に、データではなく「正解率の画面だけ」を送ってもらうのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>検証に要るのは件数と割合だけだから。相手が見せたくない位置の記録は渡してもらわず、必要なものを最小限にした。</p></details></li>
+    </ol>
+  </section>
+
+  <section id="report">
+    <div class="sec-head"><span class="sec-no">07</span><h2>日報と作業時間</h2></div>
+    <div class="memo">
+<pre>10月21日(水)　9:00〜19:00（8時間23分）在宅
+やったこと：Syllabuzz のフィードバックの続き。カレンダー同期で、Syllabuzz のイベントが月のほぼ全ての週に終日の帯でくり返し入る不具合を見つけて記録した。そのあと、Jev について調べたことを一般公開（Qiita など）に向けた記事の形にまとめ始め、たたき台を作った（背景 → Jev とは → やったこと → 結果 → 分析 → 応用 → まとめ。事実・分析・推測を分けて書く）。記事の弱点である「自分 1 人のデータで基準を決めて、同じデータで測っている」を埋めるため、友達がルールの判定を確かめられるように確かめるページを直した（PR #2）。自分のデータで交差検証と暮らし方を変えたシミュレーションをするための、データを取り出す SQL と分析スクリプトも用意した。
+詰まったこと：友達にデータをもらおうとしたら「個人情報すぎる」と断られた（データを渡してもらうのではなく、友達が自分のアカウントで確かめて、正解率の画面だけ送ってもらう形にした）。「自分のデータを別の県に移して検証する」案は、判定の材料が自宅からの距離や行った日数のような相対的な数字なので、移しても結果が変わらないと分かった（代わりに交差検証を使う）。
+学んだこと：検証では、基準を決めたデータと測るデータを分けないと、数字が実際より良く見えること。人に協力を頼むときは、相手が何を見せたくないかを先に考えて、渡すものを最小限にすること。</pre>
+    </div>
+    <p class="note">作業時間：9:00〜19:00 から昼休み 1 時間を引くと 9 時間。7.5 時間を超えるので 30 分休憩も引いて 8 時間 30 分。本人の申告でさらに 7 分減らして <b>8 時間 23 分</b>。累計 <b>146 時間 40 分</b> / 225 時間。</p>
+  </section>
+
+  <section id="next">
+    <div class="sec-head"><span class="sec-no">08</span><h2>次回</h2></div>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">検証<span class="chip pending">本人</span></div>
+        <p>PR #2 をマージ。SQL でデータを取り出して送る → 交差検証の結果を記事に書き足す。友達に確かめてもらう</p>
+      </div>
+      <div class="box">
+        <div class="box-title">金曜の提出<span class="chip step">10/23</span></div>
+        <p>Syllabuzz のフィードバックと、4 週目の週報</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>nextjs-supabase-auth-practice ／ docs/notes/2026-10-21.html</footer>
+</div>

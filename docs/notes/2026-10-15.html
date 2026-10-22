@@ -1,0 +1,420 @@
+<title>旅アプリ開発 12日目ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --surface-2: #e9eff3;
+    --ink: #15212c;
+    --muted: #566676;
+    --line: #d4dde5;
+    --accent: #1a6a9c;
+    --accent-soft: #dcebf5;
+    --pending: #a36b00;
+    --pending-soft: #fbefd4;
+    --ok: #2d7a4c;
+    --ok-soft: #dcefe3;
+    --ng: #b03a2e;
+    --ng-soft: #f6dedb;
+    --code-bg: #edf2f6;
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0e151c;
+      --surface: #15202a;
+      --surface-2: #1b2934;
+      --ink: #e4ecf2;
+      --muted: #9aabba;
+      --line: #2a3a47;
+      --accent: #62b0e3;
+      --accent-soft: #173247;
+      --pending: #e3b453;
+      --pending-soft: #3a2e14;
+      --ok: #6cc48f;
+      --ok-soft: #173325;
+      --ng: #ee8a7e;
+      --ng-soft: #3d1e1a;
+      --code-bg: #1c2833;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0e151c;
+    --surface: #15202a;
+    --surface-2: #1b2934;
+    --ink: #e4ecf2;
+    --muted: #9aabba;
+    --line: #2a3a47;
+    --accent: #62b0e3;
+    --accent-soft: #173247;
+    --pending: #e3b453;
+    --pending-soft: #3a2e14;
+    --ok: #6cc48f;
+    --ok-soft: #173325;
+    --ng: #ee8a7e;
+    --ng-soft: #3d1e1a;
+    --code-bg: #1c2833;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    padding-inline: 16px;
+    padding-block: 0 64px;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.35; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 900; }
+  h2 { font-size: 1.45rem; font-weight: 900; }
+  h3 { font-size: 1.1rem; font-weight: 700; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  a { color: var(--accent); }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ヘッダー：きっぷ風 */
+  header.ticket {
+    margin-top: 32px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    overflow: hidden;
+  }
+  .ticket-main { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .eyebrow {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .ticket-main .lead { color: var(--muted); max-width: 60ch; }
+  .ticket-stub {
+    border-left: 2px dashed var(--line);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: var(--surface-2);
+    font-variant-numeric: tabular-nums;
+    min-width: 140px;
+  }
+  .stub-label { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; }
+  .stub-value { font-family: var(--font-mono); font-weight: 600; font-size: 1.05rem; }
+  @media (max-width: 560px) {
+    header.ticket { grid-template-columns: 1fr; }
+    .ticket-stub { border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; flex-wrap: wrap; gap: 4px 20px; }
+  }
+
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -32px; }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 0.88rem;
+    padding: 4px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+  .sec-no { font-family: var(--font-mono); font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+  .note { color: var(--muted); font-size: 0.95rem; }
+
+  /* 全体像 */
+  .map { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .map-row { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+  @media (max-width: 640px) { .map-row { grid-template-columns: 1fr; } .map-arrow { transform: rotate(90deg); justify-self: center; } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .box-title { font-family: var(--font-display); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .tool-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.93rem; }
+  .tool-list li { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px; }
+  .tool-list b { font-weight: 700; }
+  .map-arrow { color: var(--muted); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .map-arrow span { font-size: 1.6rem; line-height: 1; color: var(--accent); }
+  .localhost { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); }
+  .pending-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .pending-row { grid-template-columns: 1fr; } }
+  .pending-row .box { border-style: dashed; }
+  .chip {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 1px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .chip.pending { color: var(--pending); background: var(--pending-soft); }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.ng { color: var(--ng); background: var(--ng-soft); }
+  .chip.step { color: var(--accent); background: var(--accent-soft); }
+  .callout {
+    background: var(--accent-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  /* リスト */
+  dl.facts { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 16px; }
+  dl.facts dt { font-weight: 700; color: var(--muted); }
+  dl.facts dd { margin: 0; }
+  @media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; gap: 2px; } dl.facts dd { margin-bottom: 10px; } }
+
+  /* 表 */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.93rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { background: var(--surface-2); font-weight: 700; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 700; }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* 路線図（ログインの流れ） */
+  ol.route { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ol.route li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+  ol.route li:last-child { padding-bottom: 0; }
+  ol.route li::before {
+    content: "";
+    position: absolute;
+    left: 17px;
+    top: 30px;
+    bottom: -2px;
+    width: 3px;
+    background: var(--accent);
+  }
+  ol.route li:last-child::before { display: none; }
+  .station {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    background: var(--surface);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--accent);
+    position: relative; z-index: 1;
+  }
+  .stop { display: flex; flex-direction: column; gap: 2px; padding-top: 4px; }
+  .who { font-size: 0.78rem; font-weight: 700; color: var(--muted); letter-spacing: 0.06em; }
+
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+  /* Git の流れ */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.93rem; }
+  .flow .stepbox { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; }
+  .flow .stepbox small { color: var(--muted); font-size: 0.78rem; }
+  .flow .arr { color: var(--accent); font-weight: 700; }
+
+  /* クイズ */
+  ol.quiz { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: q; }
+  ol.quiz li { counter-increment: q; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+  ol.quiz li > p::before { content: "Q" counter(q) "　"; font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+  details summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; font-weight: 700; width: fit-content; }
+  details[open] summary { margin-bottom: 6px; }
+  details p { color: var(--ink); font-size: 0.95rem; }
+
+  footer { color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  html { scroll-behavior: smooth; }
+</style>
+<style>
+  .memo { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; overflow-x: auto; }
+  .memo pre { margin: 0; font-family: var(--font-body); white-space: pre-wrap; font-size: 0.95rem; line-height: 1.8; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .stat b { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 0.8rem; color: var(--muted); }
+</style>
+<div class="wrap">
+
+  <header class="ticket">
+    <div class="ticket-main">
+      <span class="eyebrow">ZENDASH 臨地実習 ／ 学習ノート</span>
+      <h1>旅アプリ開発 12日目ノート</h1>
+      <p class="lead">折り返しの面談で、ここまでの成果と残りの予定を吉田先生に話した。本物の記録で見つかった「出てこない便」の原因を調べて直し、旅に飛行機・新幹線・バス・船を手で足せるようにした。Jev の残高が $0 なので、Jev を使わずルールだけで判定する仕組みも作った。</p>
+    </div>
+    <div class="ticket-stub">
+      <span class="stub-label">日付</span>
+      <span class="stub-value">2026.10.15 木</span>
+      <span class="stub-label">場所</span>
+      <span class="stub-value">コクーン</span>
+      <span class="stub-label">進んだところ</span>
+      <span class="stub-value">面談と便の直し</span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <a href="#result">今日の成果</a>
+    <a href="#meeting">面談</a>
+    <a href="#flights">出てこない便</a>
+    <a href="#legs">手で足す移動</a>
+    <a href="#rules">ルールの判定</a>
+    <a href="#troubles">つまずき</a>
+    <a href="#quiz">理解度チェック</a>
+    <a href="#report">日報</a>
+  </nav>
+
+  <section id="result">
+    <div class="sec-head"><span class="sec-no">00</span><h2>今日の成果</h2></div>
+    <div class="stats">
+      <div class="stat"><span>ルールだけの正解率</span><b>83%</b></div>
+      <div class="stat"><span>Jev の正解率（同じ 81 件）</span><b>84%</b></div>
+      <div class="stat"><span>手で足せる乗り物</span><b>6 種</b></div>
+      <div class="stat"><span>新幹線の路線の色</span><b>7 色</b></div>
+    </div>
+    <ul class="plain">
+      <li>13:20 から吉田先生と<b>折り返しの面談</b>。成果と残りの予定を 1 枚の資料にまとめて話した</li>
+      <li>着いた後の車の移動に混ざっていた<b>行きの便</b>（長崎 → 羽田・羽田 → 鹿児島）が、搭乗券に出るようになった</li>
+      <li>空港が違う（羽田が花巻に、など）ときに、<b>空港を手で直せる</b>ようにした</li>
+      <li>旅に<b>飛行機・新幹線・バス・在来線・船・車</b>を手で足せるようにした（何日かかけたバスも 1 枚に）</li>
+      <li>旅の切符の上に、行った都市を<b>順番にすべて</b>並べた（千葉 → 広島 → … → 徳島）</li>
+      <li>Jev を使わない<b>ルールだけの判定</b>を作り、「帰省はよくありますか？」の質問を足した</li>
+    </ul>
+  </section>
+
+  <section id="meeting">
+    <div class="sec-head"><span class="sec-no">01</span><h2>折り返しの面談（吉田先生）</h2></div>
+    <p>臨地実習の 225 時間の半分（112.5 時間）を超えたところで、30 階の吉田先生の部屋で面談した。</p>
+    <dl class="facts">
+      <dt>持って行ったもの</dt>
+      <dd>ここまでの成果と残りの予定を 1 枚にまとめた資料（<code>docs/reports/midterm-2026-10-15.html</code>）</dd>
+      <dt>言われたこと</dt>
+      <dd>進み具合をとても褒めてもらえた。予定より早く終わりそう、という話になり、Zendash に連絡してみると言ってもらえた</dd>
+      <dt>これから</dt>
+      <dd>機能はかなりそろったので、公開・紹介ページ・Syllabuzz の改善提案に時間を使う</dd>
+    </dl>
+  </section>
+
+  <section id="flights">
+    <div class="sec-head"><span class="sec-no">02</span><h2>搭乗券にならない便を直す</h2></div>
+    <p>本物の記録で、帰りの便は出るのに行きの便が出なかった。調べるためのスクリプト（<code>scripts/inspect-flights.mjs</code>、座標は表示しない）を作り、原因を 2 つ見つけた。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>原因</th><th>直し方</th></tr></thead>
+        <tbody>
+          <tr><td>飛行機の記録が無く、着いた後の「車の移動」の中に便が隠れていた</td><td>前の記録と次の記録のあいだが、時速 300〜1,000 km・300 km 以上なら便とみなす。間が短すぎるときは、次の移動の終わりまで見る</td></tr>
+          <tr><td>空港での滞在が重なって記録され、「直前の記録」を取り違えていた（時速 1,209 km を記録の乱れとして捨てていた）</td><td>直前の記録ではなく、<b>終わりがいちばん遅い記録</b>と比べる</td></tr>
+          <tr><td>飛び立った後に位置が記録され、別の空港（花巻など）になった</td><td>始点・終点が地上の記録から 50 km 以上離れていたら、直前・直後にいた空港を使う</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">本物の飛行機の記録のすぐ隣は、隠れた便として数えない（同じ便を 2 回数えないため）。</p>
+  </section>
+
+  <section id="legs">
+    <div class="sec-head"><span class="sec-no">03</span><h2>旅に移動を手で足す</h2></div>
+    <p>タイムラインに無い移動（修学旅行のバスなど）も旅の切符にしたい、という声から、移動を手で足せるようにした。</p>
+    <dl class="facts">
+      <dt>足せるもの</dt>
+      <dd>飛行機（空港コード）・新幹線（駅を選ぶ）・バス・在来線・船・車（場所は 30 文字までの自由な名前）</dd>
+      <dt>何日かかけた移動</dt>
+      <dd>バスなどは「終わりの日」を付けられる（例：11 日〜15 日に広島から新神戸まで）。1 枚の券になる</dd>
+      <dt>はんこの文字</dt>
+      <dd>バス・電車は「乗車記念」、船は「乗船記念」、車は「ドライブ記念」</dd>
+      <dt>消えないように</dt>
+      <dd>手で足したものには <code>added_by_user</code> の印を付け、タイムラインを取り込み直しても消さない</dd>
+      <dt>新しい表</dt>
+      <dd><code>ground_legs</code>（バス・船など）。自分の旅にしか足せないよう、RLS で確かめる</dd>
+    </dl>
+    <p>新幹線の切符は、路線ごとに車体の帯の色を付けた（東海道・東北・北海道・北陸・九州・秋田・山形）。会社のロゴや公式のマークは、商標なので使わない。</p>
+  </section>
+
+  <section id="rules">
+    <div class="sec-head"><span class="sec-no">04</span><h2>Jev を使わない「ルールだけの判定」</h2></div>
+    <p>新しいアカウントに無料のクレジットが付かなくなり、Jev の残高が $0 のまま。公開すると判定が止まってしまうので、Jev に渡しているのと同じ材料で、コードのルールだけで判定する仕組みを作った（<code>lib/outings/rule-judge.ts</code>）。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>版</th><th>変えたこと</th><th>正解率</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>最初の版</td><td>68%</td></tr>
+          <tr><td>2</td><td>帰省は年末年始・GW・お盆だけにした</td><td>73%</td></tr>
+          <tr><td>3</td><td>おでかけ ＝ いつもの場所以外に 120 分以上</td><td><b>83%</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="plain">
+      <li>境目は、確かめるページに「境目を変えたら」の表を出して、まわりも高い安定したところ（120 分）を選んだ</li>
+      <li>「帰省はよくありますか？（ある／ほとんどない）」の質問を足した。答えは友達に見えない別の表（<code>judge_settings</code>）に保存する</li>
+    </ul>
+    <div class="callout">ルールでも Jev とほぼ同じ精度が出たのは、数えられることを先にコードで計算して渡していたから。ただし境目は同じ 81 件を見て選んだので、新しいデータで測り直す必要がある。</div>
+  </section>
+
+  <section id="troubles">
+    <div class="sec-head"><span class="sec-no">05</span><h2>つまずいたことと学び</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>起きたこと</th><th>原因</th><th>対処</th></tr></thead>
+        <tbody>
+          <tr><td>PowerShell で調べるスクリプトが動かなかった</td><td>Timeline.json の場所の指定が違った</td><td>ファイルの場所を確かめてから実行した</td></tr>
+          <tr><td>帰省と判定した 4 件がすべて旅行だった</td><td>よく行く遠くの場所に泊まると帰省にしていた</td><td>帰省は時期で絞り、さらに「帰省はほとんどない」を選べるようにした</td></tr>
+          <tr><td>旅の切符の右側が「徳島」だけだった</td><td>最後の行き先しか出していなかった</td><td>行った日の順に、都市をすべて並べた</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head"><span class="sec-no">06</span><h2>理解度チェック</h2></div>
+    <ol class="quiz">
+      <li><p>「直前の記録」ではなく「終わりがいちばん遅い記録」と比べるようにしたのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>空港での滞在が重なって記録されることがあり、すぐ前の記録が実際には一番最後の場所ではなかったから。取り違えると、本当の移動の速さ（時速 1,209 km）が記録の乱れに見えてしまう。</p></details></li>
+      <li><p>手で足した移動が、タイムラインを取り込み直しても消えないのはなぜ？</p>
+        <details><summary>答えを見る</summary><p><code>added_by_user</code> の印を付けておき、取り込み直すときは印の無い（タイムラインから作った）ものだけを消しているから。</p></details></li>
+      <li><p>新幹線の切符に、本物の会社のロゴを入れなかったのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>ロゴや公式のマークは商標なので、勝手に使えないから。色の帯だけで路線らしさを出した。</p></details></li>
+      <li><p>ルールの正解率 83% が、実力より良く出ているかもしれないのはなぜ？</p>
+        <details><summary>答えを見る</summary><p>境目を選ぶときに見た 81 件と、正解率を測った 81 件が同じだから。新しい外出やほかの人のデータで測り直す必要がある。</p></details></li>
+    </ol>
+  </section>
+
+  <section id="report">
+    <div class="sec-head"><span class="sec-no">07</span><h2>日報と作業時間</h2></div>
+    <div class="memo">
+<pre>10月15日(木)　10:00〜18:00（7時間）コクーン
+やったこと：13:20から吉田先生と折り返しの面談（資料を作成）。本物の記録で見つかった問題を直した：飛行機の記録が無く「着いた後の車の移動」に混ざっていた便（長崎→羽田・羽田→鹿児島）を見つけるようにし、飛び立った後に位置が記録されて別の空港になった便は、直前にいた空港を使うようにした。搭乗券の空港を手で直せるようにした。旅に飛行機・新幹線・バス・船などを手で足せるようにし（数日がかりのバスも1枚に）、新幹線の切符に路線ごとの色を追加。Jevの残高が$0のため、Jevを使わずルールだけで判定する仕組みを作り、確かめた81件で境目を選んで正解率83%（Jevは84%）にした。
+詰まったこと：搭乗券にならない便があった（調べるスクリプトを作って原因を特定：空港での滞在が重なって記録され、直前の記録を取り違えていた）。
+学んだこと：AIに任せる前に、計算できる材料をそろえれば、簡単なルールでも近い精度が出ること。数字の境目は、本人が確かめたデータで比べて決めること。</pre>
+    </div>
+    <p class="note">作業時間：10:00〜18:00 から昼休み 1 時間を引いて <b>7 時間</b>（7.5 時間以下なので 30 分休憩は引かない）。累計 <b>113 時間 07 分</b> / 225 時間。ここで半分（112.5 時間）を超えた。</p>
+  </section>
+
+  <section id="next">
+    <div class="sec-head"><span class="sec-no">08</span><h2>次回</h2></div>
+    <div class="two-col">
+      <div class="box">
+        <div class="box-title">公開の準備<span class="chip step">次</span></div>
+        <p>だれでも使える公開サイトにする。トップページ・プライバシーのページ・アカウントの削除・Jev は本人だけ</p>
+      </div>
+      <div class="box">
+        <div class="box-title">週報<span class="chip pending">金曜</span></div>
+        <p>10/16（金）に 3 週目の週報を Word で出す</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>nextjs-supabase-auth-practice ／ docs/notes/2026-10-15.html</footer>
+</div>
