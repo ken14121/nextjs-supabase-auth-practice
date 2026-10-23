@@ -49,7 +49,8 @@ const timeFormat = new Intl.DateTimeFormat("ja-JP", {
   minute: "2-digit",
 });
 
-// 思い出す手がかりに、いつもの場所 / ふだん行かない場所にいた時間を出す
+// 思い出す手がかりに、いつもの場所 / ときどき行く場所 / ふだん行かない場所にいた時間を出す。
+// ルールも Jev も「ときどき行く場所」の時間を使うので、それも出す（何度も行くイベント会場や街はここに入る）
 function StayNote({ features }: { features: unknown }) {
   const parsed = outingFeaturesSchema.safeParse(features);
   if (!parsed.success) return null;
@@ -57,7 +58,8 @@ function StayNote({ features }: { features: unknown }) {
   const h = (minutes: number) => `${Math.round((minutes / 60) * 10) / 10} 時間`;
   return (
     <span className="text-xs text-muted-foreground tabular-nums">
-      いつもの場所 {h(f.frequentMinutes)}・ふだん行かない場所 {h(f.rareMinutes)}
+      いつもの場所 {h(f.frequentMinutes)}・ときどき行く場所{" "}
+      {h(f.sometimesMinutes)}・ふだん行かない場所 {h(f.rareMinutes)}
       ・自宅から最大 {Math.round(f.maxKmFromHome)} km
     </span>
   );

@@ -1,5 +1,5 @@
 -- 本人が確かめた外出（label_source = 'user'）を、ルールの検証用に 1 つの JSON で取り出す。
--- Supabase の SQL Editor で、1 行目の UID を自分のもの（Authentication → Users）に変えて実行する。
+-- Supabase の SQL Editor で、下の me の UID（00000000-…）を自分のもの（Authentication → Users）に変えて実行する。
 --
 -- 入るもの：外出ごとの日時・泊数・距離・材料（features）・本人の答え・Jev の答えと確率・行った県と国のコード、
 --           県・国ごとの行った日数、帰省の設定

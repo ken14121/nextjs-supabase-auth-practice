@@ -1,12 +1,13 @@
 // ルールだけの判定（lib/outings/rule-judge.ts）を、本人が確かめた外出で検証する。
 // docs/research/jev-report.md の「足りないデータ」を埋めるためのもの。
 //
-//   1. scripts/export-reviewed-outings.sql を Supabase の SQL Editor で実行し、結果の JSON を保存する
-//   2. JITI_ALIAS='{"@":"<このリポジトリの絶対パス>"}' yarn jiti scripts/analyze-rules.ts <保存した JSON>
+//   1. scripts/export-reviewed-outings.sql を Supabase の SQL Editor で実行し、結果を CSV（または JSON）で保存する
+//   2. JITI_ALIAS='{"@":"<このリポジトリの絶対パス>"}' node node_modules/jiti/lib/jiti-cli.mjs scripts/analyze-rules.ts <保存したファイル>
 //
 // 出すのは件数と割合だけ。--details を付けたときだけ、外れた外出の日付と答えを出す（本人が見る用。公開しない）。
 // 取り出した JSON と結果は、リポジトリに入れない。
 import fs from "node:fs";
+import { UNSURE_BELOW } from "@/lib/jev/decide";
 import { evaluateJev } from "@/lib/jev/evaluate";
 import { buildJevContext, type JevContext } from "@/lib/jev/state";
 import {
@@ -16,6 +17,7 @@ import {
 } from "@/lib/outings/labels";
 import { evaluateRuleJudge, isOutingLabel } from "@/lib/outings/review";
 import {
+  DAY_TRIP_KM,
   OUTING_MINUTES,
   OUTING_MINUTES_OF,
   type OutingMinutesOf,
@@ -24,6 +26,7 @@ import {
   ruleJudge,
 } from "@/lib/outings/rule-judge";
 import {
+  isClearlyDaily,
   type OutingFeatures,
   outingFeaturesSchema,
 } from "@/lib/timeline/features";
@@ -36,6 +39,7 @@ type ExportedOuting = {
   features: unknown;
   label: string;
   jev_label: string | null;
+  jev_confidence: number | null;
   region_codes: string[];
 };
 type Exported = {
@@ -46,6 +50,7 @@ type Exported = {
 type Row = RuleInput & {
   userLabel: OutingLabel;
   jevLabel: OutingLabel | null;
+  jevConfidence: number | null;
   features: OutingFeatures | null;
 };
 
@@ -54,8 +59,18 @@ if (!file) {
   console.error("使い方: yarn jiti scripts/analyze-rules.ts <取り出した JSON>");
   process.exit(1);
 }
-const raw = JSON.parse(fs.readFileSync(file, "utf8"));
-// SQL Editor の CSV から取ったときは [{ export: {...} }] の形になる
+const text = fs.readFileSync(file, "utf8");
+// SQL Editor の CSV は「export」の見出しの下に、"" で囲んだ JSON が 1 つだけ入る
+const raw = file.endsWith(".csv")
+  ? JSON.parse(
+      text
+        .slice(text.indexOf("\n") + 1)
+        .trim()
+        .replace(/^"|"$/g, "")
+        .replaceAll('""', '"'),
+    )
+  : JSON.parse(text);
+// JSON で取ったときは [{ export: {...} }] の形になる
 const data: Exported = Array.isArray(raw) ? raw[0].export : (raw.export ?? raw);
 
 const rows: Row[] = data.outings
@@ -71,6 +86,7 @@ const rows: Row[] = data.outings
       features: f.success ? f.data : null,
       userLabel: o.label as OutingLabel,
       jevLabel: isOutingLabel(o.jev_label) ? o.jev_label : null,
+      jevConfidence: o.jev_confidence,
     };
   });
 const ctx = buildJevContext(data.regions, { homecoming: data.homecoming });
@@ -148,6 +164,20 @@ say(
       user: r.userLabel,
     })),
     "ルール",
+  ),
+);
+// 外れたのは、どのルールで決まった外出か
+const missReasons = new Map<string, number>();
+for (const r of rows) {
+  const j = ruleJudge(r, ctx);
+  if (j.label !== r.userLabel)
+    missReasons.set(j.reason, (missReasons.get(j.reason) ?? 0) + 1);
+}
+say();
+say(
+  table(
+    ["外れた外出が決まったルール", "件数"],
+    [...missReasons].sort((a, b) => b[1] - a[1]),
   ),
 );
 
@@ -362,6 +392,66 @@ say(
     }),
   ),
 );
+
+// ---------------------------------------------------------------- 6. ルールと Jev を組み合わせたら
+// 保存してある Jev の答えを使うので、Jev には聞き直さない。組み合わせ方は前から考えていたもの（このデータで選んではいない）
+if (both.length > 0) {
+  // おでかけと日常の境目：泊まりなし・いつもの場所だけではない・日帰りの距離より近い
+  const onBorder = (r: Row) =>
+    r.nights === 0 &&
+    !(r.features && isClearlyDaily(0, r.features)) &&
+    (r.features ? r.features.maxKmFromHome : r.distance_km / 2) < DAY_TRIP_KM;
+  const sure = (r: Row) =>
+    r.jevConfidence !== null && r.jevConfidence >= UNSURE_BELOW;
+  const ways: [string, (r: Row & { jevLabel: OutingLabel }) => OutingLabel][] =
+    [
+      ["ルールだけ", (r) => ruleJudge(r, ctx).label],
+      ["Jev だけ（保存した答え）", (r) => r.jevLabel],
+      [
+        "ふだんはルール、おでかけと日常の境目だけ Jev",
+        (r) => (onBorder(r) ? r.jevLabel : ruleJudge(r, ctx).label),
+      ],
+      [
+        "Jev が迷っていない（要確認なし）ときだけ Jev、ほかはルール",
+        (r) => (sure(r) ? r.jevLabel : ruleJudge(r, ctx).label),
+      ],
+    ];
+  say();
+  say("## 6. ルールと Jev を組み合わせたら（Jev の答えもある外出）");
+  say();
+  say(
+    table(
+      ["組み合わせ方", "正解率", "Jev に聞く外出"],
+      ways.map(([name, fn], i) => {
+        const hit = both.filter((r) => fn(r) === r.userLabel).length;
+        const asked =
+          i === 0
+            ? 0
+            : i === 1
+              ? both.length
+              : i === 2
+                ? both.filter(onBorder).length
+                : both.length;
+        return [
+          name,
+          `${pct(hit / both.length)}（${hit} / ${both.length}）`,
+          `${asked} 件`,
+        ];
+      }),
+    ),
+  );
+  say();
+  const unsure = both.filter((r) => !sure(r));
+  const confident = both.filter(sure);
+  const acc = (list: typeof both) =>
+    list.length > 0
+      ? list.filter((r) => r.jevLabel === r.userLabel).length / list.length
+      : null;
+  say(
+    `「要確認」の当たり方（Jev の答え）：要確認なし ${pct(acc(confident))}（${confident.length} 件）・要確認あり ${pct(acc(unsure))}（${unsure.length} 件）。` +
+      `要確認ありの外出だけ本人が見直すと、見直すのは ${unsure.length} 件で、Jev の外れ ${both.length - both.filter((r) => r.jevLabel === r.userLabel).length} 件のうち ${unsure.filter((r) => r.jevLabel !== r.userLabel).length} 件を拾える`,
+  );
+}
 
 // ---------------------------------------------------------------- 外れた外出（本人が見る用）
 if (flags.includes("--details")) {
