@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>旅の地図帳 ── Jev で外出を仕分けた試行錯誤</title>
+<meta name="description" content="Google マップのタイムラインから旅をふり返り、友達と行った県・国を比べるアプリ「旅の地図帳」。外出の仕分けに LLM 判定器 Jev を使い、ルールと比べて確かめた記録。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* アプリと同じ「紙・墨・朱」の 3 色（docs/design/DECISIONS.md） */
+  :root {
+    --paper: #f6f3ec;
+    --ink: #1d1c1a;
+    --muted: #6b675f;
+    --rule: #d8d1c2;
+    --vermilion: #c8432c;
+    --card: #fbf9f4;
+    --serif: "Shippori Mincho", "Hiragino Mincho ProN", serif;
+    --sans: "Zen Kaku Gothic New", system-ui, sans-serif;
+    --mono: ui-monospace, "SFMono-Regular", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1b1a18; --ink: #ece8df; --muted: #a8a397; --rule: #3a3731; --vermilion: #e0644c; --card: #23221f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1b1a18; --ink: #ece8df; --muted: #a8a397; --rule: #3a3731; --vermilion: #e0644c; --card: #23221f;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.85; letter-spacing: 0.02em; }
+  a { color: inherit; text-decoration-color: var(--vermilion); text-underline-offset: 3px; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 80px; }
+  header.top { border-bottom: 1px solid var(--ink); }
+  header.top .wrap { padding-bottom: 0; display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .brand { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; text-decoration: none; }
+  .top-links { display: flex; gap: 16px; font-size: 0.9rem; }
+  .hero { padding: 56px 0 32px; border-bottom: 2px solid var(--ink); }
+  .eyebrow { font-size: 0.75rem; letter-spacing: 0.3em; color: var(--muted); }
+  h1 { font-family: var(--serif); font-size: clamp(2.2rem, 7vw, 3.2rem); line-height: 1.25; margin: 8px 0 12px; }
+  .tagline { font-family: var(--serif); font-size: 1.25rem; margin: 0 0 12px; }
+  .lead { color: var(--muted); margin: 0 0 24px; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 12px; }
+  .btn { display: inline-block; padding: 10px 18px; border: 1px solid var(--ink); text-decoration: none; font-size: 0.95rem; }
+  .btn.primary { background: var(--ink); color: var(--paper); }
+  section { padding: 40px 0 8px; border-bottom: 1px solid var(--rule); }
+  section:last-of-type { border-bottom: none; }
+  .no { font-family: var(--serif); color: var(--vermilion); font-size: 0.9rem; letter-spacing: 0.1em; }
+  h2 { font-family: var(--serif); font-size: 1.6rem; line-height: 1.4; margin: 4px 0 16px; }
+  h3 { font-family: var(--serif); font-size: 1.15rem; margin: 28px 0 8px; }
+  p { margin: 0 0 16px; }
+  .muted { color: var(--muted); }
+  figure { margin: 24px 0; }
+  figure img { width: 100%; height: auto; display: block; border: 1px solid var(--rule); }
+  figcaption { font-size: 0.85rem; color: var(--muted); margin-top: 8px; }
+  figure.cover { margin: 0; padding: 24px 0 8px; }
+  .features { list-style: none; padding: 0; margin: 0; }
+  .features li { padding: 16px 0; border-top: 1px solid var(--rule); }
+  .features b { font-family: var(--serif); font-size: 1.1rem; display: block; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0 24px; }
+  .flow span.step { border: 1px solid var(--ink); background: var(--card); padding: 6px 12px; font-size: 0.9rem; }
+  .flow span.arrow { color: var(--vermilion); }
+  .flow span.step.jev { border-color: var(--vermilion); }
+  pre { background: var(--card); border: 1px solid var(--rule); padding: 16px; overflow-x: auto; font-family: var(--mono); font-size: 0.85rem; line-height: 1.7; }
+  code { font-family: var(--mono); font-size: 0.9em; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0 24px; }
+  .stat { border-top: 2px solid var(--ink); padding-top: 8px; }
+  .stat b { font-family: var(--serif); font-size: 2rem; display: block; line-height: 1.3; }
+  .stat span { font-size: 0.85rem; color: var(--muted); }
+  .stat.accent b { color: var(--vermilion); }
+  .table-wrap { overflow-x: auto; margin: 8px 0 24px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--ink); }
+  td.num { font-family: var(--serif); font-size: 1.05rem; white-space: nowrap; }
+  .note { border-left: 3px solid var(--vermilion); padding: 4px 0 4px 14px; margin: 16px 0 24px; }
+  .lessons { padding-left: 1.2em; }
+  .lessons li { margin-bottom: 12px; }
+  .sources { font-size: 0.85rem; color: var(--muted); padding-left: 1.2em; }
+  footer { font-size: 0.85rem; color: var(--muted); padding-top: 32px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./">旅の地図帳</a>
+    <nav class="top-links">
+      <a href="https://nextjs-supabase-auth-practice.vercel.app/">アプリ</a>
+      <a href="https://github.com/ken14121/nextjs-supabase-auth-practice">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <div class="eyebrow">TABI ATLAS ／ Jev を使った試行錯誤の記録</div>
+    <h1>旅の地図帳</h1>
+    <p class="tagline">外出を「旅」と「日常」に、LLM でどこまで仕分けられるか。</p>
+    <p class="lead">Google マップのタイムラインから旅をふり返るアプリを作り、外出 1 回ずつを仕分ける部分に、LLM の判定器 Jev（TypeSafe AI）を使いました。このページは、作ったものの紹介よりも、<b>正解率を上げるために何を試して、何が効いて、何が効かなかったか</b>と、<b>Jev がほかに何に使えそうか</b>をまとめたものです。</p>
+    <div class="buttons">
+      <a class="btn primary" href="#trial">試行錯誤から読む</a>
+      <a class="btn" href="#ideas">応用から読む</a>
+      <a class="btn" href="https://nextjs-supabase-auth-practice.vercel.app/">アプリを開く</a>
+    </div>
+  </div>
+
+
+  <figure class="cover">
+    <img src="images/map3d.png" width="1280" height="800" alt="3D の地球儀を「線・白」の見た目で引きで見た画面。灰色の背景に、白い地球儀がアジアを正面にして浮かび、行った国の日本だけが朱色に塗られている。左上に「地球・日本・富士山・東京駅」の視点の切り替えと見た目の切り替え、右に拡大・縮小と回転のボタンが並ぶ">
+    <figcaption>3D の地球儀（/map3d）。行った国を塗った地球儀を回して見られます</figcaption>
+  </figure>
+
+  <section id="summary">
+    <div class="no">00</div>
+    <h2>先に結論</h2>
+    <div class="stats">
+      <div class="stat"><b>81%</b><span>自分の答えどうしの一致（2 回付けて比べた）</span></div>
+      <div class="stat accent"><b>77%</b><span>Jev だけ</span></div>
+      <div class="stat"><b>78%</b><span>ルール＋境目だけ Jev（Jev に聞くのは半分以下）</span></div>
+      <div class="stat"><b>74%</b><span>コードのルールだけ</span></div>
+    </div>
+    <ul class="lessons">
+      <li>正解率だけ見ると、Jev とコードのルールはほぼ互角でした。どちらも「自分の答えのぶれ」（81%）に近いところまで来ています。</li>
+      <li>Jev が一番役に立ったのは、<b>迷っている外出に「要確認」を付けられること</b>でした。要確認なしは 91% 当たり、ありは 48%。要確認の 3 分の 1 だけ見直せば、外れの 7 割を拾えます。</li>
+      <li>一番の失敗は、<b>あいまいな境目に、自分が言っていない数字の線を引いたこと</b>です。それだけで 75% から 58% に落ちました。</li>
+    </ul>
+  </section>
+
+  <section id="problem">
+    <div class="no">01</div>
+    <h2>やりたかったこと</h2>
+    <p>タイムラインを取り込むと、外出が数百回分たまります。その 1 回ずつを、<b>旅行・帰省・日帰り・おでかけ・日常</b>の 5 つに分け、日常以外だけを旅の一覧や地図、友達との比較に出したい、というのが出発点です。</p>
+    <p>難しいのは、距離や泊数だけでは決まらないことです。同じ東京でも「学校に行った日」と「遊びに行った日」があり、同じ 2 時間の外出でも「病院」と「買い物」では意味が違います。この「旅か日常か」の判断を、LLM に任せられないかを試しました。</p>
+
+    <figure>
+      <img src="images/trips.png" width="1280" height="1100" alt="旅の索引のページ。検索欄と「旅を手で追加」ボタンの下に、旅が 1 回ずつ切符の形で並んでいる。上は「ドライブ 千葉 → 神奈川」の切符、その下は千葉から熊本までの 5 泊の旅で、大阪（伊丹）から熊本への飛行機が朱色の搭乗券の形で表示されている" loading="lazy">
+      <figcaption>旅の索引（/trips）。旅を 1 回ずつ切符にします。飛行機は搭乗券、車はドライブの切符の形です</figcaption>
+    </figure>
+  </section>
+
+  <section id="setup">
+    <div class="no">02</div>
+    <h2>Jev の使い方の土台</h2>
+    <p>Jev は、質問に対して選択や「はい／いいえ」を、確率つきで返す判定器です。最初に、次の 2 つを決めました。</p>
+    <h3>計算はコード、判断だけ Jev</h3>
+    <p>Jev は計算が苦手なので、泊数・距離・「その場所に何日行ったか」・「どこに何分いたか」は、コードで数えてから日本語の JSON で渡します。座標そのものは保存も送信もしません。</p>
+    <h3>「いつもの場所」を数字にする</h3>
+    <p>都道府県だけだと「東京の学校」と「東京で遊んだ日」が区別できないので、履歴全体から、10 日以上行った場所を「いつもの場所」、4〜9 日を「ときどき行く場所」、3 日以下を「ふだん行かない場所」として、それぞれに何分いたかを材料にしました。ふだん行かない場所にほとんどいない日は、Jev に聞かずにコードで「日常」と決めます（通学の日がほとんどなので、聞く回数が大きく減ります）。</p>
+  </section>
+
+  <section id="trial">
+    <div class="no">03</div>
+    <h2>正解率を上げる試行錯誤</h2>
+    <p>自分の外出に自分で正解を付け、Jev とルールの答えと比べながら、1 つずつ変えていきました。</p>
+
+    <h3>1. 4 択をやめて「はい／いいえ」3 問に</h3>
+    <p>最初は「旅行・帰省・日帰り・日常」を 1 度に選ばせていましたが、並び順で答えが偏ることがありました。「これは日常か？」のように 1 つずつ聞く形に変えると、確率が実際とよく合うようになりました。泊まったかどうかは、聞かずにコードで分けます。</p>
+<pre>日常か？（Jev）── はい → 日常
+   │いいえ
+泊まったか？（コード）── いいえ → 遠くへの日帰りか？（Jev）── はい → 日帰り ／ いいえ → おでかけ
+   │はい
+帰省か？（Jev）── はい → 帰省 ／ いいえ → 旅行</pre>
+
+    <h3>2. 質問の書き方を変えて、同じ 57 件で比べる</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>版</th><th>変えたこと</th><th>正解率</th></tr></thead>
+        <tbody>
+          <tr><td>v1</td><td>最初の「はい／いいえ」版</td><td class="num">75%</td></tr>
+          <tr><td>v2</td><td>「いつもの場所以外に合計 1 時間以上いたら日常ではない」と数字の線を書いた</td><td class="num">58%</td></tr>
+          <tr><td>v3</td><td>v2 をやめ、v1 に「自宅の近くの用事は日常」だけ足した</td><td class="num">77%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>v2 で大きく下がったのが、この試行錯誤で一番の発見でした。Jev は書かれた基準を文字どおり守るので、乗り換えの駅や友達の家を足すと「1 時間」はすぐ超え、ふつうの日まで「日常ではない」になりました。しかも、確率まで崩れました（「日常の確率 0〜20%」と自信を持って言った外出の 36% が、実際は日常）。その「1 時間」は自分の言葉ではなく、自分の話を勝手に数字に置き換えたものでした。</p>
+    <p class="note"><b>教訓：</b>あいまいな境目に、本人が言っていない数字の線を引かない。基準は本人の言葉のまま渡す。基準を変えたら、必ず前後で比べる。</p>
+
+    <h3>3. 質問を作るときに見ていない外出でも確かめる</h3>
+    <p>確かめた外出を 81 件に増やすと、正解率は 80%（コードのルールも含めると 81%）。新しく足した 24 件だけなら 88% で、作るときに見ていない外出でも当たりました。</p>
+
+    <h3>4. 保存した確率で「日常」の境目を調整する</h3>
+    <p>Jev に聞き直さず、保存した確率から境目だけを動かして計算しました。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>「日常」とみなす確率</th><th>30%</th><th>35%</th><th>40%</th><th>45%</th><th>50%</th><th>60%</th></tr></thead>
+        <tbody><tr><td>正解率</td><td class="num">79%</td><td class="num">80%</td><td class="num">84%</td><td class="num">84%</td><td class="num">81%</td><td class="num">74%</td></tr></tbody>
+      </table>
+    </div>
+    <p>40% と 45% が同じで安定していたので、45% にしました。これで Jev 込み 84%。</p>
+
+    <h3>5. Jev を使わないルールだけでも作ってみる</h3>
+    <p>アプリを公開すると、Jev を使えない人（ほかのユーザー）はルールで判定することになるので、同じ材料でルールだけの判定も作りました。「いつもの場所以外に 120 分以上いたらおでかけ」などの境目を選ぶと、<b>ルールだけで 83%</b>。Jev 込みの 84% と、ほぼ互角でした。</p>
+
+    <h3>6. 正解を付け直したら、数字が下がった</h3>
+    <p>自分の答えにまちがいが無いか気になり、1 回目の答えを見ずに、同じ 81 件を付け直しました。すると <b>81 件中 15 件（19%）で、自分の答えが変わりました</b>。ほとんどが「おでかけ ↔ 日常」の境目で、迷った日は「その日の目的が用事ならば日常、遊びならおでかけ」と、基準を言葉にして決め直しました。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>判定のしかた</th><th>1 回目の答えで</th><th>2 回目の答えで</th><th>Jev に聞く外出</th></tr></thead>
+        <tbody>
+          <tr><td>ルールだけ</td><td class="num">83%</td><td class="num">74%</td><td>0 件</td></tr>
+          <tr><td>Jev だけ</td><td class="num">80%</td><td class="num">77%</td><td>81 件</td></tr>
+          <tr><td>アプリの流れ（家の近くだけの日はコードで日常、ほかは Jev）</td><td class="num">84%</td><td class="num">78%</td><td>73 件</td></tr>
+          <tr><td>ふだんはルール、おでかけと日常の境目だけ Jev</td><td class="num">84%</td><td class="num">78%</td><td>38 件</td></tr>
+          <tr><td>Jev が迷っていない（要確認なし）ときだけ Jev、ほかはルール</td><td class="num">84%</td><td class="num">80%</td><td>81 件</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>一番下がったのはルール（83% → 74%）でした。ルールの境目は 1 回目の答えに合わせて選んでいたので、答えが変わった分だけ外れました。Jev は本人の基準を言葉で渡しているだけで、数字を答えに合わせていないので、下がり方が小さく済みました。</p>
+
+    <h3>7. 交差検証で、甘かった数字を直す</h3>
+    <p>境目を選んだのと同じデータで測ると、そのデータにたまたま合う境目を選んでいる分、数字が良く出ます。「4/5 で境目を選び、残り 1/5 で測る」を 50 回くり返すと、2 回目の答えでのルールの正解率は<b>平均 75%</b>（69〜77%）。最初に言っていた 83% は、甘い数字でした。</p>
+
+    <h3>8. どこで外れるのかを見る</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>外れ方</th><th>例</th></tr></thead>
+        <tbody>
+          <tr><td>泊まりのおでかけ</td><td>ネカフェで夜通し遊ぶ、友達の家に泊まる。今のしくみでは泊まると「帰省か旅行」にしかならず、ルールも Jev も当てられない（7 件。ここで上限が 91% になる）</td></tr>
+          <tr><td>用事か遊びか</td><td>通院や書類を取りに行く日も、いつもと違う場所に長くいるので「おでかけ」に見える</td></tr>
+          <tr><td>家の近くの寄り道</td><td>近所の新しいお店に少し寄っただけの日を、Jev は自信を持って「おでかけ」と言う</td></tr>
+          <tr><td>何度も行く場所</td><td>何度も行く街は「ときどき行く場所」になり、ルールと Jev が同じ数字を反対に読む</td></tr>
+          <tr><td>記録の区切り</td><td>一度帰ったのに、記録の上で 2 つの外出が 1 つにつながっていた</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>真ん中の 3 つは、「その場所が何か（病院か、お店か、友達の家か）」が分かれば見分けやすくなります。ただ、プライバシーのために場所の名前や種類は Jev に渡していません。<b>正解率と個人情報の釣り合い</b>のところで止まっています。</p>
+
+    <h3>試行錯誤でわかったこと</h3>
+    <ol class="lessons">
+      <li><b>数えられることはコードが強い。</b>距離・泊数・滞在時間はコードで計算して渡すほうが、速く、確実で、無料。</li>
+      <li><b>基準は言葉で。勝手に数字の線を引かない。</b>LLM は書かれた線を文字どおり守り、ずれた基準のまま自信を持って間違える。</li>
+      <li><b>正解そのものもぶれる。</b>自分の答えでも 2 回で 19% 変わる。正解率は、人どうしの一致と並べて読む。迷う境目では、しくみを賢くするより、自分の基準を言葉にして答えをそろえるほうが効く。</li>
+      <li><b>境目を決めたデータと、測るデータを分ける。</b>同じデータで決めて測ると、数字は良く見える。</li>
+    </ol>
+  </section>
+
+  <section id="value">
+    <div class="no">04</div>
+    <h2>それでも Jev に価値があるところ</h2>
+    <p>正解率だけなら、ルールと互角です。それでも、ルールにはできないことが 2 つありました。</p>
+    <h3>「迷っている」と言える</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Jev の表示</th><th>件数</th><th>正解率</th></tr></thead>
+        <tbody>
+          <tr><td>要確認なし</td><td>54 件</td><td class="num">91%</td></tr>
+          <tr><td>要確認あり</td><td>27 件</td><td class="num">48%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>要確認の 27 件だけを見直せば、Jev の外れ 19 件のうち 14 件を拾えます。全部を見直すより 3 分の 1 の手間で、外れの 7 割です。自分が付け直しで迷った日（ネカフェの泊まり、成人式と同窓会など）にも、ほとんど要確認が付いていました。ルールは「白か黒」しか出せません。</p>
+    <h3>確率がおおむね現実と合う</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Jev が言った「日常」の確率</th><th>件数</th><th>実際に日常だった割合</th></tr></thead>
+        <tbody>
+          <tr><td>0〜20%</td><td>17 件</td><td class="num">0%</td></tr>
+          <tr><td>20〜40%</td><td>17 件</td><td class="num">24%</td></tr>
+          <tr><td>40〜60%</td><td>12 件</td><td class="num">42%</td></tr>
+          <tr><td>60〜80%</td><td>19 件</td><td class="num">89%</td></tr>
+          <tr><td>80〜100%</td><td>16 件</td><td class="num">100%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>高い確率は実際より少し控えめですが、数字を「どれくらい信じてよいか」の目安として使えます。ただし、迷いの印は<b>迷っている外れしか拾えません</b>。家の近くの寄り道を自信満々で外した例も 2 件ありました。</p>
+
+    <figure>
+      <img src="images/outings-review.png" width="1280" height="1100" alt="Jev の判定を確かめるページ。正解率 77%、確かめた 81 件、まだ 0 件。ルールだけで判定したときの正解率 74% と、ルールと本人の答えを比べた表、おでかけの境目を変えたときの正解率の表、「要確認」の有り無しごとの正解率（なし 91%、あり 48%）が並んでいる" loading="lazy">
+      <figcaption>判定を確かめるページ（/outings/review）。Jev とルールの判定を、本人の答えと比べた結果を見られます</figcaption>
+    </figure>
+  </section>
+
+  <section id="ideas">
+    <div class="no">05</div>
+    <h2>Jev がほかに使えそうなこと</h2>
+    <p class="muted">ここからは、今回の結果から考えたアイデアです。まだ試していない推測なので、上の結果とは分けて読んでください。</p>
+
+    <h3>使い方の型：ルール＋境目だけ LLM</h3>
+    <p>ふだんはコードのルールで速く決め、ルールが迷う境目だけ Jev に聞く。今回の保存した答えで計算すると、正解率は Jev だけと同じくらい（78%）のまま、Jev に聞く回数は半分以下（38 件）でした。<b>正解率を上げる手ではなく、料金と待ち時間を減らす手</b>として使えそうです。</p>
+
+    <h3>使い方の型：見直す相手を選ぶ係</h3>
+    <p>判定そのものを任せるのではなく、「人が確かめるべきもの」を選ぶのに、Jev の迷い（要確認）を使う。今回なら 3 分の 1 の手間で外れの 7 割です。人の確認が必要な仕事ほど、効き目が大きいと思います。</p>
+
+    <h3>向いていそうな仕分け</h3>
+    <p>「白黒つけにくく、間違いを人が確かめたい」仕分けに、「はい／いいえ＋確率」が向いていると思います。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>場面</th><th>Jev に聞くこと（はい／いいえ）</th><th>コードで先に数えること</th><th>迷ったときは</th></tr></thead>
+        <tbody>
+          <tr><td>授業のレビュー</td><td>具体的な中身があるか／先生への悪口になっていないか</td><td>文字数、同じ人の投稿数</td><td>運営が確かめてから載せる</td></tr>
+          <tr><td>学生のイベント・お知らせ</td><td>この人に関係あるか（興味・学年から）</td><td>授業と時間がかぶるか</td><td>一覧には出すが、通知はしない</td></tr>
+          <tr><td>質問の掲示板</td><td>住まい・ビザ・授業などのどの話か</td><td>似た過去の質問の数</td><td>全体に出す</td></tr>
+          <tr><td>問い合わせ</td><td>急ぎか</td><td>受け付けからの時間</td><td>担当者が先に見る</td></tr>
+          <tr><td>メール</td><td>返信が必要か</td><td>相手とのやりとりの回数</td><td>あとで見るに入れる</td></tr>
+          <tr><td>写真</td><td>人に見せてよいか（顔・住所が写っていないか）</td><td>撮った場所が自宅の近くか</td><td>本人に確かめる</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>ゲームを作る側：CPU とプロの練習相手</h3>
+    <p>ゲームを作る側から見ると、CPU（コンピューターの対戦相手）がかなり強くなりそうだと思いました。ただし、速さを出すのは LLM ではありません。LLM は 1 回答えるのに時間がかかるので、人の反応（0.2 秒くらい）より遅くなりがちです。<b>画面の状態の読み取りと操作はコードで速く、Jev には数秒に 1 回の「今は攻めるべきか？」「この相手は危ないか？」のような判断だけを聞く</b>、という分け方なら、反応が速くて判断もうまい CPU が作れるかもしれません。確率が低いときは無理をしない、という動きもさせられます。</p>
+    <p>そこまで強くなれば、プロゲーマーの練習相手にもなります。人の練習相手と違って、いつでも、同じ強さで、苦手な場面だけをくり返し相手にできます。オセロや将棋で AI が人を超えたように、いつか FPS でも CPU が人に勝つ日が来るかもしれません。</p>
+
+    <h3>人によって「正解」が違う仕事</h3>
+    <p>今回、自分の答えでさえ 2 回で 19% 変わりました。人によって基準が違う仕分けでは、<b>本人の基準を言葉で持たせ、本人が直したら次から反映する</b>しくみが向いていそうです。数字の線で合わせると、答えが変わったときに一気に外れます（ルールが 83% から 74% に落ちたように）。</p>
+
+    <h3>使うときのチェックリスト</h3>
+    <ol class="lessons">
+      <li>数えられることは、コードで数えてから渡す</li>
+      <li>基準は言葉で書く。自分が言っていない数字の線を引かない</li>
+      <li>選択肢を並べるより、「これは◯◯か？」と 1 つずつ聞く</li>
+      <li>確率は、答えそのものより「人が見直す目印」に使う</li>
+      <li>正解を 2 回付けて、人どうしの一致も測る。それが正解率の天井の目安になる</li>
+      <li>基準を決めたデータと、測るデータを分ける</li>
+    </ol>
+  </section>
+
+  <section id="next">
+    <div class="no">06</div>
+    <h2>これから</h2>
+    <ul class="lessons">
+      <li>泊まりでも「遠くへ出かけたか？」を聞き、近場なら「おでかけ」にできるようにする（上限の 91% を外す）</li>
+      <li>友達に、自分のアカウントで「判定を確かめる」をやってもらい、自分以外のデータで正解率を測る（データはもらわず、正解率の画面だけ）</li>
+      <li>帰省・日帰りの外出も確かめる（今回のデータには 1 件も無かった）</li>
+    </ul>
+  </section>
+
+  <section id="app">
+    <div class="no">07</div>
+    <h2>アプリの画面</h2>
+    <p>タイムラインを読み込むだけで、行った都道府県・国・市区町村が地図にまとまり、旅は 1 回ずつ切符になり、フレンドコードでつながった友達と行った県を比べられます。位置の座標は保存せず、データベースの全部の表に行単位のアクセス制御（RLS）をかけています。</p>
+
+    <figure>
+      <img src="images/dashboard.png" width="1280" height="1140" alt="マイページ（わたしの地図帳）。大きく「30 / 47 都道府県」、その下に「1 か国・地域、392 回の外出、8 回の旅、282 市区町村」。日本地図では、行った都道府県が日数に応じて薄い朱色から濃い赤茶色まで塗り分けられ、沖縄県は左上の枠に入っている" loading="lazy">
+      <figcaption>マイページの日本地図（/dashboard）。行った日数が多い県ほど濃く塗られます</figcaption>
+    </figure>
+    <figure>
+      <img src="images/municipalities.png" width="1280" height="1360" alt="市区町村踏破のページ。「282 / 1,902 市区町村（14.8%）」と、住居・宿泊・訪問・接地・通過ごとの数、経県値 84 / 235 点。全国の市区町村の地図で、行った市区町村が関わり方の強さに応じて赤・朱・薄い朱で塗られている。自宅のあたりはぼかしてある" loading="lazy">
+      <figcaption>市区町村踏破（/municipalities）。泊まった・訪ねた・通っただけ、のように関わり方で塗り分けます（自宅のあたりはぼかしています）</figcaption>
+    </figure>
+    <figure>
+      <img src="images/friends-compare.png" width="1280" height="1100" alt="友達と比べるページ。サブアカウントの友達との比較で、都道府県の数（あなた 30 / 47、友達 0 / 47、どちらも 0）の表と、日本地図。自分だけが行った県が青、友達だけが行った県がオレンジ、どちらも行った県が緑で塗られる（この例では青だけ）" loading="lazy">
+      <figcaption>友達と比べる（/friends）。フレンドコードでつながった友達と、行った県・国を色分けで比べます（写っているのはテスト用のサブアカウント）</figcaption>
+    </figure>
+    <figure>
+      <img src="images/dashboard-world.png" width="1280" height="880" alt="マイページの「世界」のタブ。アジアを正面にした地球儀の形の世界地図で、行った国の日本だけが濃い赤茶色に塗られている" loading="lazy">
+      <figcaption>同じページの「世界」のタブ。行った国を地球儀の形で塗ります</figcaption>
+    </figure>
+    <figure>
+      <img src="images/top.png" alt="旅の地図帳のトップページ。生成りの紙のような背景に、明朝体で「旅の地図帳 行った場所が、地図帳になる。」と書かれ、Google でログインするボタンと、3 つの特長が並んでいる" loading="lazy">
+      <figcaption>トップページ（https://nextjs-supabase-auth-practice.vercel.app/）</figcaption>
+    </figure>
+  </section>
+
+  <section id="stack">
+    <div class="no">08</div>
+    <h2>使った技術</h2>
+    <div class="table-wrap">
+      <table>
+        <tbody>
+          <tr><th>画面</th><td>Next.js 16（App Router・Server Actions）、React 19、TypeScript、Tailwind CSS 4、shadcn/ui</td></tr>
+          <tr><th>データ・ログイン</th><td>Supabase（PostgreSQL・Auth・RLS）、Google ログイン</td></tr>
+          <tr><th>地図</th><td>TopoJSON の境界データ（SVG）、MapLibre GL JS（3D の地球儀）</td></tr>
+          <tr><th>判定</th><td>Jev（TypeSafe AI）＋ コードのルール</td></tr>
+          <tr><th>品質</th><td>Biome、Playwright（画面のテストと計算のテスト）</td></tr>
+          <tr><th>公開</th><td>Vercel（アプリ）、GitHub Pages（このページ）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted">くわしい検証の記録は、リポジトリの <a href="https://github.com/ken14121/nextjs-supabase-auth-practice/blob/main/docs/research/jev-report.md">docs/research/jev-report.md</a> にあります。</p>
+  </section>
+
+  <section id="sources">
+    <div class="no">09</div>
+    <h2>データの出典</h2>
+    <ul class="sources">
+      <li>都道府県の境界：地球地図日本（国土地理院）を dataofjapan/land が TopoJSON に変換したもの</li>
+      <li>国の境界：Natural Earth（world-atlas）</li>
+      <li>市区町村の境界：国土数値情報（行政区域データ、国土交通省）2021 年版を、スマートニュース メディア研究所 japan-topography が加工したもの</li>
+      <li>空港の一覧：OurAirports（パブリックドメイン）</li>
+      <li>3D の地球儀の航空写真・標高：地理院タイル（国土地理院）</li>
+      <li>3D の地球儀の建物：3D都市モデル（Project PLATEAU、国土交通省）。Pacific Spatial Solutions 作成の LOD0 データ（CC BY 4.0）を shiwaku/mlit-plateau-bldg-pmtiles が PMTiles に変換したもの</li>
+    </ul>
+  </section>
+
+
+  <footer>
+    <p>作った人：貞保 健太郎（<a href="https://github.com/ken14121">ken14121</a>）／ 2026 年秋の臨地実務実習で制作</p>
+  </footer>
+</main>
+</body>
+</html>
