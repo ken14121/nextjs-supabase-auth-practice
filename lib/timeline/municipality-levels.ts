@@ -34,6 +34,10 @@ export type MunicipalityLookup = (
 const VISIT_MINUTES = 15;
 // 軌跡が無い古いファイルでは、移動の始点と終点を直線で結び、この間隔で点を打って「通過」を近似する
 const FALLBACK_STEP_KM = 1;
+// 軌跡があっても、新幹線のように速い移動では点と点の間が 10km 以上空き、間の市区町村が抜ける。
+// そこで点と点の間も直線で結んで同じ間隔で点を打つ。ただし離れすぎた点どうし
+// （電波が無かった時間など、どこを通ったか分からない区間）はつながない
+const MAX_GAP_KM = 50;
 // 直線で近似するのは陸の移動だけ（飛行機・船は海の上を通るので除く）
 const GROUND_MODES = new Set([
   "walk",
@@ -64,6 +68,23 @@ function staysOver3am(start: string, end: string): boolean {
 function roughKm(lat1: number, lng1: number, lat2: number, lng2: number) {
   const x = (lng2 - lng1) * Math.cos(((lat1 + lat2) / 2) * (Math.PI / 180));
   return Math.sqrt(x * x + (lat2 - lat1) ** 2) * 111.2;
+}
+
+// 2 点の間に、FALLBACK_STEP_KM おきに点を打つ（両端は含めない）
+function pointsBetween(
+  from: { lat: number; lng: number },
+  to: { lat: number; lng: number },
+): [number, number][] {
+  const km = roughKm(from.lat, from.lng, to.lat, to.lng);
+  const steps = Math.ceil(km / FALLBACK_STEP_KM);
+  const points: [number, number][] = [];
+  for (let i = 1; i < steps; i++) {
+    points.push([
+      from.lat + ((to.lat - from.lat) * i) / steps,
+      from.lng + ((to.lng - from.lng) * i) / steps,
+    ]);
+  }
+  return points;
 }
 
 export function computeMunicipalityLevels(
@@ -108,19 +129,22 @@ export function computeMunicipalityLevels(
 
   if (paths.length > 0) {
     for (const path of paths) {
-      for (const [lat, lng] of path.points)
+      let prev: { lat: number; lng: number } | null = null;
+      for (const [lat, lng] of path.points) {
+        const here = { lat, lng };
+        if (prev && roughKm(prev.lat, prev.lng, lat, lng) <= MAX_GAP_KM) {
+          for (const [pLat, pLng] of pointsBetween(prev, here))
+            add(find(pLat, pLng, false), 1, path.on);
+        }
         add(find(lat, lng, false), 1, path.on);
+        prev = here;
+      }
     }
   } else {
     for (const s of segments) {
       if (s.kind !== "activity" || !GROUND_MODES.has(s.mode)) continue;
-      const km = roughKm(s.from.lat, s.from.lng, s.to.lat, s.to.lng);
-      const steps = Math.ceil(km / FALLBACK_STEP_KM);
-      for (let i = 1; i < steps; i++) {
-        const lat = s.from.lat + ((s.to.lat - s.from.lat) * i) / steps;
-        const lng = s.from.lng + ((s.to.lng - s.from.lng) * i) / steps;
+      for (const [lat, lng] of pointsBetween(s.from, s.to))
         add(find(lat, lng, false), 1, toJstDate(s.start));
-      }
     }
   }
 
