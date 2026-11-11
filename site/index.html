@@ -135,7 +135,7 @@
     <ul class="lessons">
       <li>正解率だけ見ると、Jevとコードのルールはほぼ互角でした。どちらも、自分の答えのぶれ（81%）に近いところまで来ています。</li>
       <li>Jevが一番役に立ったのは、正解率よりも<span class="mk">迷っている外出に<span class="tag">要確認</span>を付けてくれること</span>でした。要確認なしなら91%当たり、ありだと48%。要確認の3分の1だけ見直せば、外れの7割が拾えます。</li>
-      <li>一番の失敗は、あいまいな境目に、自分が言ってもいない数字の線を引いたこと。これだけで <span class="num">75% → 58%</span> まで落ちました。</li>
+      <li>一番の失敗は、あいまいな境目に、自分が言ってもいない数字の線を引いたこと。これだけで<span class="num">75% → 58%</span>まで落ちました。</li>
     </ul>
   </section>
 
@@ -206,7 +206,7 @@
     <p>アプリを公開すると、ほかの人はJevを使えないのでルールで判定することになります。なので同じ材料で、ルールだけの判定も作りました。いつもの場所以外に120分以上いたらおでかけ、のような境目を選ぶと、<span class="ul">ルールだけで83%</span>。Jev込みの84%とほぼ同じで、驚きました。</p>
 
     <h3>6. 正解を付け直したら、数字が下がった</h3>
-    <p>自分の答えが本当に合っているのか気になって、1回目の答えを見ないで同じ81件を付け直してみました。すると <span class="mk">81件中15件（19%）で、自分の答えが変わっていました</span>。ほとんどがおでかけと日常の境目です。迷った日は、その日の目的が用事なら日常、遊びならおでかけ、と基準を言葉にして決め直しました。</p>
+    <p>自分の答えが本当に合っているのか気になって、1回目の答えを見ないで同じ81件を付け直してみました。すると<span class="mk">81件中15件（19%）で、自分の答えが変わっていました</span>。ほとんどがおでかけと日常の境目です。迷った日は、その日の目的が用事なら日常、遊びならおでかけ、と基準を言葉にして決め直しました。</p>
     <div class="table-wrap">
       <table>
         <thead><tr><th>判定のしかた</th><th>1回目の答えで</th><th>2回目の答えで</th><th>Jevに聞く外出</th></tr></thead>
@@ -381,9 +381,9 @@
       <p class="where">アプリ全体の画面と、サーバー側の処理</p>
       <ul>
         <li>ページはサーバーでSupabaseからデータを読んで組み立て、地図や切符の操作のように動きがある所だけクライアントのコンポーネントにしました。</li>
-        <li>取り込みは、<span class="ul">Timeline.jsonをブラウザの中で読んで、必要な部分（外出の区切りと軌跡）だけにしてから</span> Server Action（<code>app/import/actions.ts</code>）に送ります。ファイルを丸ごとサーバーに送らないので、軽くて、余計な位置情報も持たずに済みます。</li>
+        <li>取り込みは、<span class="ul">Timeline.jsonをブラウザの中で読んで、必要な部分（外出の区切りと軌跡）だけにしてから</span>Server Action（<code>app/import/actions.ts</code>）に送ります。ファイルを丸ごとサーバーに送らないので、軽くて、余計な位置情報も持たずに済みます。</li>
         <li>旅の追加・友達の申請・判定のやり直しなどもServer Actionにしていて、画面からはふつうの関数のように呼べます。</li>
-        <li>ログインのセッションは <code>proxy.ts</code>（Next.js 16でmiddlewareから名前が変わった所）で毎回更新しています。</li>
+        <li>ログインのセッションは<code>proxy.ts</code>（Next.js 16でmiddlewareから名前が変わった所）で毎回更新しています。</li>
       </ul>
     </div>
 
@@ -401,7 +401,7 @@
       <h3>Supabase（PostgreSQL・Auth・RLS）＋Googleログイン</h3>
       <p class="where">データの保存と、ログイン、だれが何を見られるか</p>
       <ul>
-        <li>Googleでログインして、外出・行った県・市区町村・旅・友達などを9つの表に保存しています。表の変更は <code>supabase/migrations/</code> のSQLで管理しています。</li>
+        <li>Googleでログインして、外出・行った県・市区町村・旅・友達などを9つの表に保存しています。表の変更は<code>supabase/migrations/</code>のSQLで管理しています。</li>
         <li><span class="mk">9つの表すべてに行単位のアクセス制御（RLS）</span>をかけて、自分のデータは自分だけ、友達には旅で行った県・国だけが見えるようにしました。コードを間違えても、データベースの側で止まります。</li>
         <li>正解率の検証のためにデータを取り出すSQLは、本物のデータベースで動かす前に、同じ構成にしたPGlite（手元で動くPostgreSQL）で流して、自分の分だけが取れることを確かめました。</li>
       </ul>
@@ -413,7 +413,7 @@
       <ul>
         <li>公式のSDK（<code>@typesafe-ai/sdk</code>）で、はい／いいえ の質問を3つ定義しています（<code>lib/jev/classify.ts</code>）。答えの形はZodで決めてあるので、返ってくる値がずれません。</li>
         <li>Jevに渡す材料はコードで作っています（<code>lib/jev/state.ts</code>）。泊数・距離・移動手段・時期・いつもの場所の滞在時間などを日本語のJSONにしたものです。</li>
-        <li>3つの答えから5つのどれかを決めるのは <code>lib/jev/decide.ts</code>、Jevを使えないときのルールは <code>lib/outings/rule-judge.ts</code> です。</li>
+        <li>3つの答えから5つのどれかを決めるのは<code>lib/jev/decide.ts</code>、Jevを使えないときのルールは<code>lib/outings/rule-judge.ts</code>です。</li>
         <li>APIキーはサーバーだけで読み（<code>server-only</code>）、Jevを使えるのは自分のアカウントだけにしています。結果は確率ごと保存しておいて、同じ外出で何度もJevを呼ばないようにしました。</li>
       </ul>
     </div>
@@ -461,11 +461,11 @@
       <p class="where">公開</p>
       <ul>
         <li>アプリはサーバーで動く処理があるのでVercelに置き、環境変数でSupabaseとJevのキーを渡しています。</li>
-        <li>このページは静的なページなので、GitHub Actionsで <code>site/</code> のフォルダだけをGitHub Pagesに公開しています。</li>
+        <li>このページは静的なページなので、GitHub Actionsで<code>site/</code>のフォルダだけをGitHub Pagesに公開しています。</li>
       </ul>
     </div>
 
-    <p class="muted">くわしい検証の記録は、リポジトリの <a href="https://github.com/ken14121/nextjs-supabase-auth-practice/blob/main/docs/research/jev-report.md">docs/research/jev-report.md</a> にあります。</p>
+    <p class="muted">くわしい検証の記録は、リポジトリの<a href="https://github.com/ken14121/nextjs-supabase-auth-practice/blob/main/docs/research/jev-report.md">docs/research/jev-report.md</a>にあります。</p>
   </section>
 
   <section id="sources">
