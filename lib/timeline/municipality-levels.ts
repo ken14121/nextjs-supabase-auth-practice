@@ -87,6 +87,23 @@ function pointsBetween(
   return points;
 }
 
+// 1 日ぶんの軌跡の点に、点と点の間（MAX_GAP_KM まで）を補った点を足して返す。
+// 市区町村の通過と、県の通過（lib/timeline/passed-regions.ts）の両方で使う
+export function densePathPoints(
+  points: [number, number][],
+): [number, number][] {
+  const out: [number, number][] = [];
+  let prev: { lat: number; lng: number } | null = null;
+  for (const [lat, lng] of points) {
+    const here = { lat, lng };
+    if (prev && roughKm(prev.lat, prev.lng, lat, lng) <= MAX_GAP_KM)
+      out.push(...pointsBetween(prev, here));
+    out.push([lat, lng]);
+    prev = here;
+  }
+  return out;
+}
+
 export function computeMunicipalityLevels(
   segments: TimelineSegment[],
   paths: DayPath[],
@@ -129,16 +146,8 @@ export function computeMunicipalityLevels(
 
   if (paths.length > 0) {
     for (const path of paths) {
-      let prev: { lat: number; lng: number } | null = null;
-      for (const [lat, lng] of path.points) {
-        const here = { lat, lng };
-        if (prev && roughKm(prev.lat, prev.lng, lat, lng) <= MAX_GAP_KM) {
-          for (const [pLat, pLng] of pointsBetween(prev, here))
-            add(find(pLat, pLng, false), 1, path.on);
-        }
+      for (const [lat, lng] of densePathPoints(path.points))
         add(find(lat, lng, false), 1, path.on);
-        prev = here;
-      }
     }
   } else {
     for (const s of segments) {
