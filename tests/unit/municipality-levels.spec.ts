@@ -119,6 +119,36 @@ test("通過：軌跡の点の市区町村は 1。軌跡が無いときは陸の
   ).toEqual([]);
 });
 
+test("通過：軌跡の点と点の間が空いていたら直線で補う。離れすぎた点どうしはつながない", () => {
+  // 0.1 度ずつ市区町村が変わる判定（緯度 0.1 度 ≒ 11km）
+  const fineLookup: MunicipalityLookup = (lat) =>
+    `1${Math.floor(lat * 10)
+      .toString()
+      .padStart(4, "0")}`;
+  const codes = (points: [number, number][]) =>
+    computeMunicipalityLevels(
+      [],
+      [{ on: "2025-04-01", points }],
+      fineLookup,
+    ).map((l) => l.code);
+
+  // 新幹線のように 33km 空いた 2 点：間の 2 つの市区町村も通過になる
+  expect(
+    codes([
+      [35.05, 135],
+      [35.35, 135],
+    ]),
+  ).toEqual(["10350", "10351", "10352", "10353"]);
+
+  // 60km 空いた 2 点：どこを通ったか分からないので、点のある市区町村だけ
+  expect(
+    codes([
+      [35.05, 135],
+      [35.6, 135],
+    ]),
+  ).toEqual(["10350", "10356"]);
+});
+
 test("サンプルのタイムラインで、大阪の自宅が住居になり、座標は返さない", () => {
   const json = JSON.parse(
     readFileSync("docs/samples/sample-timeline-osaka.json", "utf8"),

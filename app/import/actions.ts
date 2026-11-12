@@ -13,6 +13,10 @@ import { matchOutings } from "@/lib/timeline/match";
 import { computeMunicipalityLevels } from "@/lib/timeline/municipality-levels";
 import { buildOutings, toJstDate } from "@/lib/timeline/outings";
 import { compactTimelineSchema } from "@/lib/timeline/parse";
+import {
+  assignPassedRegions,
+  passedRegionsByDay,
+} from "@/lib/timeline/passed-regions";
 import { extractShinkansenRides } from "@/lib/timeline/rail";
 
 export type ImportResult =
@@ -377,6 +381,25 @@ export async function importTimeline(path: string): Promise<ImportResult> {
           visited_on: visitedOn,
         });
       }
+    }
+
+    // 新幹線などで立ち寄らずに通っただけの県・国も、行った県に数える（市区町村の「通過」と同じ考え方）
+    const spans = drafts.flatMap((d) => {
+      const id = outingIds.get(Date.parse(d.startedAt));
+      return id
+        ? [
+            {
+              id,
+              startedAt: d.startedAt,
+              endedAt: d.endedAt,
+              distanceKm: d.distanceKm,
+            },
+          ]
+        : [];
+    });
+    const passed = passedRegionsByDay(parsed.data.paths ?? [], lookupRegion);
+    for (const row of assignPassedRegions(passed, spans, seen)) {
+      regionRows.push({ user_id: userId, ...row });
     }
 
     // 取り込み直しに備えて、対象の外出の訪問地をいったん消してから入れ直す
