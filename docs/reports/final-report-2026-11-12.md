@@ -4,7 +4,7 @@
 - 実習先：Zendash株式会社
 - 期間：2026年9月28日〜11月12日（30日）
 - 作ったもの：https://nextjs-supabase-auth-practice.vercel.app/ （紹介ページ：https://ken14121.github.io/nextjs-supabase-auth-practice/ ）
-- 作業時間：232時間50分（11/11まで。最終日の11/12の分を除く）
+- 作業時間：238時間20分
 
 ## 1. 実習の概要
 
